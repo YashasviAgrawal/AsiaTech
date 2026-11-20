@@ -133,6 +133,10 @@ export const en = {
   'hk.amenities': 'Amenities',
   'hk.maintenance': 'Maintenance',
   'hk.submit': 'Submit inspection',
+  'hk.guestArriving': 'Guest arriving',
+  'hk.rooms': 'rooms',
+  'hk.tapIssues': 'Tap Problem or Missing where needed',
+  'hk.back': 'Back',
 } as const;
 
 export type MessageKey = keyof typeof en;

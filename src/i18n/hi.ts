@@ -126,4 +126,8 @@ export const hi: Partial<Record<MessageKey, string>> = {
   'hk.amenities': 'सामान',
   'hk.maintenance': 'मरम्मत',
   'hk.submit': 'जाँच जमा करें',
+  'hk.guestArriving': 'मेहमान आ रहे हैं',
+  'hk.rooms': 'कमरे',
+  'hk.tapIssues': 'जहाँ ज़रूरी हो, खराबी या गायब दबाएँ',
+  'hk.back': 'वापस',
 };

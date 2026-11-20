@@ -270,7 +270,7 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
         </button>
 
         <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
-          <div className="mr-1 hidden sm:block">
+          <div className="mr-0.5 sm:mr-1">
             <LanguageToggle />
           </div>
           <div className="hidden items-center gap-0.5 xl:flex">
@@ -286,6 +286,7 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
               <Headset className="h-[18px] w-[18px]" />
             </IconLink>
           </div>
+          <span className="hidden sm:contents">
           <IconLink
             href="/messages"
             label={t('top.whatsapp')}
@@ -294,6 +295,7 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
             <MessageCircle className="h-[18px] w-[18px] text-emerald-600" />
           </IconLink>
           <AppsGrid data={data} />
+          </span>
           <Notifications data={data} />
           <div className="mx-1 hidden h-6 w-px bg-ink-200 sm:block" />
           <AccountMenu data={data} />

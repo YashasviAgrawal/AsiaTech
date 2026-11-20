@@ -1,6 +1,6 @@
 'use server';
 
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { eq, or } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
@@ -9,6 +9,7 @@ import { db } from '@/db';
 import { loginHistory, users } from '@/db/schema';
 import { normaliseMobile } from '@/lib/utils';
 import { writeSession } from '../auth/session';
+import { LOCALE_COOKIE } from '@/i18n';
 
 const schema = z.object({
   identifier: z.string().trim().min(3, 'Enter your email or mobile number'),
@@ -45,6 +46,8 @@ export async function loginAction(_previous: LoginState, formData: FormData): Pr
 
   await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
   await writeSession({ sub: user.id, pid: null, v: user.sessionVersion });
+  // Staff see the app in their own language from the first screen (rule 7).
+  (await cookies()).set(LOCALE_COOKIE, user.language, { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' });
 
   const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
   redirect(safeNext);

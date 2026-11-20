@@ -375,7 +375,7 @@ async function main() {
   // Deluxe 103 is out of order and blocked for the next two weeks (AsiaTech shows "Blocked 1").
   // Blocked before bookings are generated, so the booking service never sells it.
   const room103 = types[0].roomIds.find((r) => r.number === '103')!;
-  await db.update(rooms).set({ hkStatus: 'out_of_order', oooReason: 'AC compressor replacement' }).where(eq(rooms.id, room103.id));
+  await db.update(rooms).set({ hkStatus: 'out_of_order', oooReason: 'AC compressor replacement', oooUntil: addDay(today, 15) }).where(eq(rooms.id, room103.id));
   for (const d of stayDates(today, addDay(today, 15))) {
     await db
       .update(inventory)
