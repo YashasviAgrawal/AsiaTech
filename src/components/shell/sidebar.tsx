@@ -25,13 +25,8 @@ function SidebarNav({ data, onNavigate }: { data: ShellData; onNavigate?: () => 
   const pathname = usePathname();
   const { t } = useT();
   const sections = useMemo(() => visibleNavigation((p) => hasPermission(data.permissions, p)), [data.permissions]);
+  // Explicit open/close choices; a section without one is open when it holds the current page.
   const [open, setOpen] = useState<Record<string, boolean>>({});
-
-  // Keep the section that holds the current page expanded.
-  useEffect(() => {
-    const current = sections.find((section) => section.items && sectionActive(pathname, section));
-    if (current) setOpen((state) => (state[current.key] ? state : { ...state, [current.key]: true }));
-  }, [pathname, sections]);
 
   return (
     <nav className="space-y-0.5" aria-label="Main">
@@ -58,7 +53,7 @@ function SidebarNav({ data, onNavigate }: { data: ShellData; onNavigate?: () => 
           );
         }
 
-        const expanded = open[section.key] ?? false;
+        const expanded = open[section.key] ?? active;
         return (
           <div key={section.key}>
             <button

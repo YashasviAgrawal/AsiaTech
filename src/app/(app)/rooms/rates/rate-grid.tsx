@@ -15,7 +15,6 @@ import { useRun } from '@/components/ui/use-run';
 export function RateGrid({ rows, today, canEdit }: { rows: RateRow[]; today: string; canEdit: boolean }) {
   const [editing, setEditing] = useState<{ row: RateRow; cell: RateCell } | null>(null);
   const dates = rows[0]?.cells.map((c) => c.date) ?? [];
-  let lastType = '';
 
   return (
     <div className="card overflow-hidden">
@@ -43,9 +42,8 @@ export function RateGrid({ rows, today, canEdit }: { rows: RateRow[]; today: str
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
-              const showType = row.roomType.id !== lastType;
-              lastType = row.roomType.id;
+            {rows.map((row, index) => {
+              const showType = row.roomType.id !== rows[index - 1]?.roomType.id;
               return (
                 <Fragment key={row.plan.id}>
                   {showType && (

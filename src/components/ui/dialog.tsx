@@ -95,19 +95,13 @@ export function Dialog({
 /**
  * Safe actions (rule 8): explain what will happen, optionally show a preview, optionally require a reason.
  */
-export function ConfirmDialog({
-  open,
-  onClose,
-  onConfirm,
-  title,
-  description,
-  preview,
-  confirmLabel = 'Confirm',
-  variant = 'danger',
-  requireReason,
-  reasonLabel = 'Reason',
-  loading,
-}: {
+export function ConfirmDialog(props: ConfirmDialogProps) {
+  // Mounted only while open, so the typed reason starts empty every time.
+  if (!props.open) return null;
+  return <ConfirmDialogInner {...props} />;
+}
+
+interface ConfirmDialogProps {
   open: boolean;
   onClose: () => void;
   onConfirm: (reason: string) => void | Promise<void>;
@@ -119,11 +113,22 @@ export function ConfirmDialog({
   requireReason?: boolean;
   reasonLabel?: string;
   loading?: boolean;
-}) {
+}
+
+function ConfirmDialogInner({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  description,
+  preview,
+  confirmLabel = 'Confirm',
+  variant = 'danger',
+  requireReason,
+  reasonLabel = 'Reason',
+  loading,
+}: ConfirmDialogProps) {
   const [reason, setReason] = useState('');
-  useEffect(() => {
-    if (open) setReason('');
-  }, [open]);
   return (
     <Dialog
       open={open}

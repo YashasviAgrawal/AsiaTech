@@ -439,7 +439,7 @@ function SettleDialog({
       </div>
       <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50/50 p-3">
         <p className="flex items-center gap-2 text-sm font-semibold text-violet-900">
-          <ArrowRightLeft className="h-4 w-4" /> Room transfer (add to the guest's room bill)
+          <ArrowRightLeft className="h-4 w-4" /> Room transfer (add to the guest&apos;s room bill)
         </p>
         <div className="mt-2 flex gap-2">
           <Select value={bookingId} onChange={(e) => setBookingId(e.target.value)}>

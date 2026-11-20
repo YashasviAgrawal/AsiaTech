@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle2, Info, TriangleAlert, X, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -30,10 +30,13 @@ const ICON_COLORS = { success: 'text-emerald-500', error: 'text-rose-500', info:
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const [mounted, setMounted] = useState(false);
+  // false during SSR and hydration, true afterwards: the portal only renders in the browser.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const idRef = useRef(0);
-
-  useEffect(() => setMounted(true), []);
 
   const dismiss = useCallback((id: number) => setToasts((list) => list.filter((t) => t.id !== id)), []);
 

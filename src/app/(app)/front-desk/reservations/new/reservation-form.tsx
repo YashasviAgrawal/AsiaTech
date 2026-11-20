@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
@@ -77,6 +77,9 @@ const HOLD_PRESETS = [
   { hours: 48, label: '2 days' },
 ];
 
+let lineKey = 0;
+const nextLineKey = () => ++lineKey;
+
 function Step({ n, title, description, children, aside }: { n: number; title: string; description?: string; children: React.ReactNode; aside?: React.ReactNode }) {
   return (
     <Card className="p-5 sm:p-6">
@@ -112,13 +115,12 @@ export function ReservationForm({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const keyRef = useRef(1);
   const typeMap = useMemo(() => new Map(roomTypes.map((t) => [t.id, t])), [roomTypes]);
 
   const newLine = (typeId: string, roomId?: string | null): RoomLine => {
     const type = typeMap.get(typeId)!;
     const plan = type.plans.find((p) => p.isDefault) ?? type.plans[0];
-    return { key: keyRef.current++, roomTypeId: typeId, ratePlanId: plan?.id ?? '', adults: Math.min(2, type.maxAdults), children: 0, extraBeds: 0, rateOverride: null, roomId: roomId ?? null };
+    return { key: nextLineKey(), roomTypeId: typeId, ratePlanId: plan?.id ?? '', adults: Math.min(2, type.maxAdults), children: 0, extraBeds: 0, rateOverride: null, roomId: roomId ?? null };
   };
 
   // Stay
@@ -127,7 +129,7 @@ export function ReservationForm({
   const [source, setSource] = useState(defaults.source);
   const [arrivalTime, setArrivalTime] = useState('');
   const [availability, setAvailability] = useState<Availability>(initialAvailability);
-  const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [availabilityFor, setAvailabilityFor] = useState(`${defaults.checkIn}|${defaults.checkOut}`);
   // Rooms
   const [lines, setLines] = useState<RoomLine[]>(() => (defaults.roomTypeId && typeMap.has(defaults.roomTypeId) ? [newLine(defaults.roomTypeId, defaults.roomId)] : []));
   // Guest
@@ -163,16 +165,16 @@ export function ReservationForm({
   const [showNightly, setShowNightly] = useState(false);
 
   const nights = nightsBetween(checkIn, checkOut);
+  const loadingAvailability = availabilityFor !== `${checkIn}|${checkOut}`;
 
   // Availability for the chosen stay.
   useEffect(() => {
     if (nights <= 0) return;
     let cancelled = false;
-    setLoadingAvailability(true);
     availabilityAction(checkIn, checkOut).then((result) => {
       if (cancelled) return;
-      setLoadingAvailability(false);
       if (result.ok) setAvailability(result.data);
+      setAvailabilityFor(`${checkIn}|${checkOut}`);
     });
     return () => {
       cancelled = true;
@@ -180,15 +182,12 @@ export function ReservationForm({
   }, [checkIn, checkOut, nights]);
 
   // Live price (debounced).
+  const quotable = nights > 0 && lines.length > 0 && lines.every((l) => l.ratePlanId);
   const quoteKey = JSON.stringify({ checkIn, checkOut, lines: lines.map(({ key: _k, roomId: _r, ...l }) => l), discountType, discountValue });
   useEffect(() => {
-    if (nights <= 0 || lines.length === 0 || lines.some((l) => !l.ratePlanId)) {
-      setQuoteData(null);
-      setQuoteError(null);
-      return;
-    }
-    setQuoting(true);
+    if (!quotable) return;
     const timer = window.setTimeout(async () => {
+      setQuoting(true);
       const result = await quoteAction({
         checkIn,
         checkOut,
@@ -208,26 +207,20 @@ export function ReservationForm({
   }, [quoteKey]);
 
   // Returning guest lookup by mobile (rule 5) or name.
+  const lookupQuery = guestId ? '' : mobile.replace(/\D/g, '').length >= 6 ? mobile.replace(/\D/g, '') : name.trim().length >= 3 ? name.trim() : '';
   useEffect(() => {
-    const digits = mobile.replace(/\D/g, '');
-    const q = digits.length >= 6 ? digits : !guestId && name.trim().length >= 3 ? name.trim() : '';
-    if (!q || guestId) {
-      setSuggestions([]);
-      return;
-    }
+    const q = lookupQuery;
+    if (!q) return;
     const timer = window.setTimeout(async () => {
       const result = await lookupGuestAction(q);
       if (result.ok) setSuggestions(result.data);
     }, 250);
     return () => window.clearTimeout(timer);
-  }, [mobile, name, guestId]);
+  }, [lookupQuery]);
 
   // Near-duplicate warning ("Vivek Agrawal" vs "Vivek Agewal").
   useEffect(() => {
-    if (name.trim().length < 4) {
-      setDuplicates([]);
-      return;
-    }
+    if (name.trim().length < 4) return;
     const timer = window.setTimeout(async () => {
       const result = await duplicatesAction(name, mobile || null, guestId ?? undefined);
       if (result.ok) setDuplicates(result.data);
@@ -235,7 +228,7 @@ export function ReservationForm({
     return () => window.clearTimeout(timer);
   }, [name, mobile, guestId]);
 
-  function useGuest(g: GuestLookup) {
+  function applyGuest(g: GuestLookup) {
     setGuestId(g.id);
     setName(g.name);
     setMobile(g.mobile ?? '');
@@ -259,10 +252,14 @@ export function ReservationForm({
   const updateLine = (key: number, patch: Partial<RoomLine>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const countOfType = (typeId: string) => lines.filter((l) => l.roomTypeId === typeId).length;
 
+  const visibleSuggestions = lookupQuery ? suggestions : [];
+  const visibleDuplicates = name.trim().length >= 4 && !guestId ? duplicates : [];
+  const shownQuote = quotable ? quoteData : null;
+  const shownQuoteError = quotable ? quoteError : null;
   const paidNow = Math.max(0, advance);
-  const balance = quoteData ? Math.max(0, quoteData.totalAmount - paidNow) : 0;
+  const balance = shownQuote ? Math.max(0, shownQuote.totalAmount - paidNow) : 0;
   const shortOn = lines.length > 0 ? roomTypes.filter((t) => countOfType(t.id) > (availability[t.id]?.available ?? 0)) : [];
-  const canSubmit = lines.length > 0 && name.trim().length >= 2 && nights > 0 && !quoteError && (shortOn.length === 0 || allowOverbook);
+  const canSubmit = lines.length > 0 && name.trim().length >= 2 && nights > 0 && !shownQuoteError && (shortOn.length === 0 || allowOverbook);
 
   function submit() {
     startSaving(async () => {
@@ -391,7 +388,7 @@ export function ReservationForm({
             <div className="mt-5 space-y-2.5">
               {lines.map((line, index) => {
                 const type = typeMap.get(line.roomTypeId)!;
-                const quoted = quoteData?.rooms[index];
+                const quoted = shownQuote?.rooms[index];
                 return (
                   <div key={line.key} className="rounded-xl bg-ink-50/80 p-3.5 ring-1 ring-ink-200/70">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
@@ -479,13 +476,13 @@ export function ReservationForm({
             </Field>
           </div>
 
-          {suggestions.length > 0 && (
+          {visibleSuggestions.length > 0 && (
             <div className="mt-3 animate-fade-in space-y-1.5">
-              {suggestions.slice(0, 3).map((g) => (
+              {visibleSuggestions.slice(0, 3).map((g) => (
                 <button
                   key={g.id}
                   type="button"
-                  onClick={() => useGuest(g)}
+                  onClick={() => applyGuest(g)}
                   className="flex w-full items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-left transition hover:border-emerald-300 hover:bg-emerald-50"
                 >
                   <span className="grid h-9 w-9 place-items-center rounded-full bg-emerald-100 text-emerald-700">
@@ -505,18 +502,18 @@ export function ReservationForm({
             </div>
           )}
 
-          {duplicates.length > 0 && !guestId && (
+          {visibleDuplicates.length > 0 && (
             <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
               <p className="flex items-center gap-2 text-sm font-semibold text-amber-900">
                 <AlertTriangle className="h-4 w-4" /> Is this the same guest?
               </p>
               <ul className="mt-2 space-y-1.5">
-                {duplicates.map((d) => (
+                {visibleDuplicates.map((d) => (
                   <li key={d.id} className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-amber-900">
                       <strong>{d.name}</strong> {d.mobile && <span className="text-amber-700">· {d.mobile}</span>} <span className="text-xs text-amber-700">({d.reason})</span>
                     </span>
-                    <button type="button" className="text-xs font-semibold text-amber-900 underline underline-offset-2" onClick={() => useGuest({ id: d.id, name: d.name, mobile: d.mobile, email: null, city: null, nationality: 'Indian', company: null, companyGstin: null, isVip: false, stays: 0, lastStay: null })}>
+                    <button type="button" className="text-xs font-semibold text-amber-900 underline underline-offset-2" onClick={() => applyGuest({ id: d.id, name: d.name, mobile: d.mobile, email: null, city: null, nationality: 'Indian', company: null, companyGstin: null, isVip: false, stays: 0, lastStay: null })}>
                       Use this guest
                     </button>
                   </li>
@@ -615,18 +612,18 @@ export function ReservationForm({
             <p className="flex items-center gap-2 text-xs font-medium text-ink-400">
               <CalendarRange className="h-3.5 w-3.5" /> {formatDayShort(checkIn)} → {formatDayShort(checkOut)} · {nights} night{nights === 1 ? '' : 's'}
             </p>
-            <p className="num mt-2 text-3xl font-extrabold tracking-tight">{quoteData ? formatINR(quoteData.totalAmount) : '₹0'}</p>
+            <p className="num mt-2 text-3xl font-extrabold tracking-tight">{shownQuote ? formatINR(shownQuote.totalAmount) : '₹0'}</p>
             <p className="mt-1 text-xs text-ink-400">
               {lines.length} room{lines.length === 1 ? '' : 's'} · incl. GST {quoting && <Loader2 className="ml-1 inline h-3 w-3 animate-spin" />}
             </p>
           </div>
 
           <div className="space-y-2.5 p-5 text-sm">
-            {quoteError && <p className="rounded-lg bg-rose-50 p-2.5 text-xs text-rose-700">{quoteError}</p>}
-            {!quoteData && !quoteError && <p className="text-ink-500">Add a room to see the price.</p>}
-            {quoteData && (
+            {shownQuoteError && <p className="rounded-lg bg-rose-50 p-2.5 text-xs text-rose-700">{shownQuoteError}</p>}
+            {!shownQuote && !shownQuoteError && <p className="text-ink-500">Add a room to see the price.</p>}
+            {shownQuote && (
               <>
-                {quoteData.rooms.map((room, i) => (
+                {shownQuote.rooms.map((room, i) => (
                   <div key={i} className="flex justify-between gap-3">
                     <span className="min-w-0 text-ink-600">
                       <span className="block truncate">{room.roomTypeName}</span>
@@ -643,7 +640,7 @@ export function ReservationForm({
                 </button>
                 {showNightly && (
                   <div className="space-y-1 rounded-lg bg-ink-50 p-2.5 text-xs">
-                    {quoteData.rooms.flatMap((room, i) =>
+                    {shownQuote.rooms.flatMap((room, i) =>
                       room.nightly.map((n) => (
                         <div key={`${i}-${n.date}`} className="flex justify-between text-ink-600">
                           <span>
@@ -658,13 +655,13 @@ export function ReservationForm({
                   </div>
                 )}
                 <div className="space-y-1.5 border-t border-dashed border-ink-200 pt-2.5">
-                  {quoteData.discountAmount > 0 && (
+                  {shownQuote.discountAmount > 0 && (
                     <div className="flex justify-between text-emerald-700">
                       <span>Discount</span>
-                      <span className="num">−{formatINR(quoteData.discountAmount)}</span>
+                      <span className="num">−{formatINR(shownQuote.discountAmount)}</span>
                     </div>
                   )}
-                  {Object.entries(quoteData.taxByRate).map(([rate, tax]) => (
+                  {Object.entries(shownQuote.taxByRate).map(([rate, tax]) => (
                     <div key={rate} className="flex justify-between text-ink-600">
                       <span>GST @{rate}% (CGST + SGST)</span>
                       <span className="num">{formatINR(tax)}</span>
@@ -672,7 +669,7 @@ export function ReservationForm({
                   ))}
                   <div className="flex justify-between pt-1 text-[15px] font-bold text-ink-900">
                     <span>Total</span>
-                    <span className="num">{formatINR(quoteData.totalAmount)}</span>
+                    <span className="num">{formatINR(shownQuote.totalAmount)}</span>
                   </div>
                   {paidNow > 0 && (
                     <>
@@ -722,7 +719,7 @@ export function ReservationForm({
               {hold ? <Clock className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
               {hold ? `Hold for ${HOLD_PRESETS.find((p) => p.hours === holdHours)?.label ?? `${holdHours} h`}` : 'Confirm booking'}
             </Button>
-            {!canSubmit && <p className="text-center text-xs text-ink-500">{lines.length === 0 ? 'Add a room' : name.trim().length < 2 ? 'Enter the guest name' : quoteError ?? 'Not enough rooms'}</p>}
+            {!canSubmit && <p className="text-center text-xs text-ink-500">{lines.length === 0 ? 'Add a room' : name.trim().length < 2 ? 'Enter the guest name' : shownQuoteError ?? 'Not enough rooms'}</p>}
           </div>
         </Card>
       </aside>

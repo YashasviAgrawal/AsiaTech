@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -63,19 +63,18 @@ export function BookingView({
   const router = useRouter();
   const toast = useToast();
   const { run, pending } = useRun();
-  const [dialog, setDialog] = useState<Dialogs>(null);
   const activeRooms = data.rooms.filter((r) => ['reserved', 'in_house'].includes(r.status));
-
   // Dashboard "Check in now" / "Check out" / "Assign" buttons land here with ?do=…
-  useEffect(() => {
-    if (intent === 'checkin' && b.status === 'confirmed') setDialog('checkin');
-    else if (intent === 'checkout' && b.status === 'checked_in') setDialog('checkout');
-    else if (intent === 'assign') {
+  const [dialog, setDialog] = useState<Dialogs>(() => {
+    if (intent === 'checkin' && b.status === 'confirmed') return 'checkin';
+    if (intent === 'checkout' && b.status === 'checked_in') return 'checkout';
+    if (intent === 'assign') {
       const first = activeRooms.find((r) => !r.roomId) ?? activeRooms[0];
-      if (first) setDialog({ assign: first.id });
+      if (first) return { assign: first.id };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [intent]);
+    return null;
+  });
+  const [now] = useState(() => Date.now());
 
   const close = () => {
     setDialog(null);
@@ -84,7 +83,7 @@ export function BookingView({
 
   const formCDue = g.isForeign && b.status === 'checked_in' && !b.formCSubmittedAt;
   const checkedInAt = data.rooms.find((r) => r.checkedInAt)?.checkedInAt;
-  const formCHoursLeft = checkedInAt ? Math.round(24 - (Date.now() - new Date(checkedInAt).getTime()) / 3600_000) : 24;
+  const formCHoursLeft = checkedInAt ? Math.round(24 - (now - new Date(checkedInAt).getTime()) / 3600_000) : 24;
   const invoice = data.invoices[0];
 
   const primary =

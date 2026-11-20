@@ -39,8 +39,8 @@ export function BookingEngine({ hotel, defaults }: { hotel: Hotel; defaults: { c
   const [done, setDone] = useState<{ bookingNo: string; total: number; paymentUrl: string | null } | null>(null);
 
   function search() {
-    setError(null);
     startSearch(async () => {
+      setError(null);
       const r = await searchStayAction({ slug: hotel.slug, checkIn, checkOut, adults, coupon: coupon || null });
       if (r.ok) setResults(r.data);
       else setError(r.error);

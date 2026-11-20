@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ArrowRight, GripVertical, Import, Pencil, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -58,7 +58,11 @@ export function ChecklistEditor({ items: initial, roomTypes }: { items: Item[]; 
   const [dragId, setDragId] = useState<string | null>(null);
   const { run } = useRun();
 
-  useEffect(() => setItems(initial), [initial]);
+  const [seen, setSeen] = useState(initial);
+  if (seen !== initial) {
+    setSeen(initial);
+    setItems(initial);
+  }
 
   function onDrop(target: Item) {
     if (!dragId || dragId === target.id) return;

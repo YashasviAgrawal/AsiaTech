@@ -4,94 +4,128 @@ This is the single place to see **what is done, what changed, and what is still 
 Update it in the same commit as the code it describes.
 
 - The plan and full module checklists are in [`PLAN.md`](./PLAN.md).
-- Legend: ✅ done · 🟡 in progress / partial · ⬜ pending
+- Legend: ✅ done · 🟡 done with follow-ups · ⬜ pending
 
 ## Module status
 
 | Module | Status | Notes |
 |--------|--------|-------|
-| M0 · Foundation | ✅ | Next.js 16, Tailwind v4 Tixit tokens, Drizzle schema (41 tables), auth, tenancy, shell, search, i18n, seed |
-| M1 · Property Setup & Settings | ⬜ | Property switcher works (M0). Settings screens are next. |
-| M2 · Rooms, Rates & Inventory | ✅ | Calendar, cell edit, Bulk Update (preview + undo), Excel, Rate Management, Room and Rate Plan |
-| M3 · Reservations & Guests | ✅ | One-page reservation, holds, Booking Report + Excel, guests, duplicate merge |
-| M4 · Front Office Operations | ✅ | Today board, check-in (ID, Form-III), folio, check-out, GST invoice + UPI QR, registration card, Room Chart (drag & drop) |
-| M5 · Home Dashboard & Command Centre | 🟡 | Tiles, Today's Task, Tonight, System Update, bookings table and notifications done. Owner phone view pending. |
-| M6 · Housekeeping | ⬜ | |
-| M7 · Restaurant POS | ⬜ | |
-| M8 · Money & Night Audit | ⬜ | |
-| M9 · Channels & Booking Engine | ⬜ | ARI outbox (`sync_logs`) is already filled by every inventory/rate change |
-| M10 · Reports, Communication & Audit | 🟡 | WhatsApp message log (console provider) and activity log are written; screens pending |
+| M0 · Foundation | ✅ | Next.js 16, Tailwind v4 Tixit tokens, Drizzle schema (41 tables, `property_id` everywhere), auth, tenancy, shell, `Ctrl+K` search, EN/हिं, seed |
+| M1 · Property Setup & Settings | ✅ | Hotel Details (GST slabs, invoice, UPI), User Management (roles matrix, login history, sign out everywhere), Branding (live preview), Notifications, Setup wizard, property switcher |
+| M2 · Rooms, Rates & Inventory | ✅ | Availability Calendar, cell edit, Bulk Update (preview + Undo), Download Inventory, Rate Management (+ bulk), Room and Rate Plan |
+| M3 · Reservations & Guests | 🟡 | All screens done. Follow-up: full "modify booking" dialog (Room Chart drag already moves/extends single-room stays) |
+| M4 · Front Office Operations | 🟡 | Today board, check-in (ID, Form-III, 24 h banner), folio, check-out, GST invoice + UPI QR, registration card, Room Chart. Follow-up: ID photo upload |
+| M5 · Home Dashboard & Command Centre | 🟡 | Tiles, Today's Task (incl. Form-C, listing, sync, holds), Tonight, System Update, bookings table, notifications. Follow-ups: super-admin System Update editor, owner summary screen |
+| M6 · Housekeeping | ✅ | Status board, out-of-order blocks inventory, checklist master + legacy clean-up, inspections → repair tickets, Hindi phone screen |
+| M7 · Restaurant POS | ✅ | Terminal, KOT, GST bill series, cash/card/UPI/room transfer/complimentary, discount, voids, day close, menu & tables |
+| M8 · Money & Night Audit | ✅ | Payments, Request Money (link + webhook, auto-posted), Petty Cash (approval, bill photo), Credit Report (ageing), Night Audit wizard |
+| M9 · Channels & Booking Engine | ✅ | Connect + mapping, listing health + Fix listing, ARI outbox with coalescing and retries, inbound OTA webhook with overbooking guard, promotions, reviews, public booking engine |
+| M10 · Reports, Communication & Audit | ✅ | 9 reports with charts + Excel, Activity Log, WhatsApp centre, zero-bookings and Night Audit emails, Support |
 
 ## Feature checklist (34 features from the screenshots)
 
-| # | Feature | Status |
-|---|---------|--------|
-| 1–2 | Today's / month booking tiles | ✅ |
-| 3 | 6 POS tiles | ✅ (data from POS tables; POS screens in M7) |
-| 4 | System Update panel | ✅ |
-| 5 | Today's Task with action buttons | ✅ |
-| 6 | Today's Bookings table + Assign | ✅ |
-| 7 | Property switcher | ✅ |
-| 8 | Notifications | ✅ |
-| 9 | WhatsApp | 🟡 sending + log done, screen pending |
-| 10 | Apps grid | ✅ |
-| 11 | Promotions | ⬜ |
-| 12 | Booking engine | ⬜ |
-| 13 | Support | ⬜ |
-| 14 | Make A Reservation | ✅ |
-| 15 | Hold Booking | ✅ |
-| 16 | Today Check (In-Out) | ✅ |
-| 17 | Booking Report | ✅ |
-| 18 | Credit Report | ⬜ |
-| 19–21 | Availability Calendar, Download Inventory, Bulk Update | ✅ |
-| 22 | Room Chart | ✅ |
-| 23 | Room and Rate Plan | ✅ |
-| 24 | Rate Management | ✅ |
-| 25 | Channel manager | ⬜ |
-| 26 | OTA Reviews | ⬜ |
-| 27 | Point Of Sale | ⬜ |
-| 28 | House Keeping + checklist | ⬜ |
-| 29 | Night Audit | ⬜ |
-| 30 | Petty Cash | ⬜ |
-| 31 | Request Money | ⬜ |
-| 32 | Reports | ⬜ |
-| 33 | Hotel Details, User Management, Branding | ⬜ |
-| 34 | Zero-bookings email alert | ⬜ |
+| # | Feature | Status | Where |
+|---|---------|--------|-------|
+| 1–2 | Today's / month booking tiles | ✅ | Home |
+| 3 | 6 POS tiles | ✅ | Home |
+| 4 | System Update panel | ✅ | Home |
+| 5 | Today's Task with action buttons | ✅ | Home |
+| 6 | Today's Bookings table + Assign | ✅ | Home |
+| 7 | Property switcher | ✅ | Top bar |
+| 8 | Notifications | ✅ | Top bar |
+| 9 | WhatsApp | ✅ | Top bar → `/messages` |
+| 10 | Apps grid | ✅ | Top bar |
+| 11 | Promotions | ✅ | Channels → Promotions |
+| 12 | Booking engine | ✅ | `/book/[slug]` |
+| 13 | Support | ✅ | `/support` |
+| 14 | Make A Reservation | ✅ | Front Desk |
+| 15 | Hold Booking | ✅ | Front Desk |
+| 16 | Today Check (In-Out) | ✅ | Front Desk |
+| 17 | Booking Report | ✅ | Front Desk |
+| 18 | Credit Report | ✅ | Money |
+| 19–21 | Availability Calendar, Download Inventory, Bulk Update | ✅ | Rooms & Rates |
+| 22 | Room Chart | ✅ | Rooms & Rates |
+| 23 | Room and Rate Plan | ✅ | Rooms & Rates |
+| 24 | Rate Management | ✅ | Rooms & Rates |
+| 25 | Channel manager | ✅ | Channels |
+| 26 | OTA Reviews | ✅ | Channels |
+| 27 | Point Of Sale | ✅ | Restaurant |
+| 28 | House Keeping + checklist | ✅ | Housekeeping |
+| 29 | Night Audit | ✅ | Money |
+| 30 | Petty Cash | ✅ | Money |
+| 31 | Request Money | ✅ | Money |
+| 32 | Reports | ✅ | Reports |
+| 33 | Hotel Details, User Management, Branding | ✅ | Settings |
+| 34 | Zero-bookings email alert | ✅ | Settings → Notifications + worker |
+
+**The 10 small additions:** global search ✅ · action buttons on tasks ✅ · drag-and-drop Room Chart ✅ · duplicate guest
+warning and merge ✅ · overbooking guard ✅ · auto GST slabs ✅ · Form-III helper ✅ · UPI QR on invoices ✅ · Hindi
+housekeeping phone screen ✅ · activity log ✅
+
+## Verified
+
+| Check | Result |
+|-------|--------|
+| `npm run typecheck` | clean |
+| `npm run lint` | clean (React Compiler rules on) |
+| `npm test` | 12 unit tests pass (GST slabs, tax split, amount in words, financial year, duplicates, formatting) |
+| `npm run build` | production build passes, all routes compile |
+| End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
+| Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
+| Inventory integrity | seeded `booked` counts match booking rooms on every date; availability never negative |
 
 ## Pending (next up)
 
-- [ ] M6 Housekeeping: status board, checklist master, inspections, repair tickets, Hindi phone screen
-- [ ] M7 Restaurant POS
-- [ ] M8 Money & Night Audit
-- [ ] M1 Settings + setup wizard
-- [ ] M9 Channels & Booking Engine
-- [ ] M10 Reports hub, WhatsApp centre, activity log viewer, support page
+Production readiness:
+- [ ] Real providers: WhatsApp Business API (the console provider is in place), Razorpay live keys and webhook secret (adapter written, sandbox test pending), Channex certification (adapter written)
+- [ ] Encrypt OTA credentials at rest. Move uploads (`public/uploads`) to object storage (S3 / R2)
+- [ ] Rate limiting / bot protection on `/book/*`, `/pay/*` and webhooks
+- [ ] Postgres Row-Level Security on `property_id`; super-admin console (organisations, System Update editor)
+- [ ] Server-side PDF for invoices (email attachment); thermal print agent for KOT (58/80 mm)
+
+Product follow-ups:
+- [ ] "Modify booking" dialog (change dates, rooms, room type / upgrade) for multi-room bookings
+- [ ] Guest ID photo upload at check-in (masked number only today)
+- [ ] Hindi for every screen: the shell, Home tiles and the housekeeping phone screen are translated; other screens fall back to English
+- [ ] Owner summary screen for phones; logo / hero image upload in Branding
+- [ ] Integration tests for server actions (unit tests cover the money maths today)
+
+Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates incl./excl. GST at the desk, live OTA codes, printer models.
 
 ## Change log
 
 ### 2026-11-21
-- **M4 Room Chart:** rooms × 14 days with stay bars (reserved / in house / hold / departed), hover card with balance,
-  drag to move (room or dates), drag the right edge to extend, drop unassigned bookings onto a room, click an empty
-  cell to start a booking for that room and date.
-- **M3 + M4 front desk:** one-page reservation (live price and GST slab per night, returning-guest autofill by
-  mobile, near-duplicate warning, discount, advance, hold, WhatsApp confirmation); Hold Booking with countdown;
-  Booking Report with filters, totals and Excel export; Guests list, profile and duplicate merge; booking page with
-  assign room, check-in (ID masking, Form-III for foreign guests and a 24 h Form-C banner), folio charges and voids,
-  payments and refunds, cancel / no-show with Undo, check-out (early departure re-prices and releases nights),
-  GST invoice `SRP/26-27/0001` with UPI QR and amount in words, printable registration card. Check-out marks the
-  room dirty and creates a housekeeping task.
-- **M2:** Availability Calendar (15 days, colour rule, stop-sell), cell editor, Bulk Update with preview and Undo,
-  Download Inventory (Excel), Rate Management grid and bulk rate update with preview and Undo, Room and Rate Plan
-  (room types, room numbers with ranges, EP/CP/MAP/AP plans).
-- **M5:** dashboard with 12 clickable tiles, Today's Task (pending check-ins/outs, unassigned rooms, Booking.com
-  "Parked business", failed syncs, expiring holds) each with an action button, Tonight occupancy/ADR/RevPAR, System
-  Update, Today's Bookings table with Assign.
-- Schema: added `bookings.form_c_submitted_at` and `form_c_ref` (migration `0001_form_c`).
+- **Verification and polish:** React Compiler lint rules fixed (no setState-in-effect, no ref or variable mutation
+  during render), unit tests (Vitest), README, OTA push coalescing, seed mappings and counters.
+- **M10:** reports hub with 9 reports (occupancy/ADR/RevPAR, revenue by source, collections, GST summary, room revenue,
+  restaurant by item and by day, housekeeping, Night Audit history), bar charts, Excel export, Activity Log, WhatsApp
+  centre with phone-style preview, Support page, Form-C task on the dashboard.
+- **M9:** channel manager (connect with hotel code + token, automatic mapping, mapping editor, listing health,
+  Fix listing re-sends paused updates), sync log with retry and back-off, inbound OTA webhook (new + cancel) through
+  the locked reservation path, promotions (early bird, last minute, long stay, coupon) pushed to OTAs, OTA reviews with
+  replies, public booking engine (`WEB…` bookings, coupons, pay now via link or at hotel), background worker.
+- **M1:** Hotel Details (GSTIN validation with state auto-fill, GST slabs, invoice prefix, UPI, bank details),
+  User Management (roles, permission matrix, language, password reset signs out everywhere, login history), Branding
+  with live booking-page preview, Notifications, Setup wizard with progress and Go live.
+- **M8:** payments ledger, Request Money (mock and Razorpay adapters, idempotent webhook, money auto-added to the bill),
+  Petty Cash (running balance, approval above ₹2,000, bill photo), Credit Report (guest / company / agent / OTA, aged
+  0–30 / 31–60 / 61–90 / 90+), Night Audit wizard (no-shows → room charges → POS closed → cash match → lock day → email).
+- **M7:** POS terminal (tables, take-away, room and in-house orders, menu search and categories, "86" items), KOT print
+  (80 mm), GST bill series per financial year, settle by cash/card/UPI/room transfer/complimentary, discounts, voids,
+  orders list with totals by mode, day close, menu and tables editor.
+- **M6:** housekeeping board, out-of-order with inventory blocking, checklist master with duplicate block, drag sort and
+  legacy clean-up, inspections (OK / Problem / Missing) creating repair tickets, Hindi phone screen. Login now sets the
+  user's language.
+- **M4 Room Chart:** rooms × 14 days, drag to move/extend, drop unassigned bookings, click an empty cell to book.
+- **M3 + M4 front desk:** one-page reservation, holds, Booking Report + Excel, guests and merge, check-in/out, folio,
+  GST invoice with UPI QR, registration card, Today board.
+- **M2:** Availability Calendar, Bulk Update with preview and Undo, Download Inventory, Rate Management, Room and
+  Rate Plan.
+- **M5:** dashboard with 12 clickable tiles, Today's Task, Tonight, System Update, Today's Bookings.
+- Schema: `bookings.form_c_submitted_at/form_c_ref` (`0001_form_c`), `rooms.ooo_until` (`0002_room_ooo`).
 
 ### 2026-11-20
-- Added `docs/PLAN.md` (10-module build plan with checklists and feature traceability), `docs/DESIGN.md` (Tixit design
-  system) and this tracker.
-- **M0 Foundation:** Next.js 16 + Tailwind v4 with Tixit tokens, PostgreSQL + Drizzle schema for every module,
-  session auth with per-property roles, `requireContext()` tenancy guard, 9-section sidebar, top bar (search,
-  EN/हिं, promotions, booking engine, support, WhatsApp, apps grid, notifications, property switcher), `Ctrl+K`
-  global search, row-locked inventory engine, pricing with GST slabs, booking service, demo seed for Shri Ram Portico.
+- Added `docs/PLAN.md`, `docs/DESIGN.md` and this tracker.
+- **M0 Foundation:** Next.js 16 + Tailwind v4 with Tixit tokens, PostgreSQL + Drizzle schema for every module, session
+  auth with per-property roles, `requireContext()` tenancy guard, 9-section sidebar, top bar, `Ctrl+K` search,
+  row-locked inventory engine, pricing with GST slabs, booking service, demo seed for Shri Ram Portico.

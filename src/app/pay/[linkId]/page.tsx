@@ -18,6 +18,8 @@ export default async function PayPage({ params }: { params: Promise<{ linkId: st
   const [property] = await db.select().from(properties).where(eq(properties.id, p.propertyId));
   const upi = property.settings.invoice.upiId;
   const qr = await QRCode.toString(`upi://pay?pa=${upi}&pn=${encodeURIComponent(property.name)}&am=${p.amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(p.purpose ?? 'Payment')}`, { type: 'svg', margin: 0, width: 180 });
+  // Server component: reading the clock once per request is intended.
+  // eslint-disable-next-line react-hooks/purity
   const expired = p.status === 'pending' && p.linkExpiresAt && p.linkExpiresAt.getTime() < Date.now();
 
   return (
