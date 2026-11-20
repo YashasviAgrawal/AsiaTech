@@ -13,6 +13,7 @@ import {
   bookingRooms,
   bookings,
   channels,
+  counters,
   folioLines,
   guests,
   hkChecklistItems,
@@ -45,7 +46,7 @@ import {
 } from './schema';
 import { SYSTEM_ROLES } from '../server/auth/permissions';
 import { DEFAULT_ROOM_SLABS, splitTax } from '../lib/gst';
-import { addDay, stayDates, todayIST } from '../lib/format';
+import { addDay, financialYear, stayDates, todayIST } from '../lib/format';
 import { nameKey, round2 } from '../lib/utils';
 import { ensureInventory, INVENTORY_HORIZON_DAYS } from '../server/services/inventory';
 import { createBooking, insertPayment } from '../server/services/bookings';
@@ -629,7 +630,7 @@ async function main() {
         propertyId: portico.id,
         outletId: outlet.id,
         orderNo: `KOT${String(orderSerial).padStart(5, '0')}`,
-        billNo: settled ? `RST/${String(++billSerial).padStart(5, '0')}` : null,
+        billNo: settled ? `RST/${financialYear(day).slice(2)}/${String(++billSerial).padStart(5, '0')}` : null,
         orderType: type,
         tableId: type === 'dine_in' ? pick(tables).id : null,
         bookingId: guest?.bookingId ?? null,
@@ -694,6 +695,12 @@ async function main() {
   if (inHouse[0]) await posOrder(today, 'room', 'room_transfer', [[0, 2], [14, 2]], inHouse[0]);
   if (inHouse[1]) await posOrder(today, 'room', 'room_transfer', [[9, 2], [13, 4], [17, 2]], inHouse[1]);
   await posOrder(today, 'dine_in', null, [[4, 1], [13, 3], [8, 1]]);
+
+  // Number series continue after the seeded orders.
+  await db.insert(counters).values([
+    { propertyId: portico.id, key: 'kot', value: orderSerial },
+    { propertyId: portico.id, key: `posbill:${financialYear(today)}`, value: billSerial },
+  ]);
 
   /* ── money ─────────────────────────────────────────────────────── */
   await db.insert(pettyCash).values([
