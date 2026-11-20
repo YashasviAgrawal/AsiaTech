@@ -26,7 +26,7 @@ export function CardHeader({
         {icon && <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600">{icon}</span>}
         <div className="min-w-0">
           <h2 className="truncate text-[15px] font-bold text-ink-900">{title}</h2>
-          {description && <p className="mt-0.5 truncate text-xs text-ink-500">{description}</p>}
+          {description && <p className="mt-0.5 line-clamp-2 text-xs text-ink-500">{description}</p>}
         </div>
       </div>
       {action}
