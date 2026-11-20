@@ -108,8 +108,8 @@ export async function lookupGuests(propertyId: string, query: string): Promise<G
       company: guests.company,
       companyGstin: guests.companyGstin,
       isVip: guests.isVip,
-      stays: sql<number>`(SELECT count(*)::int FROM bookings b WHERE b.guest_id = ${guests.id} AND b.status IN ('checked_out','checked_in','confirmed'))`,
-      lastStay: sql<string | null>`(SELECT max(b.check_in)::text FROM bookings b WHERE b.guest_id = ${guests.id})`,
+      stays: sql<number>`(SELECT count(*)::int FROM bookings b WHERE b.guest_id = "guests"."id" AND b.status IN ('checked_out','checked_in','confirmed'))`,
+      lastStay: sql<string | null>`(SELECT max(b.check_in)::text FROM bookings b WHERE b.guest_id = "guests"."id")`,
     })
     .from(guests)
     .where(

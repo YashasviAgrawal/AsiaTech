@@ -291,7 +291,7 @@ async function main() {
         credentials: { apiKey: 'demo-channex-key' },
         status: 'connected' as const,
         listingStatus: 'parked_business' as const,
-        listingMessage: 'Property not bookable on Booking.com. Reason: Parked business (contract or bank details pending).',
+        listingMessage: 'Contract or bank details are pending in the Booking.com extranet.',
         commissionPercent: 15,
         lastSyncAt: new Date(Date.now() - 1000 * 60 * 42),
       },
@@ -751,6 +751,8 @@ async function main() {
   ]);
 
   /* ── platform: tasks, system updates, notifications, activity ─────── */
+  // Bookings created above raised their own notifications; keep only a curated set for the demo.
+  await db.delete(notifications);
   await db.insert(tasks).values({
     propertyId: portico.id,
     type: 'ota_listing',
