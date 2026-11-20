@@ -12,6 +12,7 @@ import {
   activityLog,
   bookingRooms,
   bookings,
+  channelMappings,
   channels,
   counters,
   folioLines,
@@ -301,6 +302,15 @@ async function main() {
       { propertyId: portico.id, ota: 'airbnb' as const, status: 'disconnected' as const },
     ])
     .returning();
+
+  // Room/rate mapping for the connected OTAs.
+  for (const ch of channelRows.filter((c) => c.status === 'connected')) {
+    await db.insert(channelMappings).values(
+      types.flatMap((t) =>
+        t.plans.map((plan) => ({ propertyId: portico.id, channelId: ch.id, roomTypeId: t.id, ratePlanId: plan.id, otaRoomId: `${ch.ota.toUpperCase()}-${t.code}`, otaRateId: `${t.code}-${plan.meal}` })),
+      ),
+    );
+  }
 
   /* ── bookings: ~25 days back to ~30 days ahead, created through the booking service ─ */
   const actorBase: Actor = { propertyId: portico.id, userId: frontDesk.id, businessDate: today, settings: portico.settings, shortCode: 'SRP' };
@@ -805,6 +815,9 @@ async function main() {
     { propertyId: portico.id, userId: manager.id, entityType: 'inventory', action: 'block', summary: `Blocked 1 Deluxe Double Bed Room from ${today} for 15 days (room 103 out of order)` },
     { propertyId: portico.id, userId: owner.id, entityType: 'promotion', action: 'create', summary: 'Created promotion "Early bird 10%" and pushed to MakeMyTrip, Goibibo, Booking.com' },
   ]);
+
+  // Pushes queued while generating history are already "sent".
+  await db.execute(sql`UPDATE sync_logs SET status = 'success', processed_at = created_at, response = '{"message":"Accepted (seed)"}'::jsonb WHERE status = 'queued'`);
 
   const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(bookings);
   const [{ guestCount }] = await db.select({ guestCount: sql<number>`count(*)::int` }).from(guests);
