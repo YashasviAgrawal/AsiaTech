@@ -99,6 +99,9 @@ export const bookings = pgTable(
     internalNotes: text('internal_notes'),
     createdBy: uuid('created_by').references(() => users.id),
     confirmedAt: ts('confirmed_at'),
+    /** FRRO Form-C for foreign guests must be filed within 24 hours of arrival. */
+    formCSubmittedAt: ts('form_c_submitted_at'),
+    formCRef: text('form_c_ref'),
     cancelledAt: ts('cancelled_at'),
     cancelReason: text('cancel_reason'),
     createdAt: createdAt(),
