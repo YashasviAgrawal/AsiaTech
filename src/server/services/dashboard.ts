@@ -173,6 +173,25 @@ export async function getTodaysTasks(ctx: AppContext): Promise<TaskItem[]> {
       .orderBy(desc(tasks.createdAt)),
   ]);
 
+  const foreignInHouse = await db
+    .select({ id: bookings.id, bookingNo: bookings.bookingNo, name: guests.name, checkedInAt: sql<Date>`min(${bookingRooms.checkedInAt})` })
+    .from(bookings)
+    .innerJoin(guests, eq(guests.id, bookings.guestId))
+    .innerJoin(bookingRooms, eq(bookingRooms.bookingId, bookings.id))
+    .where(and(eq(bookings.propertyId, pid), eq(bookings.status, 'checked_in'), eq(guests.isForeign, true), isNull(bookings.formCSubmittedAt)))
+    .groupBy(bookings.id, guests.name);
+  for (const f of foreignInHouse) {
+    const hoursLeft = f.checkedInAt ? Math.round(24 - (Date.now() - new Date(f.checkedInAt).getTime()) / 3600_000) : 24;
+    items.push({
+      id: `formc-${f.id}`,
+      kind: 'custom',
+      severity: hoursLeft <= 6 ? 'danger' : 'warning',
+      title: `Submit Form-C (FRRO) for ${f.name.toUpperCase()} (ID: ${f.bookingNo})`,
+      detail: hoursLeft > 0 ? `${hoursLeft} h left of the 24-hour limit` : 'Overdue',
+      action: { label: 'Open Form-III', href: `/front-desk/bookings/${f.id}` },
+    });
+  }
+
   for (const ch of listingProblems) {
     items.push({
       id: `listing-${ch.id}`,
