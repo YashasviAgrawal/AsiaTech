@@ -13,7 +13,7 @@ Update it in the same commit as the code it describes.
 | M0 · Foundation | ✅ | Next.js 16, Tailwind v4 Tixit tokens, Drizzle schema (41 tables, `property_id` everywhere), auth, tenancy, shell, `Ctrl+K` search, EN/हिं, seed |
 | M1 · Property Setup & Settings | ✅ | Hotel Details (GST slabs, invoice, UPI), User Management (roles matrix, login history, sign out everywhere), Branding (live preview), Notifications, Setup wizard, property switcher |
 | M2 · Rooms, Rates & Inventory | ✅ | Availability Calendar, cell edit, Bulk Update (preview + Undo), Download Inventory, Rate Management (+ bulk), Room and Rate Plan |
-| M3 · Reservations & Guests | 🟡 | All screens done. Follow-up: full "modify booking" dialog (Room Chart drag already moves/extends single-room stays) |
+| M3 · Reservations & Guests | ✅ | All screens done, including the "Change booking" dialog (dates, add/remove rooms, upgrade, plan, occupancy) |
 | M4 · Front Office Operations | 🟡 | Today board, check-in (ID, Form-III, 24 h banner), folio, check-out, GST invoice + UPI QR, registration card, Room Chart. Follow-up: ID photo upload |
 | M5 · Home Dashboard & Command Centre | 🟡 | Tiles, Today's Task (incl. Form-C, listing, sync, holds), Tonight, System Update, bookings table, notifications. Follow-ups: super-admin System Update editor, owner summary screen |
 | M6 · Housekeeping | ✅ | Status board, out-of-order blocks inventory, checklist master + legacy clean-up, inspections → repair tickets, Hindi phone screen |
@@ -73,6 +73,7 @@ housekeeping phone screen ✅ · activity log ✅
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
 | Inventory integrity | seeded `booked` counts match booking rooms on every date; availability never negative |
+| Change booking | +1 night, upgrade Standard → Deluxe Family and add a room: blocked while a type is sold out, then saved; `booked` still matches booking rooms on every date (SQL check), OTAs pushed, activity log written. In-house guest extended: room kept, agreed nights kept at ₹2,300 |
 
 ## Pending (next up)
 
@@ -84,7 +85,7 @@ Production readiness:
 - [ ] Server-side PDF for invoices (email attachment); thermal print agent for KOT (58/80 mm)
 
 Product follow-ups:
-- [ ] "Modify booking" dialog (change dates, rooms, room type / upgrade) for multi-room bookings
+- [x] "Change booking" dialog (dates, add/remove rooms, room type upgrade, plan, occupancy) with a live availability re-check
 - [ ] Guest ID photo upload at check-in (masked number only today)
 - [ ] Hindi for every screen: the shell, Home tiles and the housekeeping phone screen are translated; other screens fall back to English
 - [ ] Owner summary screen for phones; logo / hero image upload in Branding
@@ -95,6 +96,15 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-21
+- **Change booking (M3):** one dialog for dates, rooms (add / remove), room type upgrade, rate plan, occupancy and
+  discount. A live preview shows the new price, the difference, the balance and any sold-out night; saving releases
+  and re-reserves inventory under row locks in one transaction. Agreed nightly prices are kept by default
+  ("Today's rates" re-prices everything). In-house guests can extend or shorten the stay and change plan/occupancy.
+- **Premium UI:** Geist + Noto Devanagari fonts, sparkline tiles with week/month trends, count-up numbers, collapsible
+  sidebar rail, skeleton loading, undo countdown, glass top bar.
+- **Rates and channels:** min stay / stop-sell / closed-to-arrival enforced on the booking engine and shown as warnings
+  at the desk; automatic promotions (early bird, last minute, long stay) on the booking engine; OTA updates are pushed
+  within seconds of a change (after-response sync) instead of waiting for the worker.
 - **Verification and polish:** React Compiler lint rules fixed (no setState-in-effect, no ref or variable mutation
   during render), unit tests (Vitest), README, OTA push coalescing, seed mappings and counters.
 - **M10:** reports hub with 9 reports (occupancy/ADR/RevPAR, revenue by source, collections, GST summary, room revenue,

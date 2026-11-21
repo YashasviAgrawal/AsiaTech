@@ -15,6 +15,7 @@ import { cancelBooking, confirmHold, createBooking, extendHold, restoreBooking }
 import { findDuplicateGuests, lookupGuests, mergeGuests } from '../services/guests';
 import { getStayAvailability } from '../services/inventory';
 import { quote } from '../services/pricing';
+import { modifyBooking, previewModification } from '../services/modify';
 import { sendMessage } from '../services/messaging';
 import { bookingConfirmationText } from '../services/templates';
 
@@ -259,4 +260,47 @@ export async function updateGuestAction(input: z.input<typeof guestUpdate>) {
     revalidatePath('/front-desk', 'layout');
     return { id: data.id };
   }, 'Guest saved.');
+}
+
+/* ───────────── modify booking (dates, rooms, room type, plan) ───────────── */
+
+const modifySchema = z.object({
+  bookingId: z.string().uuid(),
+  checkIn: day,
+  checkOut: day,
+  rooms: z
+    .array(
+      z.object({
+        id: z.string().uuid().nullable().optional(),
+        roomTypeId: z.string().uuid(),
+        ratePlanId: z.string().uuid(),
+        adults: z.number().int().min(1).max(10),
+        children: z.number().int().min(0).max(10),
+        extraBeds: z.number().int().min(0).max(5),
+      }),
+    )
+    .min(1, 'Keep at least one room.')
+    .max(20),
+  discount,
+  pricing: z.enum(['keep', 'current']).default('keep'),
+  allowOverbook: z.boolean().default(false),
+});
+
+export async function previewModifyAction(input: z.input<typeof modifySchema>) {
+  return runAction(async () => {
+    const ctx = await actionContext('bookings.edit');
+    const data = modifySchema.parse(input);
+    return previewModification(actorFromContext(ctx), data);
+  });
+}
+
+export async function modifyBookingAction(input: z.input<typeof modifySchema>) {
+  return runAction(async () => {
+    const ctx = await actionContext('bookings.edit');
+    const data = modifySchema.parse(input);
+    if (data.allowOverbook && !['owner', 'manager'].includes(ctx.role.key)) throw new UserError('Only a manager can overbook.');
+    const result = await modifyBooking(actorFromContext(ctx), data);
+    revalidatePath('/', 'layout');
+    return result;
+  }, 'Booking updated');
 }

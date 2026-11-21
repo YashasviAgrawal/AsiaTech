@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
-import { and, asc, eq } from 'drizzle-orm';
-import { db } from '@/db';
-import { ratePlans, roomTypes } from '@/db/schema';
 import { requireContext } from '@/server/context';
 import { getStayAvailability } from '@/server/services/inventory';
+import { getRoomTypeOptions } from '@/server/services/room-options';
 import { addDay } from '@/lib/format';
 import { PageHeader } from '@/components/ui/card';
-import { ReservationForm, type RoomTypeOption } from './reservation-form';
+import { ReservationForm } from './reservation-form';
 
 export const metadata: Metadata = { title: 'Make A Reservation' };
 
@@ -21,33 +19,7 @@ export default async function NewReservationPage({
   const checkIn = params.checkIn && params.checkIn >= today ? params.checkIn : today;
   const checkOut = params.checkOut && params.checkOut > checkIn ? params.checkOut : addDay(checkIn, 1);
 
-  const [types, plans, availability] = await Promise.all([
-    db
-      .select()
-      .from(roomTypes)
-      .where(and(eq(roomTypes.propertyId, ctx.propertyId), eq(roomTypes.isActive, true)))
-      .orderBy(asc(roomTypes.sortOrder)),
-    db
-      .select()
-      .from(ratePlans)
-      .where(and(eq(ratePlans.propertyId, ctx.propertyId), eq(ratePlans.isActive, true)))
-      .orderBy(asc(ratePlans.sortOrder)),
-    getStayAvailability(ctx.propertyId, checkIn, checkOut),
-  ]);
-
-  const options: RoomTypeOption[] = types.map((t) => ({
-    id: t.id,
-    name: t.name,
-    code: t.code,
-    color: t.color,
-    maxAdults: t.maxAdults,
-    maxChildren: t.maxChildren,
-    maxExtraBeds: t.maxExtraBeds,
-    baseOccupancy: t.baseOccupancy,
-    plans: plans
-      .filter((p) => p.roomTypeId === t.id)
-      .map((p) => ({ id: p.id, name: p.name, mealPlan: p.mealPlan, price2: p.price2, isDefault: p.isDefault })),
-  }));
+  const [options, availability] = await Promise.all([getRoomTypeOptions(ctx.propertyId), getStayAvailability(ctx.propertyId, checkIn, checkOut)]);
 
   const walkIn = params.walkin === '1';
   return (

@@ -36,17 +36,8 @@ import { Card } from '@/components/ui/card';
 import { Checkbox, Field, Input, Segmented, Select, Stepper, Switch, Textarea } from '@/components/ui/fields';
 import { useToast } from '@/components/ui/toast';
 
-export interface RoomTypeOption {
-  id: string;
-  name: string;
-  code: string;
-  color: string;
-  maxAdults: number;
-  maxChildren: number;
-  maxExtraBeds: number;
-  baseOccupancy: number;
-  plans: { id: string; name: string; mealPlan: string; price2: number; isDefault: boolean }[];
-}
+import type { RoomTypeOption } from '@/server/services/room-options';
+export type { RoomTypeOption };
 
 interface RoomLine {
   key: number;

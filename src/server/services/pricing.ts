@@ -15,6 +15,8 @@ export interface QuoteRoomInput {
   extraBeds: number;
   /** Front desk can override the nightly price (e.g. a negotiated corporate rate). */
   rateOverride?: number | null;
+  /** Per-night base price that wins over everything else (keeps the price already agreed when a booking changes). */
+  nightlyOverride?: Record<string, number> | null;
 }
 
 export interface QuotedRoom extends QuoteRoomInput {
@@ -119,7 +121,7 @@ export async function quoteStay(
       const p2 = day?.price2 ?? plan.price2;
       const p3 = day?.price3 ?? plan.price3;
       const extraBedRate = day?.extraBed ?? plan.extraBed;
-      const base = room.rateOverride ?? (room.adults <= 1 ? p1 : room.adults === 2 ? p2 : p3);
+      const base = room.nightlyOverride?.[date] ?? room.rateOverride ?? (room.adults <= 1 ? p1 : room.adults === 2 ? p2 : p3);
       const amount = round2(base + room.extraBeds * extraBedRate + room.children * plan.childPrice);
       return { date, rate: base, extraBeds: room.extraBeds, amount };
     });

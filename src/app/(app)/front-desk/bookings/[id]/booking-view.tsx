@@ -20,6 +20,7 @@ import {
   Mail,
   MessageCircle,
   MoreHorizontal,
+  PencilLine,
   Phone,
   Plus,
   Printer,
@@ -42,19 +43,23 @@ import { ConfirmDialog } from '@/components/ui/dialog';
 import { MenuItem, Popover } from '@/components/ui/popover';
 import { useRun } from '@/components/ui/use-run';
 import { useToast } from '@/components/ui/toast';
+import type { RoomTypeOption } from '@/server/services/room-options';
 import { AssignDialog, ChargeDialog, CheckInDialog, CheckOutDialog, FormCDialog, PaymentDialog } from './booking-dialogs';
+import { ModifyDialog } from './modify-dialog';
 
-type Dialogs = 'checkin' | 'checkout' | 'payment' | 'charge' | 'cancel' | 'noshow' | 'formc' | { assign: string } | null;
+type Dialogs = 'checkin' | 'checkout' | 'payment' | 'charge' | 'cancel' | 'noshow' | 'formc' | 'modify' | { assign: string } | null;
 
 export function BookingView({
   data,
   intent,
+  roomTypes,
   businessDate,
   hotel,
   can,
 }: {
   data: BookingDetail;
   intent: string | null;
+  roomTypes: RoomTypeOption[];
   businessDate: string;
   hotel: { name: string; upiId: string };
   can: { checkin: boolean; cancel: boolean; edit: boolean; create: boolean; requestMoney: boolean };
@@ -68,6 +73,7 @@ export function BookingView({
   const [dialog, setDialog] = useState<Dialogs>(() => {
     if (intent === 'checkin' && b.status === 'confirmed') return 'checkin';
     if (intent === 'checkout' && b.status === 'checked_in') return 'checkout';
+    if (intent === 'modify' && ['hold', 'confirmed', 'checked_in'].includes(b.status)) return 'modify';
     if (intent === 'assign') {
       const first = activeRooms.find((r) => !r.roomId) ?? activeRooms[0];
       if (first) return { assign: first.id };
@@ -85,6 +91,7 @@ export function BookingView({
   const checkedInAt = data.rooms.find((r) => r.checkedInAt)?.checkedInAt;
   const formCHoursLeft = checkedInAt ? Math.round(24 - (now - new Date(checkedInAt).getTime()) / 3600_000) : 24;
   const invoice = data.invoices[0];
+  const canModify = can.edit && ['hold', 'confirmed', 'checked_in'].includes(b.status) && roomTypes.length > 0;
 
   const primary =
     b.status === 'hold' && can.create ? (
@@ -173,6 +180,11 @@ export function BookingView({
                       Request {formatINR(totals.balance)}
                     </MenuItem>
                   )}
+                  {canModify && (
+                    <MenuItem icon={<PencilLine className="h-4 w-4" />} onClick={() => (closeMenu(), setDialog('modify'))}>
+                      Change dates, rooms or plan
+                    </MenuItem>
+                  )}
                   {b.status === 'hold' && can.create && (
                     <MenuItem icon={<Clock className="h-4 w-4" />} onClick={() => (closeMenu(), run(() => extendHoldAction(b.id, 2), { success: 'Hold extended by 2 hours' }))}>
                       Extend hold by 2 hours
@@ -223,7 +235,18 @@ export function BookingView({
         <div className="space-y-6">
           {/* Stay */}
           <Card>
-            <CardHeader icon={<CalendarRange className="h-4 w-4" />} title="Stay" description={`${b.nights} night${b.nights === 1 ? '' : 's'} · ${b.adults} adult${b.adults === 1 ? '' : 's'}${b.children ? `, ${b.children} child` : ''}`} />
+            <CardHeader
+              icon={<CalendarRange className="h-4 w-4" />}
+              title="Stay"
+              description={`${b.nights} night${b.nights === 1 ? '' : 's'} · ${b.adults} adult${b.adults === 1 ? '' : 's'}${b.children ? `, ${b.children} child` : ''}`}
+              action={
+                canModify && (
+                  <Button size="sm" variant="soft" onClick={() => setDialog('modify')}>
+                    <PencilLine className="h-4 w-4" /> {b.status === 'checked_in' ? 'Extend / change' : 'Change booking'}
+                  </Button>
+                )
+              }
+            />
             <div className="grid grid-cols-2 gap-px bg-ink-100 sm:grid-cols-4">
               {[
                 { label: 'Check-in', value: formatDayShort(b.checkIn), sub: b.arrivalTime ? `arriving ${b.arrivalTime}` : undefined },
@@ -469,6 +492,7 @@ export function BookingView({
       {dialog === 'checkout' && <CheckOutDialog data={data} businessDate={businessDate} onClose={close} />}
       {dialog === 'payment' && <PaymentDialog bookingId={b.id} balance={totals.balance} onClose={close} />}
       {dialog === 'charge' && <ChargeDialog bookingId={b.id} onClose={close} />}
+      {dialog === 'modify' && <ModifyDialog data={data} roomTypes={roomTypes} businessDate={businessDate} onClose={close} />}
       {dialog === 'formc' && <FormCDialog bookingId={b.id} onClose={close} />}
       {typeof dialog === 'object' && dialog && 'assign' in dialog && <AssignDialog room={data.rooms.find((r) => r.id === dialog.assign)!} onClose={close} />}
       <ConfirmDialog
