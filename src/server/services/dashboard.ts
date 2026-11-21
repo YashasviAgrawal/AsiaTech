@@ -377,3 +377,87 @@ export async function getTonight(ctx: AppContext) {
     })),
   };
 }
+
+export interface TileTrend {
+  /** Oldest → newest, ending today. */
+  series: number[];
+  /** % change against the comparison period; null when there is nothing to compare with. */
+  delta: number | null;
+  compare: string;
+}
+
+function pctChange(now: number, before: number): number | null {
+  if (!before) return now ? null : 0;
+  return Math.round(((now - before) / before) * 100);
+}
+
+/** 8-day series for the sparklines and week-on-week (or month-on-month) change for every tile. */
+export async function getTileTrends(ctx: AppContext): Promise<Record<string, TileTrend>> {
+  const pid = ctx.propertyId;
+  const today = todayIST();
+  const biz = ctx.property.businessDate;
+  const from = addDay(today, -7);
+  const bizFrom = addDay(biz, -7);
+  const days = Array.from({ length: 8 }, (_, i) => addDay(today, i - 7));
+  const bizDays = Array.from({ length: 8 }, (_, i) => addDay(biz, i - 7));
+
+  const [created, arrivals, departures, pos, mtd, lastMtd, posMtd, posLastMtd] = await Promise.all([
+    db.execute<{ d: string; n: number; total: number }>(sql`
+      SELECT (created_at AT TIME ZONE 'Asia/Kolkata')::date::text AS d, count(*)::int AS n, COALESCE(sum(total_amount), 0)::float AS total
+      FROM bookings WHERE property_id = ${pid} AND status <> 'cancelled'
+        AND (created_at AT TIME ZONE 'Asia/Kolkata')::date BETWEEN ${from}::date AND ${today}::date GROUP BY 1`),
+    db.execute<{ d: string; n: number }>(sql`
+      SELECT check_in::text AS d, count(*)::int AS n FROM booking_rooms
+      WHERE property_id = ${pid} AND status IN ('reserved','in_house','departed') AND check_in BETWEEN ${bizFrom}::date AND ${biz}::date GROUP BY 1`),
+    db.execute<{ d: string; n: number }>(sql`
+      SELECT check_out::text AS d, count(*)::int AS n FROM booking_rooms
+      WHERE property_id = ${pid} AND status IN ('reserved','in_house','departed') AND check_out BETWEEN ${bizFrom}::date AND ${biz}::date GROUP BY 1`),
+    db.execute<{ d: string; n: number; total: number; transfer: number; inhouse: number }>(sql`
+      SELECT business_date::text AS d, count(*)::int AS n, COALESCE(sum(total), 0)::float AS total,
+             count(*) FILTER (WHERE settlement_mode = 'room_transfer')::int AS transfer,
+             count(*) FILTER (WHERE order_type = 'in_house')::int AS inhouse
+      FROM pos_orders WHERE property_id = ${pid} AND status <> 'void' AND business_date BETWEEN ${bizFrom}::date AND ${biz}::date GROUP BY 1`),
+    db.execute<{ n: number; total: number }>(sql`
+      SELECT count(*)::int AS n, COALESCE(sum(total_amount), 0)::float AS total FROM bookings
+      WHERE property_id = ${pid} AND status <> 'cancelled'
+        AND (created_at AT TIME ZONE 'Asia/Kolkata')::date BETWEEN date_trunc('month', ${today}::date)::date AND ${today}::date`),
+    db.execute<{ n: number; total: number }>(sql`
+      SELECT count(*)::int AS n, COALESCE(sum(total_amount), 0)::float AS total FROM bookings
+      WHERE property_id = ${pid} AND status <> 'cancelled'
+        AND (created_at AT TIME ZONE 'Asia/Kolkata')::date BETWEEN (date_trunc('month', ${today}::date) - interval '1 month')::date
+            AND (${today}::date - interval '1 month')::date`),
+    db.execute<{ n: number; total: number }>(sql`
+      SELECT count(*)::int AS n, COALESCE(sum(total), 0)::float AS total FROM pos_orders
+      WHERE property_id = ${pid} AND status <> 'void' AND business_date BETWEEN date_trunc('month', ${biz}::date)::date AND ${biz}::date`),
+    db.execute<{ n: number; total: number }>(sql`
+      SELECT count(*)::int AS n, COALESCE(sum(total), 0)::float AS total FROM pos_orders
+      WHERE property_id = ${pid} AND status <> 'void'
+        AND business_date BETWEEN (date_trunc('month', ${biz}::date) - interval '1 month')::date AND (${biz}::date - interval '1 month')::date`),
+  ]);
+
+  const series = <T extends { d: string }>(rows: T[], dates: string[], pick: (r: T) => number) => {
+    const map = new Map(rows.map((r) => [r.d, r]));
+    return dates.map((d) => (map.has(d) ? pick(map.get(d)!) : 0));
+  };
+  const weekly = (values: number[]): TileTrend => ({ series: values, delta: pctChange(values[7], values[0]), compare: 'vs same day last week' });
+  const monthly = (values: number[], now: number, before: number): TileTrend => ({ series: values, delta: pctChange(now, before), compare: 'vs same point last month' });
+
+  const createdN = series(created.rows, days, (r) => r.n);
+  const createdT = series(created.rows, days, (r) => r.total);
+  const posN = series(pos.rows, bizDays, (r) => r.n);
+  const posT = series(pos.rows, bizDays, (r) => r.total);
+  return {
+    todaysBookings: weekly(createdN),
+    todaysEarning: weekly(createdT),
+    checkIns: weekly(series(arrivals.rows, bizDays, (r) => r.n)),
+    checkOuts: weekly(series(departures.rows, bizDays, (r) => r.n)),
+    monthBookings: monthly(createdN, mtd.rows[0]?.n ?? 0, lastMtd.rows[0]?.n ?? 0),
+    monthEarning: monthly(createdT, mtd.rows[0]?.total ?? 0, lastMtd.rows[0]?.total ?? 0),
+    posOrders: weekly(posN),
+    posEarning: weekly(posT),
+    posRoomTransfer: weekly(series(pos.rows, bizDays, (r) => r.transfer)),
+    posInHouse: weekly(series(pos.rows, bizDays, (r) => r.inhouse)),
+    monthPosOrders: monthly(posN, posMtd.rows[0]?.n ?? 0, posLastMtd.rows[0]?.n ?? 0),
+    monthPosEarning: monthly(posT, posMtd.rows[0]?.total ?? 0, posLastMtd.rows[0]?.total ?? 0),
+  };
+}

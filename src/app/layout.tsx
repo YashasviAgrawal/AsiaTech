@@ -1,4 +1,7 @@
 import type { Metadata, Viewport } from 'next';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
+import '@fontsource-variable/noto-sans-devanagari';
 import './globals.css';
 import { ToastProvider } from '@/components/ui/toast';
 import { I18nProvider } from '@/i18n/client';
@@ -23,7 +26,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   return (
-    <html lang={locale === 'hi' ? 'hi' : 'en-IN'}>
+    <html lang={locale === 'hi' ? 'hi' : 'en-IN'} className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
         <I18nProvider locale={locale} dictionary={getDictionary(locale)}>
           <ToastProvider>{children}</ToastProvider>

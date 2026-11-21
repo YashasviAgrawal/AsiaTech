@@ -20,10 +20,11 @@ import {
 } from 'lucide-react';
 import { requireContext } from '@/server/context';
 import { getT } from '@/i18n/server';
-import { getSystemUpdates, getTiles, getTodaysBookings, getTodaysTasks, getTonight } from '@/server/services/dashboard';
+import { getSystemUpdates, getTileTrends, getTiles, getTodaysBookings, getTodaysTasks, getTonight } from '@/server/services/dashboard';
+import { AnimatedNumber } from '@/components/ui/animated-number';
 import { releaseExpiredHolds } from '@/server/services/bookings';
 import { actorFromContext } from '@/server/services/actor';
-import { formatDayLong, formatINR, formatNumber, monthName, timeAgo, todayIST, toIST } from '@/lib/format';
+import { formatDayLong, formatINR, monthName, timeAgo, todayIST, toIST } from '@/lib/format';
 import { Card, CardHeader, PageHeader, StatTile } from '@/components/ui/card';
 import { ButtonLink } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,8 +39,9 @@ export default async function DashboardPage() {
   await releaseExpiredHolds(actorFromContext(ctx));
   const { t } = await getT();
 
-  const [tiles, tasks, updates, todays, tonight] = await Promise.all([
+  const [tiles, trends, tasks, updates, todays, tonight] = await Promise.all([
     getTiles(ctx),
+    getTileTrends(ctx),
     getTodaysTasks(ctx),
     getSystemUpdates(),
     getTodaysBookings(ctx),
@@ -75,12 +77,12 @@ export default async function DashboardPage() {
 
       {/* Front desk tiles (AsiaTech row 1) */}
       <section aria-label="Front desk numbers" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <StatTile href="/front-desk/bookings?created=today" label={t('dash.todaysBookings')} value={formatNumber(tiles.todaysBookings)} icon={<CalendarCheck2 className="h-4 w-4" />} tone="teal" />
-        <StatTile href="/front-desk/bookings?created=today" label={t('dash.todaysEarning')} value={formatINR(tiles.todaysEarning)} icon={<IndianRupee className="h-4 w-4" />} tone="rose" />
+        <StatTile href="/front-desk/bookings?created=today" label={t('dash.todaysBookings')} value={<AnimatedNumber value={tiles.todaysBookings} format="number" />} trend={trends.todaysBookings} icon={<CalendarCheck2 className="h-4 w-4" />} tone="teal" />
+        <StatTile href="/front-desk/bookings?created=today" label={t('dash.todaysEarning')} value={<AnimatedNumber value={tiles.todaysEarning} format="inr" />} trend={trends.todaysEarning} icon={<IndianRupee className="h-4 w-4" />} tone="rose" />
         <StatTile
           href="/front-desk/today?tab=departures"
           label={t('dash.todaysCheckOut')}
-          value={formatNumber(tiles.checkOuts)}
+          value={<AnimatedNumber value={tiles.checkOuts} format="number" />} trend={trends.checkOuts}
           hint={`${tiles.checkOutsDone} done · ${tiles.checkOuts - tiles.checkOutsDone} pending`}
           icon={<LogOut className="h-4 w-4" />}
           tone="amber"
@@ -88,23 +90,23 @@ export default async function DashboardPage() {
         <StatTile
           href="/front-desk/today?tab=arrivals"
           label={t('dash.todaysCheckIn')}
-          value={formatNumber(tiles.checkIns)}
+          value={<AnimatedNumber value={tiles.checkIns} format="number" />} trend={trends.checkIns}
           hint={`${tiles.checkInsDone} done · ${tiles.checkIns - tiles.checkInsDone} pending`}
           icon={<LogIn className="h-4 w-4" />}
           tone="violet"
         />
-        <StatTile href="/front-desk/bookings?created=month" label={t('dash.monthBookings', { month })} value={formatNumber(tiles.monthBookings)} icon={<ClipboardList className="h-4 w-4" />} tone="sky" />
-        <StatTile href="/front-desk/bookings?created=month" label={t('dash.monthEarning', { month })} value={formatINR(tiles.monthEarning)} icon={<Wallet className="h-4 w-4" />} tone="emerald" />
+        <StatTile href="/front-desk/bookings?created=month" label={t('dash.monthBookings', { month })} value={<AnimatedNumber value={tiles.monthBookings} format="number" />} trend={trends.monthBookings} icon={<ClipboardList className="h-4 w-4" />} tone="sky" />
+        <StatTile href="/front-desk/bookings?created=month" label={t('dash.monthEarning', { month })} value={<AnimatedNumber value={tiles.monthEarning} format="inr" />} trend={trends.monthEarning} icon={<Wallet className="h-4 w-4" />} tone="emerald" />
       </section>
 
       {/* Restaurant tiles (AsiaTech row 2) */}
       <section aria-label="Restaurant numbers" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        <StatTile href="/restaurant/orders?date=today" label={t('dash.posOrders')} value={formatNumber(tiles.posOrders)} icon={<UtensilsCrossed className="h-4 w-4" />} tone="teal" />
-        <StatTile href="/restaurant/orders?date=today" label={t('dash.posEarning')} value={formatINR(tiles.posEarning)} icon={<Receipt className="h-4 w-4" />} tone="rose" />
-        <StatTile href="/restaurant/orders?date=today&mode=room_transfer" label={t('dash.posRoomTransfer')} value={formatNumber(tiles.posRoomTransfer)} icon={<ArrowRightLeft className="h-4 w-4" />} tone="amber" />
-        <StatTile href="/restaurant/orders?date=today&type=in_house" label={t('dash.posInHouse')} value={formatNumber(tiles.posInHouse)} icon={<DoorOpen className="h-4 w-4" />} tone="violet" />
-        <StatTile href="/restaurant/orders?date=month" label={t('dash.monthPosOrders', { month })} value={formatNumber(tiles.monthPosOrders)} icon={<ShoppingBag className="h-4 w-4" />} tone="sky" />
-        <StatTile href="/restaurant/orders?date=month" label={t('dash.monthPosEarning', { month })} value={formatINR(tiles.monthPosEarning)} icon={<IndianRupee className="h-4 w-4" />} tone="emerald" />
+        <StatTile href="/restaurant/orders?date=today" label={t('dash.posOrders')} value={<AnimatedNumber value={tiles.posOrders} format="number" />} trend={trends.posOrders} icon={<UtensilsCrossed className="h-4 w-4" />} tone="teal" />
+        <StatTile href="/restaurant/orders?date=today" label={t('dash.posEarning')} value={<AnimatedNumber value={tiles.posEarning} format="inr" />} trend={trends.posEarning} icon={<Receipt className="h-4 w-4" />} tone="rose" />
+        <StatTile href="/restaurant/orders?date=today&mode=room_transfer" label={t('dash.posRoomTransfer')} value={<AnimatedNumber value={tiles.posRoomTransfer} format="number" />} trend={trends.posRoomTransfer} icon={<ArrowRightLeft className="h-4 w-4" />} tone="amber" />
+        <StatTile href="/restaurant/orders?date=today&type=in_house" label={t('dash.posInHouse')} value={<AnimatedNumber value={tiles.posInHouse} format="number" />} trend={trends.posInHouse} icon={<DoorOpen className="h-4 w-4" />} tone="violet" />
+        <StatTile href="/restaurant/orders?date=month" label={t('dash.monthPosOrders', { month })} value={<AnimatedNumber value={tiles.monthPosOrders} format="number" />} trend={trends.monthPosOrders} icon={<ShoppingBag className="h-4 w-4" />} tone="sky" />
+        <StatTile href="/restaurant/orders?date=month" label={t('dash.monthPosEarning', { month })} value={<AnimatedNumber value={tiles.monthPosEarning} format="inr" />} trend={trends.monthPosEarning} icon={<IndianRupee className="h-4 w-4" />} tone="emerald" />
       </section>
 
       <div className="grid gap-6 xl:grid-cols-3">

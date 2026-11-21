@@ -248,7 +248,7 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
   const { t } = useT();
   const can = (p: Parameters<typeof hasPermission>[1]) => hasPermission(data.permissions, p);
   return (
-    <header className="sticky top-0 z-30 border-b border-ink-200/80 bg-white/85 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-ink-200/70 bg-white/75 shadow-[0_1px_0_0_rgb(255_255_255/0.6)_inset] backdrop-blur-xl backdrop-saturate-150">
       <div className="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
         <button onClick={onOpenMenu} className="grid h-9 w-9 place-items-center rounded-lg text-ink-600 hover:bg-ink-100 lg:hidden" aria-label="Open menu">
           <Menu className="h-5 w-5" />
