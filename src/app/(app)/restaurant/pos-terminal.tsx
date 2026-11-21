@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowRightLeft, BedDouble, ChefHat, CreditCard, Gift, IndianRupee, Minus, Plus, Printer, QrCode, Receipt, RotateCcw, Search, ShoppingBag, Trash2, Users, Wallet, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTr } from '@/i18n/client';
 import { formatINR } from '@/lib/format';
 import type { getPosTerminal } from '@/server/services/pos';
 import { billOrderAction, reopenOrderAction, sendKotAction, setDiscountAction, settleOrderAction, toggleAvailabilityAction, voidItemAction, voidOrderAction } from '@/server/actions/pos';
@@ -17,6 +18,7 @@ type Order = Terminal['orders'][number];
 type Draft = { orderType: 'dine_in' | 'take_away' | 'room' | 'in_house'; tableId?: string; bookingId?: string; roomId?: string; guestName?: string; label: string };
 
 export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canVoid: boolean; canManage: boolean }) {
+  const tr = useTr();
   const toast = useToast();
   const { run, pending } = useRun();
   const [selectedId, setSelectedId] = useState<string | null>(data.orders[0]?.id ?? null);
@@ -100,7 +102,7 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
       {/* Left: tables & open orders */}
       <div className="space-y-4">
         <div className="card p-3">
-          <p className="mb-2 px-1 text-[11px] font-bold tracking-wider text-ink-400 uppercase">Tables</p>
+          <p className="mb-2 px-1 text-[11px] font-bold tracking-wider text-ink-400 uppercase">{tr('Tables')}</p>
           <div className="grid grid-cols-4 gap-2 xl:grid-cols-3">
             {data.tables.map((table) => {
               const order = tableOrder(table.id);
@@ -115,7 +117,7 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
                   )}
                 >
                   {table.name}
-                  <span className={cn('num mt-0.5 text-[10px] font-semibold', active ? 'text-white/80' : 'text-ink-500')}>{order ? formatINR(order.total, { compact: true }) : `${table.seats} seats`}</span>
+                  <span className={cn('num mt-0.5 text-[10px] font-semibold', active ? 'text-white/80' : 'text-ink-500')}>{order ? formatINR(order.total, { compact: true }) : tr(`${table.seats} seats`)}</span>
                 </button>
               );
             })}
@@ -124,13 +126,13 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
         <div className="card p-3">
           <div className="mb-2 grid grid-cols-3 gap-1.5">
             <Button size="sm" variant="outline" className="h-auto flex-col gap-1 py-2" onClick={() => startDraft({ orderType: 'take_away', label: 'Take-away' })}>
-              <ShoppingBag className="h-4 w-4" /> <span className="text-[11px]">Take-away</span>
+              <ShoppingBag className="h-4 w-4" /> <span className="text-[11px]">{tr('Take-away')}</span>
             </Button>
             <Button size="sm" variant="outline" className="h-auto flex-col gap-1 py-2" onClick={() => setRoomPicker(true)}>
-              <BedDouble className="h-4 w-4" /> <span className="text-[11px]">Room</span>
+              <BedDouble className="h-4 w-4" /> <span className="text-[11px]">{tr('Room')}</span>
             </Button>
             <Button size="sm" variant="outline" className="h-auto flex-col gap-1 py-2" onClick={() => startDraft({ orderType: 'in_house', guestName: 'Staff', label: 'In-house · Staff' })}>
-              <Users className="h-4 w-4" /> <span className="text-[11px]">In-house</span>
+              <Users className="h-4 w-4" /> <span className="text-[11px]">{tr('In-house')}</span>
             </Button>
           </div>
           <ul className="space-y-1.5">
@@ -138,12 +140,12 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
               <li key={o.id}>
                 <button onClick={() => select(o)} className={cn('flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition', o.id === selectedId ? 'bg-brand-50 ring-1 ring-brand-300' : 'hover:bg-ink-50')}>
                   {o.orderType === 'room' ? <BedDouble className="h-4 w-4 text-violet-500" /> : o.orderType === 'in_house' ? <Users className="h-4 w-4 text-ink-400" /> : <ShoppingBag className="h-4 w-4 text-ink-400" />}
-                  <span className="min-w-0 flex-1 truncate font-medium text-ink-800">{o.orderType === 'room' ? `Room ${o.roomNumber}` : o.orderType === 'in_house' ? 'In-house' : 'Take-away'}</span>
+                  <span className="min-w-0 flex-1 truncate font-medium text-ink-800">{o.orderType === 'room' ? `${tr('Room')} ${o.roomNumber}` : tr(o.orderType === 'in_house' ? 'In-house' : 'Take-away')}</span>
                   <span className="num text-xs font-semibold text-ink-600">{formatINR(o.total)}</span>
                 </button>
               </li>
             ))}
-            {otherOrders.length === 0 && <li className="px-2 py-1 text-xs text-ink-400">No open take-away or room orders.</li>}
+            {otherOrders.length === 0 && <li className="px-2 py-1 text-xs text-ink-400">{tr('No open take-away or room orders.')}</li>}
           </ul>
         </div>
       </div>
@@ -153,7 +155,7 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
         <div className="space-y-3 border-b border-ink-100 p-3">
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search menu…" leading={<Search className="h-4 w-4" />} className="h-10" />
           <div className="scrollbar-none -mx-1 flex gap-1.5 overflow-x-auto px-1">
-            {[{ id: 'all', name: 'All' }, ...data.categories].map((c) => (
+            {[{ id: 'all', name: tr('All') }, ...data.categories].map((c) => (
               <button
                 key={c.id}
                 onClick={() => setCategory(c.id)}
@@ -188,7 +190,7 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
               <button
                 onClick={() => run(() => toggleAvailabilityAction(item.id, !item.isAvailable))}
                 className="absolute right-1.5 bottom-1.5 rounded px-1 text-[10px] font-semibold text-ink-400 hover:text-ink-700"
-                title={item.isAvailable ? 'Mark finished for today' : 'Back on menu'}
+                title={tr(item.isAvailable ? 'Mark finished for today' : 'Back on menu')}
               >
                 {item.isAvailable ? '86' : 'On'}
               </button>
@@ -200,8 +202,8 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
       {/* Right: ticket */}
       <div className="card flex flex-col overflow-hidden xl:sticky xl:top-24 xl:max-h-[calc(100vh-8rem)]">
         <div className="bg-ink-950 px-4 py-3.5 text-white">
-          <p className="text-[11px] font-medium text-ink-400">{selected ? `${selected.orderNo}${selected.billNo ? ` · Bill ${selected.billNo}` : ''}` : draft ? 'New order' : 'No order selected'}</p>
-          <p className="mt-0.5 truncate text-lg font-bold">{ticketLabel ?? 'Pick a table, room or take-away'}</p>
+          <p className="text-[11px] font-medium text-ink-400">{selected ? `${selected.orderNo}${selected.billNo ? ` · ${tr('Bill')} ${selected.billNo}` : ''}` : tr(draft ? 'New order' : 'No order selected')}</p>
+          <p className="mt-0.5 truncate text-lg font-bold">{ticketLabel ? tr(ticketLabel) : tr('Pick a table, room or take-away')}</p>
         </div>
         <div className="scrollbar-thin min-h-40 flex-1 overflow-y-auto">
           <ul className="divide-y divide-ink-100">
@@ -239,19 +241,19 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
               );
             })}
           </ul>
-          {!selected?.items.length && cartLines.length === 0 && <p className="px-4 py-8 text-center text-sm text-ink-400">Tap menu items to add them.</p>}
+          {!selected?.items.length && cartLines.length === 0 && <p className="px-4 py-8 text-center text-sm text-ink-400">{tr('Tap menu items to add them.')}</p>}
         </div>
 
         <div className="space-y-1.5 border-t border-ink-200 px-4 py-3 text-sm">
           {selected && (
             <>
               <div className="flex justify-between text-ink-500">
-                <span>Subtotal</span>
+                <span>{tr('Subtotal')}</span>
                 <span className="num">{formatINR(selected.subtotal)}</span>
               </div>
               {selected.discount > 0 && (
                 <div className="flex justify-between text-emerald-700">
-                  <span>Discount</span>
+                  <span>{tr('Discount')}</span>
                   <span className="num">−{formatINR(selected.discount)}</span>
                 </div>
               )}
@@ -263,12 +265,12 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
           )}
           {cartLines.length > 0 && (
             <div className="flex justify-between font-medium text-brand-700">
-              <span>Not sent yet</span>
+              <span>{tr('Not sent yet')}</span>
               <span className="num">+{formatINR(cartTotal)}</span>
             </div>
           )}
           <div className="flex justify-between text-lg font-extrabold text-ink-900">
-            <span>Total</span>
+            <span>{tr('Total')}</span>
             <span className="num">{formatINR(Math.round(((selected?.total ?? 0) + cartWithTax) * 100) / 100)}</span>
           </div>
         </div>
@@ -337,7 +339,7 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
                 <p className="truncate text-xs text-ink-500">{g.guestName}</p>
               </button>
             ))}
-            {data.inHouse.length === 0 && <p className="col-span-4 text-sm text-ink-500">No guests in house.</p>}
+            {data.inHouse.length === 0 && <p className="col-span-4 text-sm text-ink-500">{tr('No guests in house.')}</p>}
           </div>
         </Dialog>
       )}
@@ -410,6 +412,7 @@ function SettleDialog({
   pending: boolean;
   canComp: boolean;
 }) {
+  const tr = useTr();
   const [bookingId, setBookingId] = useState(order.bookingId ?? '');
   const [tendered, setTendered] = useState('');
   const change = Number(tendered) - order.total;
@@ -428,14 +431,14 @@ function SettleDialog({
             onClick={() => onSettle(m.mode)}
             className="flex h-20 flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-ink-200 bg-white text-sm font-bold text-ink-800 transition hover:border-brand-500 hover:bg-brand-50/50 active:scale-95"
           >
-            <m.icon className="h-5 w-5 text-brand-600" /> {m.label}
+            <m.icon className="h-5 w-5 text-brand-600" /> {tr(m.label)}
           </button>
         ))}
       </div>
       <div className="mt-3 flex items-center gap-2 rounded-xl bg-ink-50 p-3 text-sm">
-        <span className="text-ink-600">Cash received</span>
+        <span className="text-ink-600">{tr('Cash received')}</span>
         <Input type="number" value={tendered} onChange={(e) => setTendered(e.target.value)} className="h-9 w-28" />
-        {Number(tendered) > 0 && <span className={cn('num ml-auto font-bold', change >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{change >= 0 ? `Return ${formatINR(change)}` : `Short ${formatINR(-change)}`}</span>}
+        {Number(tendered) > 0 && <span className={cn('num ml-auto font-bold', change >= 0 ? 'text-emerald-700' : 'text-rose-600')}>{change >= 0 ? `${tr('Return')} ${formatINR(change)}` : `${tr('Short')} ${formatINR(-change)}`}</span>}
       </div>
       <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50/50 p-3">
         <p className="flex items-center gap-2 text-sm font-semibold text-violet-900">

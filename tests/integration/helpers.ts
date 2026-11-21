@@ -1,3 +1,8 @@
+// Second guard (the integration config has the first): these tests write bookings, so never run on real data.
+if (!/_test(\?|$)/.test(process.env.DATABASE_URL ?? '')) {
+  throw new Error(`Integration tests only run against a *_test database (got ${process.env.DATABASE_URL ?? 'none'}). Use npm run test:integration.`);
+}
+
 import { sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { systemActor, type Actor } from '@/server/services/actor';

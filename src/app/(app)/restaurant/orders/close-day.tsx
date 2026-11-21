@@ -7,6 +7,7 @@ import { closeDayAction } from '@/server/actions/pos';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/dialog';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 export function CloseDayButton({ outletId, closed, totals }: { outletId: string; closed: boolean; totals: Record<string, number> }) {
   const [open, setOpen] = useState(false);
@@ -20,7 +21,7 @@ export function CloseDayButton({ outletId, closed, totals }: { outletId: string;
   return (
     <>
       <Button onClick={() => setOpen(true)}>
-        <LockKeyhole className="h-4 w-4" /> Close the day
+        <LockKeyhole className="h-4 w-4" /> {tx('Close the day')}
       </Button>
       <ConfirmDialog
         open={open}

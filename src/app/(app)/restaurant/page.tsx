@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ClipboardList, Settings2, UtensilsCrossed } from 'lucide-react';
 import { requireContext } from '@/server/context';
+import { getT } from '@/i18n/server';
 import { OutletSwitcher } from './outlet-switcher';
 import { getPosTerminal } from '@/server/services/pos';
 import { formatDayShort } from '@/lib/format';
@@ -12,6 +13,7 @@ import { PosTerminal } from './pos-terminal';
 export const metadata: Metadata = { title: 'Point Of Sale' };
 
 export default async function RestaurantPage({ searchParams }: { searchParams: Promise<{ outlet?: string }> }) {
+  const { tr } = await getT();
   const ctx = await requireContext('pos.use');
   const { outlet } = await searchParams;
   const data = await getPosTerminal(ctx.propertyId, outlet);
@@ -19,17 +21,17 @@ export default async function RestaurantPage({ searchParams }: { searchParams: P
   return (
     <div>
       <PageHeader
-        eyebrow={`Restaurant · ${formatDayShort(ctx.property.businessDate)}`}
+        eyebrow={`${tr('Restaurant')} · ${tr(formatDayShort(ctx.property.businessDate))}`}
         title={data.outlet.name}
         actions={
           <>
             <OutletSwitcher outlets={data.outlets} current={data.outlet.id} basePath="/restaurant" />
             <Link href={`/restaurant/orders?outlet=${data.outlet.id}`} className={buttonClasses('outline')}>
-              <ClipboardList className="h-4 w-4" /> Orders & day close
+              <ClipboardList className="h-4 w-4" /> {tr('Orders & day close')}
             </Link>
             {ctx.can('pos.manage') && (
               <Link href={`/restaurant/menu?outlet=${data.outlet.id}`} className={buttonClasses('outline')}>
-                <Settings2 className="h-4 w-4" /> Menu & tables
+                <Settings2 className="h-4 w-4" /> {tr('Menu & Tables')}
               </Link>
             )}
           </>

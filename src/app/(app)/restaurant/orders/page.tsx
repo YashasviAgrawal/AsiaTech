@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { posDayCloses } from '@/db/schema';
 import { requireContext } from '@/server/context';
+import { tx } from '@/i18n/tx';
 import { OutletSwitcher } from '../outlet-switcher';
 import { RestoreOrderButton } from './restore-button';
 import { dayTotals, listOrders, listOutlets } from '@/server/services/pos';
@@ -104,12 +105,12 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                       )}
                     </Td>
                     <Td className="whitespace-nowrap">
-                      {titleCase(o.orderType)}
-                      <p className="text-xs text-ink-400">{o.tableName ? `Table ${o.tableName}` : o.roomNumber ? `Room ${o.roomNumber}` : o.guestName}</p>
+                      {tx(titleCase(o.orderType))}
+                      <p className="text-xs text-ink-400">{tx(o.tableName ? `Table ${o.tableName}` : o.roomNumber ? `Room ${o.roomNumber}` : o.guestName ?? '')}</p>
                     </Td>
                     <Td className="max-w-72 truncate text-xs">{o.items}</Td>
                     <Td className="text-xs whitespace-nowrap">{formatDateTime(o.createdAt)}</Td>
-                    <Td>{o.settlementMode ? PAYMENT_MODE_LABELS[o.settlementMode] : '—'}</Td>
+                    <Td>{o.settlementMode ? tx(PAYMENT_MODE_LABELS[o.settlementMode]) : '—'}</Td>
                     <Td className="num text-right font-semibold">{formatINR(o.total)}</Td>
                     <Td className="whitespace-nowrap">
                       <StatusBadge status={o.status} />
@@ -121,7 +122,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             </Table>
             <div className="flex justify-end gap-6 border-t border-ink-200 bg-ink-50/60 px-5 py-3 text-sm">
               <span className="text-ink-500">
-                {live.length} bills · Total <strong className="num text-ink-900">{formatINR(sum)}</strong>
+                {tx(`${live.length} bills`)} · {tx('Total')} <strong className="num text-ink-900">{formatINR(sum)}</strong>
               </span>
             </div>
           </>
