@@ -1,12 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { markLinkPaid } from '@/server/services/money';
 import { verifyRazorpaySignature } from '@/server/adapters/payments';
+import { limitRequest } from '@/server/rate-limit';
 
 /**
  * Payment gateway webhooks. Razorpay sends `payment_link.paid`; the signature is verified against the raw body.
  * The "mock" provider is accepted only outside production.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
+  const limited = limitRequest(request, 'webhook:pay', 60, 60_000);
+  if (limited) return limited;
   const { provider } = await params;
   const raw = await request.text();
   try {

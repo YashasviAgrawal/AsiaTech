@@ -15,6 +15,7 @@ import { requestMoney } from '../services/money';
 import { sendMessage } from '../services/messaging';
 import { bookingConfirmationText } from '../services/templates';
 import { bestPromotion } from '../services/promotions';
+import { enforceRateLimit } from '../rate-limit';
 
 /*
  * Public booking engine actions. No login: everything is looked up by the property slug and validated strictly.
@@ -56,6 +57,7 @@ async function couponDiscount(propertyId: string, code?: string | null) {
 
 export async function searchStayAction(input: { slug: string; checkIn: string; checkOut: string; adults: number; coupon?: string | null }) {
   return runAction(async () => {
+    await enforceRateLimit('book:search', 60, 60_000);
     const data = z.object({ slug: z.string().min(2), checkIn: day, checkOut: day, adults: z.number().int().min(1).max(12), coupon: z.string().max(20).nullable().optional() }).parse(input);
     const nights = nightsBetween(data.checkIn, data.checkOut);
     if (data.checkIn < todayIST()) throw new UserError('Choose a check-in date from today.');
@@ -132,6 +134,7 @@ const bookSchema = z.object({
 
 export async function publicBookAction(input: z.input<typeof bookSchema>) {
   return runAction(async () => {
+    await enforceRateLimit('book:create', 8, 10 * 60_000);
     const data = bookSchema.parse(input);
     if (data.checkIn < todayIST()) throw new UserError('Check-in cannot be in the past.');
     const p = await propertyBySlug(data.slug);

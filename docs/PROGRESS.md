@@ -68,11 +68,13 @@ housekeeping phone screen ✅ · activity log ✅
 |-------|--------|
 | `npm run typecheck` | clean |
 | `npm run lint` | clean (React Compiler rules on) |
-| `npm test` | 16 unit tests pass (incl. Hindi phrase + pattern translation) (GST slabs, tax split, amount in words, financial year, duplicates, formatting) |
+| `npm test` | 24 unit tests pass (money maths, Hindi phrases and patterns, secrets sealing, rate limiter) |
+| `npm run test:integration` | 3 DB-backed tests pass on a freshly seeded `hotel_os_test` (GST slabs, tax split, amount in words, financial year, duplicates, formatting) |
 | `npm run build` | production build passes, all routes compile |
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
 | Inventory integrity | seeded `booked` counts match booking rooms on every date; availability never negative |
+| Hardening | OTA tokens sealed (seed + migrate re-seal, pushes still succeed; wrong key fails one channel with "reconnect", no crash); OTA webhook 120/min then 429, other IP unaffected; 8 failed sign-ins lock that account for 15 min (right password waits too) |
 | Platform admin | `/admin` is a 404 for hotel staff; super admin publishes a System Update → it appears on the front desk dashboard; suspending the organisation signs its staff out (super admin still in); re-activating lets them back in |
 | Multi-outlet POS | duplicate bill prefix refused; café added; switcher on terminal / menu / orders ("All outlets" hides day close); bills RST/26-27/00142 and CAFE/26-27/00001 in separate consecutive series; old counter carried over by migration; fresh reset + seed OK |
 | Owner phone view | `/owner` on iPhone 13: earnings today (rooms + restaurant, WoW, sparkline), occupancy with per-type bars, desk counts, collected today by mode, money owed, month so far, needs-attention list; no horizontal scroll; Hindi checked |
@@ -85,8 +87,9 @@ housekeeping phone screen ✅ · activity log ✅
 
 Production readiness:
 - [ ] Real providers: WhatsApp Business API (the console provider is in place), Razorpay live keys and webhook secret (adapter written, sandbox test pending), Channex certification (adapter written)
-- [ ] Encrypt OTA credentials at rest. Add an S3 / R2 driver to `src/server/storage.ts` (local disk driver in place); clean up uploads that were never attached to a record
-- [ ] Rate limiting / bot protection on `/book/*`, `/pay/*` and webhooks
+- [x] Encrypt OTA credentials at rest (AES-256-GCM, `CREDENTIALS_KEY`)
+- [ ] Add an S3 / R2 driver to `src/server/storage.ts` (local disk driver in place); clean up uploads that were never attached to a record
+- [x] Rate limiting on sign-in (failed attempts per network and per account), booking engine, payment and OTA webhooks (in-memory; Redis store for several instances)
 - [ ] Postgres Row-Level Security on `property_id`
 - [x] Super-admin console `/admin`: organisations and hotels (plan, suspend / re-activate), System Update editor
 - [ ] Server-side PDF for invoices (email attachment); thermal print agent for KOT (58/80 mm)
@@ -96,13 +99,15 @@ Product follow-ups:
 - [x] Guest ID scan at check-in (webcam or phone camera, private storage), room type photos, logo and cover photo upload
 - [x] Hindi on every screen: shared components translate their text (headers, labels, buttons, tables, tabs, dialogs, badges, filters, toasts), plus ~640 phrases and sentence patterns. Follow-up: a few long sentences inside individual screens are still English
 - [x] Owner summary screen for phones (`/owner`)
-- [ ] Integration tests for server actions (unit tests cover the money maths today)
+- [x] DB-backed integration tests (`npm run test:integration`): concurrent last-room sales, change booking, cancel, sold-out change refused
 
 Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates incl./excl. GST at the desk, live OTA codes, printer models.
 
 ## Change log
 
 ### 2026-11-21
+- **Hardening:** OTA credentials encrypted at rest (AES-256-GCM, legacy rows sealed by `db:migrate`), rate limits on
+  sign-in / booking engine / webhooks, DB-backed integration tests against a separate `_test` database.
 - **Platform admin (`/admin`):** organisations with their hotels (rooms, staff, 30-day bookings, last sign-in), plan
   and suspend / re-activate (suspended organisations lock their staff out), System Update editor with drafts.
 - **Multi-outlet POS:** add/rename outlets (restaurant, café, bar, room service), outlet switcher on the terminal, menu

@@ -15,7 +15,8 @@
     "db:reset": "tsx src/db/reset.ts && npm run db:migrate && npm run db:seed",
     "db:studio": "drizzle-kit studio",
     "worker": "tsx --conditions=react-server src/server/jobs/worker.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:integration": "DATABASE_URL=${TEST_DATABASE_URL:-postgresql://hotel:hotel@localhost:5432/hotel_os_test} npm run db:reset && vitest run --config vitest.integration.mts"
   },
   "engines": {
     "node": ">=20.9"

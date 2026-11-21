@@ -10,6 +10,7 @@ import { queueAriPush } from './inventory';
 import { createBooking, cancelBooking } from './bookings';
 import { checkListing, pushToChannel } from '../adapters/channels';
 import { systemActor } from './actor';
+import { sealSecrets, tryOpenSecrets } from '../secrets';
 
 export async function listChannels(propertyId: string) {
   const rows = await db
@@ -33,7 +34,7 @@ export async function connectChannel(actor: Actor, input: { ota: Ota; hotelCode:
     const [existing] = await tx.select().from(channels).where(and(eq(channels.propertyId, actor.propertyId), eq(channels.ota, input.ota)));
     const values = {
       hotelCode: input.hotelCode.trim(),
-      credentials: { accessToken: input.token.trim() },
+      credentials: sealSecrets({ accessToken: input.token.trim() }),
       status: 'connected' as const,
       listingStatus: existing?.listingStatus === 'unknown' || !existing ? ('open' as const) : existing.listingStatus,
       commissionPercent: input.commissionPercent,
@@ -98,7 +99,7 @@ export async function saveMappings(actor: Actor, channelId: string, rows: { room
 export async function fixListing(actor: Actor, channelId: string) {
   const [ch] = await db.select().from(channels).where(and(eq(channels.id, channelId), eq(channels.propertyId, actor.propertyId)));
   if (!ch) throw new UserError('Channel not found.');
-  const result = await checkListing({ ota: ch.ota, hotelCode: ch.hotelCode, listingStatus: ch.listingStatus, credentials: ch.credentials, fixRequested: true });
+  const result = await checkListing({ ota: ch.ota, hotelCode: ch.hotelCode, listingStatus: ch.listingStatus, credentials: tryOpenSecrets(ch.credentials) ?? {}, fixRequested: true });
   await db.update(channels).set({ listingStatus: result.status, listingMessage: result.message }).where(eq(channels.id, channelId));
   if (result.status === 'open') {
     await db.update(tasks).set({ status: 'done' }).where(and(eq(tasks.propertyId, actor.propertyId), eq(tasks.entityId, channelId), eq(tasks.status, 'open')));
@@ -215,7 +216,16 @@ export async function processSyncQueue(propertyId?: string, limit = 50) {
     await db.update(syncLogs).set({ status: 'processing' }).where(eq(syncLogs.id, log.id));
     const payload = (log.payload ?? {}) as { roomTypeId?: string | null; from: string; to: string };
     const values = log.kind === 'promotion' ? [log.payload as Record<string, unknown>] : await buildValues(log.propertyId, payload, log.kind, channel.id);
-    const result = await pushToChannel({ ota: channel.ota, hotelCode: channel.hotelCode, listingStatus: channel.listingStatus, credentials: channel.credentials }, { kind: log.kind as 'availability', hotelCode: channel.hotelCode, values });
+    const credentials = tryOpenSecrets(channel.credentials);
+    if (!credentials) {
+      await db
+        .update(syncLogs)
+        .set({ status: 'failed', response: { error: 'Saved OTA credentials cannot be read (the encryption key changed). Reconnect this channel.' }, processedAt: new Date(), retries: 5 })
+        .where(eq(syncLogs.id, log.id));
+      failed++;
+      continue;
+    }
+    const result = await pushToChannel({ ota: channel.ota, hotelCode: channel.hotelCode, listingStatus: channel.listingStatus, credentials }, { kind: log.kind as 'availability', hotelCode: channel.hotelCode, values });
     const retries = log.status === 'failed' ? log.retries + 1 : log.retries;
     await db
       .update(syncLogs)

@@ -52,6 +52,7 @@ import { nameKey, round2 } from '../lib/utils';
 import { ensureInventory, INVENTORY_HORIZON_DAYS } from '../server/services/inventory';
 import { createBooking, insertPayment } from '../server/services/bookings';
 import type { Actor } from '../server/services/actor';
+import { sealSecrets } from '../server/secrets';
 
 const PASSWORD = 'Hotel@123';
 
@@ -284,13 +285,13 @@ async function main() {
   const channelRows = await db
     .insert(channels)
     .values([
-      { propertyId: portico.id, ota: 'makemytrip' as const, hotelCode: 'MMT-208411', credentials: { accessToken: 'demo-mmt-token' }, status: 'connected' as const, listingStatus: 'open' as const, commissionPercent: 18, lastSyncAt: new Date() },
-      { propertyId: portico.id, ota: 'goibibo' as const, hotelCode: 'GI-208411', credentials: { accessToken: 'demo-mmt-token' }, status: 'connected' as const, listingStatus: 'open' as const, commissionPercent: 18, lastSyncAt: new Date() },
+      { propertyId: portico.id, ota: 'makemytrip' as const, hotelCode: 'MMT-208411', credentials: sealSecrets({ accessToken: 'demo-mmt-token' }), status: 'connected' as const, listingStatus: 'open' as const, commissionPercent: 18, lastSyncAt: new Date() },
+      { propertyId: portico.id, ota: 'goibibo' as const, hotelCode: 'GI-208411', credentials: sealSecrets({ accessToken: 'demo-mmt-token' }), status: 'connected' as const, listingStatus: 'open' as const, commissionPercent: 18, lastSyncAt: new Date() },
       {
         propertyId: portico.id,
         ota: 'booking_com' as const,
         hotelCode: '9182736',
-        credentials: { apiKey: 'demo-channex-key' },
+        credentials: sealSecrets({ apiKey: 'demo-channex-key' }),
         status: 'connected' as const,
         listingStatus: 'parked_business' as const,
         listingMessage: 'Contract or bank details are pending in the Booking.com extranet.',

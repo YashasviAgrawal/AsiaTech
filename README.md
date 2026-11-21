@@ -72,6 +72,8 @@ The public booking engine is at `/book/shri-ram-portico`, and needs no login.
 - **OTA sync**: every inventory/rate change writes to an outbox (`sync_logs`) inside the same transaction. The worker coalesces and pushes the updates through a provider adapter: `mock` by default, `channex` for production.
 - **Providers behind adapters**: payments (`mock` / `razorpay`), WhatsApp (`console`), channels (`mock` / `channex`). All are switched by environment variables.
 - **Uploads** (`src/server/storage.ts`): photos are shrunk in the browser, checked by their bytes on the server and stored behind a driver (`local` disk today; add S3 / R2 with the same three methods). Guest IDs and bills are private (`/files/prv/…`, staff of that hotel only); room photos and branding are public.
+- **Secrets at rest**: OTA tokens and API keys are sealed with AES-256-GCM (`src/server/secrets.ts`, key `CREDENTIALS_KEY`). `db:migrate` seals any older plain rows.
+- **Rate limits** (`src/server/rate-limit.ts`): failed sign-ins per network and per account, booking-engine search and booking, payment and OTA webhooks. In-memory per instance; use Redis when running several instances.
 - **Audit and undo**: `activity_log` keeps before/after snapshots. Bulk inventory and rate changes and cancellations can be undone.
 
 ```
@@ -90,7 +92,8 @@ src/
 | Script | Does |
 |--------|------|
 | `npm run dev` / `build` / `start` | Next.js |
-| `npm run typecheck` · `npm run lint` · `npm test` | TypeScript, ESLint, Vitest |
+| `npm run typecheck` · `npm run lint` · `npm test` | TypeScript, ESLint, Vitest unit tests |
+| `npm run test:integration` | Resets and seeds `hotel_os_test` (or `TEST_DATABASE_URL`, must end in `_test`), then runs the DB-backed tests: concurrent last-room sales, change booking, cancel, sold-out change refused |
 | `npm run db:generate` | New migration from schema changes |
 | `npm run db:migrate` · `db:seed` · `db:reset` | Database |
 | `npm run worker` | Background jobs (OTA push queue, holds, alerts) |
