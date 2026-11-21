@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils';
 import { formatDateTime, formatDay, formatDayShort, formatINR, ID_TYPE_LABELS, MEAL_PLAN_LABELS, PAYMENT_MODE_LABELS, sourceLabel, timeAgo } from '@/lib/format';
 import type { BookingDetail } from '@/server/services/frontoffice';
 import { cancelBookingAction, confirmHoldAction, extendHoldAction, noShowAction, restoreBookingAction } from '@/server/actions/reservations';
-import { voidFolioLineAction } from '@/server/actions/frontoffice';
+import { updateGuestIdPhotosAction, voidFolioLineAction } from '@/server/actions/frontoffice';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Badge, StatusBadge } from '@/components/ui/badge';
@@ -46,6 +46,7 @@ import { useToast } from '@/components/ui/toast';
 import type { RoomTypeOption } from '@/server/services/room-options';
 import { AssignDialog, ChargeDialog, CheckInDialog, CheckOutDialog, FormCDialog, PaymentDialog } from './booking-dialogs';
 import { ModifyDialog } from './modify-dialog';
+import { PhotoGrid } from '@/components/ui/photo-upload';
 
 type Dialogs = 'checkin' | 'checkout' | 'payment' | 'charge' | 'cancel' | 'noshow' | 'formc' | 'modify' | { assign: string } | null;
 
@@ -441,6 +442,7 @@ export function BookingView({
                 <IdCard className="h-4 w-4 text-ink-400" />
                 <span className="text-ink-800">{g.idType ? `${ID_TYPE_LABELS[g.idType] ?? g.idType} ${g.idNumberMasked ?? ''}` : <span className="text-ink-400">ID not collected yet</span>}</span>
               </div>
+              {(can.checkin || g.idPhotos.length > 0) && <GuestIdPhotos guestId={g.id} photos={g.idPhotos} editable={can.checkin} />}
               {g.isForeign && g.passportNumber && (
                 <div className="rounded-lg bg-ink-50 p-2.5 text-xs text-ink-600">
                   Passport {g.passportNumber} · Visa {g.visaNumber ?? '—'} ({g.visaType ?? '—'}) · arrived from {g.arrivedFrom ?? '—'}
@@ -537,5 +539,33 @@ function VoidButton({ onVoid }: { onVoid: (reason: string) => void }) {
       </button>
       <ConfirmDialog open={open} onClose={() => setOpen(false)} title="Void this line?" requireReason confirmLabel="Void" onConfirm={(reason) => (onVoid(reason), setOpen(false))} />
     </>
+  );
+}
+
+/** ID photos on the guest card: thumbnails open full size; desk staff can scan or replace them here too. */
+function GuestIdPhotos({ guestId, photos, editable }: { guestId: string; photos: string[]; editable: boolean }) {
+  const { run } = useRun();
+  if (!editable) {
+    return (
+      <div className="flex flex-wrap gap-2">
+        {photos.map((url, i) => (
+          <a key={url} href={url} target="_blank" rel="noreferrer" className="block h-14 w-20 overflow-hidden rounded-lg ring-1 ring-ink-200">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={url} alt={`ID photo ${i + 1}`} className="h-full w-full object-cover" />
+          </a>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <PhotoGrid
+      folder="ids"
+      value={photos}
+      onChange={(urls) => run(() => updateGuestIdPhotosAction(guestId, urls), { success: urls.length > photos.length ? 'ID photo saved' : 'ID photo removed' })}
+      max={4}
+      webcam
+      scanLabel="Scan ID"
+      tileClassName="h-14 w-20"
+    />
   );
 }

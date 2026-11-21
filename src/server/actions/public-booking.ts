@@ -96,6 +96,7 @@ export async function searchStayAction(input: { slug: string; checkIn: string; c
         name: type.name,
         description: type.description,
         amenities: type.amenities,
+        photos: type.photos,
         maxAdults: type.maxAdults,
         sizeSqft: type.sizeSqft,
         bedType: type.bedType,

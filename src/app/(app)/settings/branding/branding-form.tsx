@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Field, Input, Textarea } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { PhotoGrid } from '@/components/ui/photo-upload';
 
 const SWATCHES = ['#e11d48', '#be123c', '#7c3aed', '#0284c7', '#059669', '#d97706', '#0f172a', '#9a3412'];
 
 export function BrandingForm({ initial, hotelName, city, slug }: { initial: { primaryColor: string; tagline: string; aboutText: string; logoUrl: string; heroImageUrl: string }; hotelName: string; city: string; slug: string }) {
   const [form, setForm] = useState(initial);
+  const [showLinks, setShowLinks] = useState(false);
   const { run, pending } = useRun();
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -33,12 +35,28 @@ export function BrandingForm({ initial, hotelName, city, slug }: { initial: { pr
           <Field label="About the hotel">
             <Textarea value={form.aboutText} onChange={(e) => setForm({ ...form, aboutText: e.target.value })} />
           </Field>
-          <Field label="Logo URL" hint="Upload to your website or a CDN and paste the link">
-            <Input value={form.logoUrl} onChange={(e) => setForm({ ...form, logoUrl: e.target.value })} placeholder="https://…" />
-          </Field>
-          <Field label="Hero photo URL">
-            <Input value={form.heroImageUrl} onChange={(e) => setForm({ ...form, heroImageUrl: e.target.value })} placeholder="https://…" />
-          </Field>
+          <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
+            <Field label="Logo" hint="PNG with a clear background looks best">
+              <PhotoGrid folder="branding" value={form.logoUrl ? [form.logoUrl] : []} onChange={(urls) => setForm((f) => ({ ...f, logoUrl: urls[0] ?? '' }))} max={1} keepPng maxSize={800} fit="contain" tileClassName="h-24 w-40" addLabel="Upload logo" />
+            </Field>
+            <Field label="Cover photo" hint="Wide photo of the building or lobby, at least 1600 px">
+              <PhotoGrid folder="branding" value={form.heroImageUrl ? [form.heroImageUrl] : []} onChange={(urls) => setForm((f) => ({ ...f, heroImageUrl: urls[0] ?? '' }))} max={1} maxSize={2400} tileClassName="h-24 w-full min-w-48" addLabel="Upload cover photo" />
+            </Field>
+          </div>
+          {showLinks ? (
+            <div className="grid gap-3 rounded-xl bg-ink-50 p-3 sm:grid-cols-2">
+              <Field label="Logo link">
+                <Input value={form.logoUrl} onChange={(e) => setForm({ ...form, logoUrl: e.target.value })} placeholder="https://…" />
+              </Field>
+              <Field label="Cover photo link">
+                <Input value={form.heroImageUrl} onChange={(e) => setForm({ ...form, heroImageUrl: e.target.value })} placeholder="https://…" />
+              </Field>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setShowLinks(true)} className="text-xs font-semibold text-ink-500 hover:text-ink-800">
+              Images already online? Paste links instead
+            </button>
+          )}
           <div className="flex justify-between">
             <a href={`/book/${slug}`} target="_blank" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600">
               Open booking page <ExternalLink className="h-3.5 w-3.5" />
@@ -63,6 +81,10 @@ export function BrandingForm({ initial, hotelName, city, slug }: { initial: { pr
           style={{ backgroundImage: form.heroImageUrl ? `url(${form.heroImageUrl})` : `linear-gradient(135deg, ${form.primaryColor}, #0f172a)` }}
         >
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          {form.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={form.logoUrl} alt="Logo" className="absolute top-3 left-4 h-9 w-auto max-w-32 rounded-lg bg-white/90 object-contain p-1 shadow" />
+          )}
           <div className="absolute bottom-4 left-5 text-white">
             <p className="text-2xl font-extrabold">{hotelName}</p>
             <p className="flex items-center gap-1 text-sm text-white/80">

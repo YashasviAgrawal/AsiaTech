@@ -78,6 +78,18 @@ export default async function RegistrationCard({ params }: { params: Promise<{ i
         </section>
       )}
 
+      {guest.idPhotos.length > 0 && (
+        <section className="mt-6 break-inside-avoid">
+          <h2 className="mb-2 text-xs font-bold tracking-wider text-ink-500 uppercase">Copy of ID</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {guest.idPhotos.slice(0, 4).map((url, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={url} src={url} alt={`ID photo ${i + 1}`} className="max-h-56 w-full rounded border border-ink-200 object-contain" />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="mt-6 text-[11px] leading-relaxed text-ink-500">
         <p className="font-semibold text-ink-700">Terms</p>
         <p>

@@ -10,6 +10,7 @@ import { Card, EmptyState } from '@/components/ui/card';
 import { Badge, StatusBadge } from '@/components/ui/badge';
 import { Dialog } from '@/components/ui/dialog';
 import { Checkbox, Field, Input, Select, Stepper, Textarea } from '@/components/ui/fields';
+import { PhotoGrid } from '@/components/ui/photo-upload';
 import { useRun } from '@/components/ui/use-run';
 
 interface RoomRow {
@@ -47,6 +48,7 @@ interface TypeRow {
   sizeSqft: number | null;
   bedType: string | null;
   amenities: string[];
+  photos: string[];
   color: string;
   isActive: boolean;
   rooms: RoomRow[];
@@ -88,7 +90,12 @@ export function RoomSetup({ types }: { types: TypeRow[] }) {
         <Card key={type.id} className={cn('overflow-hidden', !type.isActive && 'opacity-60')}>
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ink-100 p-5" style={{ backgroundImage: `linear-gradient(90deg, ${type.color}12, transparent 40%)` }}>
             <div className="flex items-start gap-3">
-              <span className="mt-1 h-10 w-1.5 rounded-full" style={{ backgroundColor: type.color }} />
+              {type.photos[0] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={type.photos[0]} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover ring-2 ring-offset-1" style={{ ['--tw-ring-color' as string]: type.color }} />
+              ) : (
+                <span className="mt-1 h-10 w-1.5 rounded-full" style={{ backgroundColor: type.color }} />
+              )}
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-lg font-bold text-ink-900">{type.name}</h2>
@@ -208,6 +215,7 @@ function RoomTypeDialog({ type, onClose }: { type?: TypeRow; onClose: () => void
     sizeSqft: type?.sizeSqft ?? null,
     bedType: type?.bedType ?? '',
     amenities: type?.amenities ?? ['Air conditioning', 'Free Wi-Fi', 'LED TV', 'Hot water'],
+    photos: type?.photos ?? [],
     color: type?.color ?? COLORS[0],
     isActive: type?.isActive ?? true,
   });
@@ -264,6 +272,9 @@ function RoomTypeDialog({ type, onClose }: { type?: TypeRow; onClose: () => void
       </div>
       <Field label="Description" className="mt-4">
         <Textarea value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Shown on the booking engine" />
+      </Field>
+      <Field label="Photos" className="mt-4" hint="Shown on your booking page. The first photo is the cover; tap ★ on another to make it the cover.">
+        <PhotoGrid folder="rooms" value={form.photos} onChange={(photos) => set('photos', photos)} max={8} cover tileClassName="h-20 w-28" addLabel="Add photos" />
       </Field>
       <Field label="Amenities" className="mt-4">
         <div className="flex flex-wrap gap-1.5">

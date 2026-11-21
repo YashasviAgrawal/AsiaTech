@@ -73,22 +73,23 @@ housekeeping phone screen ✅ · activity log ✅
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
 | Inventory integrity | seeded `booked` counts match booking rooms on every date; availability never negative |
+| Uploads | fake image refused; ID uploaded + webcam scan (fake camera) saved on the guest at check-in; private file 200 for staff, login redirect for anonymous; room photos + cover order on the booking page; logo/cover on the booking page for anonymous visitors; CSS-injection link refused |
 | Change booking | +1 night, upgrade Standard → Deluxe Family and add a room: blocked while a type is sold out, then saved; `booked` still matches booking rooms on every date (SQL check), OTAs pushed, activity log written. In-house guest extended: room kept, agreed nights kept at ₹2,300 |
 
 ## Pending (next up)
 
 Production readiness:
 - [ ] Real providers: WhatsApp Business API (the console provider is in place), Razorpay live keys and webhook secret (adapter written, sandbox test pending), Channex certification (adapter written)
-- [ ] Encrypt OTA credentials at rest. Move uploads (`public/uploads`) to object storage (S3 / R2)
+- [ ] Encrypt OTA credentials at rest. Add an S3 / R2 driver to `src/server/storage.ts` (local disk driver in place); clean up uploads that were never attached to a record
 - [ ] Rate limiting / bot protection on `/book/*`, `/pay/*` and webhooks
 - [ ] Postgres Row-Level Security on `property_id`; super-admin console (organisations, System Update editor)
 - [ ] Server-side PDF for invoices (email attachment); thermal print agent for KOT (58/80 mm)
 
 Product follow-ups:
 - [x] "Change booking" dialog (dates, add/remove rooms, room type upgrade, plan, occupancy) with a live availability re-check
-- [ ] Guest ID photo upload at check-in (masked number only today)
+- [x] Guest ID scan at check-in (webcam or phone camera, private storage), room type photos, logo and cover photo upload
 - [ ] Hindi for every screen: the shell, Home tiles and the housekeeping phone screen are translated; other screens fall back to English
-- [ ] Owner summary screen for phones; logo / hero image upload in Branding
+- [ ] Owner summary screen for phones
 - [ ] Integration tests for server actions (unit tests cover the money maths today)
 
 Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates incl./excl. GST at the desk, live OTA codes, printer models.
@@ -96,6 +97,12 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-21
+- **Uploads:** storage layer with private (guest IDs, bills) and public (room photos, branding) files, byte-level
+  image check, browser-side downscaling. ID scan at check-in with a webcam scanner (card guide, retake) or the phone
+  camera; ID photos on the guest card and the printed registration card. Room type photos with a cover photo and a
+  carousel on the booking page. Logo and cover photo upload in Branding (links still accepted, checked). Petty cash
+  bills moved to private storage. Fixed a hydration mismatch in dialogs opened from a link; Escape closes only the top
+  dialog.
 - **Change booking (M3):** one dialog for dates, rooms (add / remove), room type upgrade, rate plan, occupancy and
   discount. A live preview shows the new price, the difference, the balance and any sold-out night; saving releases
   and re-reserves inventory under row locks in one transaction. Agreed nightly prices are kept by default

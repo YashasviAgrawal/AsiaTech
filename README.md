@@ -71,6 +71,7 @@ The public booking engine is at `/book/shri-ram-portico`, and needs no login.
 - **No double-selling**: `reserveInventory()` locks the inventory rows (`SELECT … FOR UPDATE`) in a fixed order inside the same transaction as the booking insert. Six simultaneous OTA requests for the last room produce exactly one booking.
 - **OTA sync**: every inventory/rate change writes to an outbox (`sync_logs`) inside the same transaction. The worker coalesces and pushes the updates through a provider adapter: `mock` by default, `channex` for production.
 - **Providers behind adapters**: payments (`mock` / `razorpay`), WhatsApp (`console`), channels (`mock` / `channex`). All are switched by environment variables.
+- **Uploads** (`src/server/storage.ts`): photos are shrunk in the browser, checked by their bytes on the server and stored behind a driver (`local` disk today; add S3 / R2 with the same three methods). Guest IDs and bills are private (`/files/prv/…`, staff of that hotel only); room photos and branding are public.
 - **Audit and undo**: `activity_log` keeps before/after snapshots. Bulk inventory and rate changes and cancellations can be undone.
 
 ```

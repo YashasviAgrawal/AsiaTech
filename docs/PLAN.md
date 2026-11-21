@@ -194,7 +194,7 @@ and tests. All database tables are created in M0, so modules never need disrupti
 **Goal:** arrivals and departures are one click. Features **#16, #22**, check-in/out, Form-III, GST invoice.
 
 - [x] **Today Check (In-Out)**: tabs Arrivals · In-House · Departures with one-click Check in / Check out
-- [x] Check-in: assign room (clean rooms first), guest ID (masked number), advance payment, **print registration card** · 🟡 ID photo upload pending
+- [x] Check-in: assign room (clean rooms first), guest ID (masked number) with **ID scan** (webcam / phone camera, private storage), advance payment, **print registration card** with the ID copy
 - [x] **Form-III helper** for foreign guests: passport/visa fields and a 24-hour FRRO countdown
 - [x] Check-out: full folio (room + restaurant + extras), settle payment, **GST invoice** (CGST/SGST, invoice no. per FY) with **UPI QR**; room → *dirty* and a cleaning task is created
 - [x] Folio: post extras, discounts, payments; void with reason

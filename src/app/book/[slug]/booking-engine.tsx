@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
-import { BadgeCheck, BedDouble, Check, Clock, Loader2, MapPin, Minus, Phone, Plus, Ruler, ShieldCheck, Star, Ticket, Users, Wifi } from 'lucide-react';
+import { BadgeCheck, BedDouble, Check, ChevronLeft, ChevronRight, Clock, Loader2, MapPin, Minus, Phone, Plus, Ruler, ShieldCheck, Star, Ticket, Users, Wifi } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { addDay, formatDay, formatDayShort, formatINR, MEAL_PLAN_LABELS, nightsBetween } from '@/lib/format';
 import { publicBookAction, searchStayAction } from '@/server/actions/public-booking';
@@ -83,6 +83,14 @@ export function BookingEngine({ hotel, defaults }: { hotel: Hotel; defaults: { c
       {/* Hero */}
       <header className="relative h-72 bg-cover bg-center sm:h-80" style={{ backgroundImage: hotel.branding.heroImageUrl ? `url(${hotel.branding.heroImageUrl})` : `linear-gradient(135deg, ${brand}, #0f172a 85%)` }}>
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        {hotel.branding.logoUrl && (
+          <div className="absolute inset-x-0 top-0 z-10">
+            <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={hotel.branding.logoUrl} alt={`${hotel.name} logo`} className="h-11 w-auto max-w-40 rounded-xl bg-white/95 object-contain p-1.5 shadow-lg" />
+            </div>
+          </div>
+        )}
         <div className="relative mx-auto flex h-full max-w-6xl flex-col justify-end px-4 pb-20 text-white sm:px-6">
           {hotel.starRating ? (
             <p className="flex gap-0.5">
@@ -140,9 +148,7 @@ export function BookingEngine({ hotel, defaults }: { hotel: Hotel; defaults: { c
             return (
               <article key={room.id} className={cn('overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-ink-200', soldOut && 'opacity-60')}>
                 <div className="grid sm:grid-cols-[200px_1fr]">
-                  <div className="grid min-h-36 place-items-center" style={{ background: `linear-gradient(135deg, ${room.color}22, ${room.color}55)` }}>
-                    <BedDouble className="h-12 w-12" style={{ color: room.color }} />
-                  </div>
+                  <RoomPhotos photos={room.photos ?? []} color={room.color} name={room.name} />
                   <div className="p-5">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
@@ -279,6 +285,40 @@ export function BookingEngine({ hotel, defaults }: { hotel: Hotel; defaults: { c
         </aside>
       </main>
       <footer className="pb-8 text-center text-xs text-ink-400">Powered by AsiaTech Hotel OS</footer>
+    </div>
+  );
+}
+
+/** Room photo carousel on the booking page; falls back to the room colour when there are no photos yet. */
+function RoomPhotos({ photos, color, name }: { photos: string[]; color: string; name: string }) {
+  const [index, setIndex] = useState(0);
+  if (photos.length === 0) {
+    return (
+      <div className="grid min-h-36 place-items-center" style={{ background: `linear-gradient(135deg, ${color}22, ${color}55)` }}>
+        <BedDouble className="h-12 w-12" style={{ color }} />
+      </div>
+    );
+  }
+  const go = (step: number) => setIndex((i) => (i + step + photos.length) % photos.length);
+  return (
+    <div className="group relative min-h-48 overflow-hidden bg-ink-100">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img key={photos[index]} src={photos[index]} alt={`${name}, photo ${index + 1} of ${photos.length}`} className="absolute inset-0 h-full w-full animate-fade-in object-cover transition duration-500 group-hover:scale-[1.03]" />
+      {photos.length > 1 && (
+        <>
+          <button type="button" onClick={() => go(-1)} aria-label="Previous photo" className="absolute top-1/2 left-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-ink-800 opacity-0 shadow transition group-hover:opacity-100 focus:opacity-100">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={() => go(1)} aria-label="Next photo" className="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-ink-800 opacity-0 shadow transition group-hover:opacity-100 focus:opacity-100">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1.5">
+            {photos.map((url, i) => (
+              <button key={url} type="button" onClick={() => setIndex(i)} aria-label={`Photo ${i + 1}`} className={cn('h-1.5 rounded-full bg-white shadow transition-all', i === index ? 'w-4' : 'w-1.5 opacity-60')} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

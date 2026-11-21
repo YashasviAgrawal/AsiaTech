@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,9 @@ function useBodyLock(open: boolean) {
   }, [open]);
 }
 
+/** Open dialogs, newest last: Escape closes only the top one when dialogs are stacked (e.g. camera over check-in). */
+const escapeStack: symbol[] = [];
+
 function useEscape(open: boolean, onClose: () => void) {
   const latest = useRef(onClose);
   useEffect(() => {
@@ -25,16 +28,29 @@ function useEscape(open: boolean, onClose: () => void) {
   }, [onClose]);
   useEffect(() => {
     if (!open) return;
+    const token = Symbol('dialog');
+    escapeStack.push(token);
     const handler = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') latest.current();
+      if (event.key === 'Escape' && escapeStack[escapeStack.length - 1] === token) latest.current();
     };
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+      escapeStack.splice(escapeStack.indexOf(token), 1);
+    };
   }, [open]);
 }
 
+const noop = () => () => {};
+
+/** Renders into <body> once hydrated (false on the server and during hydration, so both sides match). */
 function Portal({ children }: { children: ReactNode }) {
-  if (typeof document === 'undefined') return null;
+  const mounted = useSyncExternalStore(
+    noop,
+    () => true,
+    () => false,
+  );
+  if (!mounted) return null;
   return createPortal(children, document.body);
 }
 

@@ -1,12 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { mkdir, writeFile } from 'node:fs/promises';
-import path from 'node:path';
-import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { actionContext } from '../context';
 import { runAction } from '../action';
+import { saveImage } from '../storage';
 import { UserError } from '../errors';
 import { actorFromContext } from '../services/actor';
 import { addPettyCash, cancelLink, markLinkPaid, requestMoney, reviewPettyCash } from '../services/money';
@@ -87,20 +85,13 @@ export async function reviewPettyCashAction(id: string, approve: boolean) {
   }, approve ? 'Expense approved.' : 'Expense rejected.');
 }
 
-/** Bill photos are stored on local disk in development (public/uploads); use object storage in production. */
+/** Bill photos go to private storage (only staff with money access can open them). */
 export async function uploadBillPhotoAction(formData: FormData) {
   return runAction(async () => {
-    await actionContext('money.manage');
+    const ctx = await actionContext('money.manage');
     const file = formData.get('file');
     if (!(file instanceof File)) throw new UserError('Choose a photo.');
-    if (file.size > 5 * 1024 * 1024) throw new UserError('Photo must be under 5 MB.');
-    if (!/^image\/(jpeg|png|webp|heic)$/.test(file.type)) throw new UserError('Upload a JPG, PNG or WebP photo.');
-    const ext = file.type.split('/')[1].replace('jpeg', 'jpg');
-    const name = `${Date.now()}-${randomBytes(4).toString('hex')}.${ext}`;
-    const dir = path.join(process.cwd(), 'public', 'uploads', 'bills');
-    await mkdir(dir, { recursive: true });
-    await writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));
-    return { url: `/uploads/bills/${name}` };
+    return { url: await saveImage(ctx.propertyId, 'bills', file) };
   });
 }
 

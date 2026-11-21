@@ -24,6 +24,7 @@ import { SAC_ACCOMMODATION, SAC_RESTAURANT, splitTax } from '@/lib/gst';
 import { maskIdNumber, round2 } from '@/lib/utils';
 import { UserError } from '../errors';
 import { logActivity, nextCounter } from '../audit';
+import { isOwnFile } from '../storage';
 import type { Actor } from './actor';
 import { insertPayment, occupiedRoomIds } from './bookings';
 import { releaseInventory, reserveInventory } from './inventory';
@@ -218,6 +219,8 @@ export interface CheckInInput {
   assignments: { bookingRoomId: string; roomId: string }[];
   idType?: (typeof guests.$inferInsert)['idType'] | null;
   idNumber?: string | null;
+  /** Photos of the ID (front / back), uploaded to private storage. Replaces what is on file. */
+  idPhotos?: string[];
   foreign?: {
     passportNumber: string;
     passportExpiry?: string | null;
@@ -253,6 +256,7 @@ export async function checkIn(actor: Actor, input: CheckInInput) {
     const guestPatch: Partial<typeof guests.$inferInsert> = {};
     if (input.idType) guestPatch.idType = input.idType;
     if (input.idNumber) guestPatch.idNumberMasked = maskIdNumber(input.idNumber);
+    if (input.idPhotos) guestPatch.idPhotos = input.idPhotos.filter((url) => isOwnFile(url, actor.propertyId, 'ids'));
     if (input.foreign) {
       Object.assign(guestPatch, {
         isForeign: true,
@@ -622,4 +626,22 @@ export async function getTodayBoard(propertyId: string, bizDate: string) {
     inHouse: withBalance.filter((r) => r.brStatus === 'in_house'),
     departures: withBalance.filter((r) => (r.brStatus === 'in_house' && r.checkOut <= bizDate) || r.brStatus === 'departed'),
   };
+}
+
+/* ───────────────────────────── guest ID photos ───────────────────────────── */
+
+export async function updateGuestIdPhotos(actor: Actor, guestId: string, urls: string[]) {
+  const photos = urls.filter((url) => isOwnFile(url, actor.propertyId, 'ids')).slice(0, 6);
+  const [guest] = await db.select({ id: guests.id, name: guests.name, idPhotos: guests.idPhotos }).from(guests).where(and(eq(guests.id, guestId), eq(guests.propertyId, actor.propertyId)));
+  if (!guest) throw new UserError('Guest not found.');
+  await db.update(guests).set({ idPhotos: photos }).where(eq(guests.id, guest.id));
+  await logActivity({
+    propertyId: actor.propertyId,
+    userId: actor.userId,
+    entityType: 'guest',
+    entityId: guest.id,
+    action: 'id_photos',
+    summary: `ID photos for ${guest.name}: ${guest.idPhotos.length} → ${photos.length}`,
+  });
+  return { count: photos.length };
 }

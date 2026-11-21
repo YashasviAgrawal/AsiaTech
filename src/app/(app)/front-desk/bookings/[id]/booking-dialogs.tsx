@@ -13,6 +13,7 @@ import { Checkbox, Field, Input, Segmented, Select } from '@/components/ui/field
 import { Alert } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/badge';
 import { useRun } from '@/components/ui/use-run';
+import { PhotoGrid } from '@/components/ui/photo-upload';
 import { useToast } from '@/components/ui/toast';
 
 type RoomOption = { id: string; number: string; floor: string | null; hkStatus: 'clean' | 'dirty' | 'inspected' | 'out_of_order'; free: boolean; current: boolean };
@@ -134,6 +135,7 @@ export function CheckInDialog({ data, onClose }: { data: BookingDetail; onClose:
   const [assign, setAssign] = useState<Record<string, string | null>>(Object.fromEntries(reserved.map((r) => [r.id, r.roomId])));
   const [idType, setIdType] = useState<(typeof ID_TYPES)[number]['value']>(g.isForeign ? 'passport' : (g.idType as 'aadhaar') ?? 'aadhaar');
   const [idNumber, setIdNumber] = useState('');
+  const [idPhotos, setIdPhotos] = useState<string[]>(g.idPhotos ?? []);
   const [foreign, setForeign] = useState(g.isForeign);
   const [f, setF] = useState({
     nationality: g.isForeign ? g.nationality : '',
@@ -176,6 +178,7 @@ export function CheckInDialog({ data, onClose }: { data: BookingDetail; onClose:
                     assignments: reserved.map((r) => ({ bookingRoomId: r.id, roomId: assign[r.id]! })),
                     idType: foreign ? 'passport' : idType,
                     idNumber: foreign ? f.passportNumber : idNumber || null,
+                    idPhotos,
                     foreign: foreign ? f : null,
                     advance: advance > 0 ? { amount: advance, mode } : null,
                   }),
@@ -258,6 +261,14 @@ export function CheckInDialog({ data, onClose }: { data: BookingDetail; onClose:
               <p className="text-xs text-amber-700 sm:col-span-3">Form-C must be filed on the FRRO portal within 24 hours. A countdown appears on the booking.</p>
             </div>
           )}
+          <div className="mt-4 border-t border-ink-100 pt-3">
+            <p className="mb-2 text-xs font-medium text-ink-500">
+              {foreign ? 'Passport and visa pages' : 'ID photo, front and back'}
+              {(g.idPhotos?.length ?? 0) > 0 && <span className="text-emerald-700"> · on file from an earlier stay</span>}
+              <span className="text-ink-400"> · kept private, staff only</span>
+            </p>
+            <PhotoGrid folder="ids" value={idPhotos} onChange={setIdPhotos} max={4} webcam scanLabel={foreign ? 'Scan passport' : 'Scan ID'} tileClassName="h-20 w-28" />
+          </div>
         </div>
 
         <div className="flex flex-wrap items-end gap-3 rounded-xl bg-ink-50 p-4">

@@ -10,6 +10,7 @@ import { isValidGstin } from '@/lib/gst';
 import { normaliseMobile } from '@/lib/utils';
 import { actionContext } from '../context';
 import { runAction } from '../action';
+import { isOwnFile } from '../storage';
 import { UserError } from '../errors';
 import { logActivity } from '../audit';
 
@@ -113,10 +114,20 @@ const brandingSchema = z.object({
   heroImageUrl: z.string().max(300).optional(),
 });
 
+/** Branding images must be our own uploads or a plain https link (they end up in CSS url(…) and <img>). */
+function safeImageUrl(url: string | undefined, propertyId: string) {
+  if (!url) return '';
+  if (isOwnFile(url, propertyId, 'branding')) return url;
+  if (/^https:\/\/[^\s"'()<>\\]+$/.test(url)) return url;
+  throw new UserError('Upload the image, or paste a link that starts with https://');
+}
+
 export async function saveBrandingAction(input: z.input<typeof brandingSchema>) {
   return runAction(async () => {
     const ctx = await actionContext('settings.manage');
     const data = brandingSchema.parse(input);
+    data.logoUrl = safeImageUrl(data.logoUrl, ctx.propertyId);
+    data.heroImageUrl = safeImageUrl(data.heroImageUrl, ctx.propertyId);
     await db.update(properties).set({ branding: { ...ctx.property.branding, ...data } }).where(eq(properties.id, ctx.propertyId));
     refresh();
     return { ok: true };

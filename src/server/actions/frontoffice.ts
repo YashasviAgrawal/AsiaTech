@@ -7,7 +7,7 @@ import { actionContext } from '../context';
 import { runAction } from '../action';
 import { UserError } from '../errors';
 import { actorFromContext } from '../services/actor';
-import { assignRoom, checkIn, checkOut, markFormC, moveStay, postCharge, recordPayment, roomOptions, voidFolioLine } from '../services/frontoffice';
+import { assignRoom, checkIn, checkOut, markFormC, moveStay, postCharge, recordPayment, roomOptions, updateGuestIdPhotos, voidFolioLine } from '../services/frontoffice';
 
 function refresh() {
   revalidatePath('/', 'layout');
@@ -50,6 +50,7 @@ const checkInSchema = z.object({
   assignments: z.array(z.object({ bookingRoomId: z.string().uuid(), roomId: z.string().uuid() })),
   idType: z.enum(ID_TYPES).nullable().optional(),
   idNumber: z.string().trim().max(30).nullable().optional(),
+  idPhotos: z.array(z.string().max(200)).max(6).optional(),
   foreign: z
     .object({
       nationality: z.string().trim().min(2, 'Enter nationality'),
@@ -146,4 +147,14 @@ export async function markFormCAction(bookingId: string, reference: string) {
     refresh();
     return { ok: true };
   }, 'Form-C marked as submitted.');
+}
+
+export async function updateGuestIdPhotosAction(guestId: string, urls: string[]) {
+  return runAction(async () => {
+    const ctx = await actionContext('frontdesk.checkin');
+    const data = z.object({ guestId: z.string().uuid(), urls: z.array(z.string().max(200)).max(6) }).parse({ guestId, urls });
+    const result = await updateGuestIdPhotos(actorFromContext(ctx), data.guestId, data.urls);
+    revalidatePath('/', 'layout');
+    return result;
+  }, 'ID photos saved');
 }

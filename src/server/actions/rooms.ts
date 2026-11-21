@@ -7,6 +7,7 @@ import { db } from '@/db';
 import { MEAL_PLANS, ratePlans, roomTypes, rooms } from '@/db/schema';
 import { actionContext } from '../context';
 import { runAction } from '../action';
+import { isOwnFile } from '../storage';
 import { UserError } from '../errors';
 import { logActivity } from '../audit';
 import { recountInventoryTotals, queueAriPush } from '../services/inventory';
@@ -29,6 +30,7 @@ const roomTypeSchema = z.object({
   sizeSqft: z.number().int().min(0).max(10000).optional().nullable(),
   bedType: z.string().trim().max(60).optional().nullable(),
   amenities: z.array(z.string().trim().min(1)).max(40),
+  photos: z.array(z.string().max(200)).max(12).default([]),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   isActive: z.boolean(),
 });
@@ -42,7 +44,14 @@ export async function saveRoomTypeAction(input: z.input<typeof roomTypeSchema>) 
       .from(roomTypes)
       .where(and(eq(roomTypes.propertyId, ctx.propertyId), eq(roomTypes.code, data.code), data.id ? ne(roomTypes.id, data.id) : undefined));
     if (clash) throw new UserError(`The code ${data.code} is already used by another room type.`);
-    const values = { ...data, id: undefined, sizeSqft: data.sizeSqft ?? null, description: data.description ?? null, bedType: data.bedType ?? null };
+    const values = {
+      ...data,
+      id: undefined,
+      sizeSqft: data.sizeSqft ?? null,
+      description: data.description ?? null,
+      bedType: data.bedType ?? null,
+      photos: data.photos.filter((url) => isOwnFile(url, ctx.propertyId, 'rooms')),
+    };
     if (data.id) {
       const [before] = await db.select().from(roomTypes).where(and(eq(roomTypes.id, data.id), eq(roomTypes.propertyId, ctx.propertyId)));
       if (!before) throw new UserError('Room type not found.');
