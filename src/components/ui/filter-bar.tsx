@@ -1,5 +1,6 @@
 'use client';
 
+import { useTr } from '@/i18n/client';
 import { useEffect, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Search, X } from 'lucide-react';
@@ -22,6 +23,7 @@ export function FilterBar({ fields, className }: { fields: FilterField[]; classN
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
   const [search, setSearch] = useState(params.get('q') ?? '');
+  const tr = useTr();
 
   const set = (key: string, value: string) => {
     const next = new URLSearchParams(params.toString());
@@ -58,17 +60,17 @@ export function FilterBar({ fields, className }: { fields: FilterField[]; classN
         if (field.type === 'select')
           return (
             <Select key={field.key} value={params.get(field.key) ?? ''} onChange={(e) => set(field.key, e.target.value)} className={cn('h-9 w-auto py-1.5 text-[13px]', field.className)} aria-label={field.label}>
-              <option value="">{field.placeholder ?? 'All'}</option>
+              <option value="">{tr(field.placeholder ?? 'All')}</option>
               {field.options?.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {tr(o.label)}
                 </option>
               ))}
             </Select>
           );
         return (
           <label key={field.key} className="flex items-center gap-1.5 text-xs text-ink-500">
-            {field.label}
+            {field.label && tr(field.label)}
             <Input type="date" value={params.get(field.key) ?? ''} onChange={(e) => set(field.key, e.target.value)} className="h-9 w-auto py-1.5 text-[13px]" />
           </label>
         );

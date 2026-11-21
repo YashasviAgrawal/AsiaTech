@@ -149,7 +149,7 @@ and tests. All database tables are created in M0, so modules never need disrupti
 - [x] Tenancy: organizations → properties → property_members (role per property) and `requireContext()`
 - [x] Roles and permissions (owner, manager, front_desk, housekeeping, restaurant, accountant)
 - [x] App shell: dark sidebar with the 9 sections, top bar (search, EN/हिं, promotions, booking engine, support, WhatsApp, apps grid, notifications, property switcher, user menu), mobile drawer
-- [x] i18n: `t()` dictionary (English + Hindi), language cookie, per-user default
+- [x] i18n: `t()` dictionary (English + Hindi), language cookie, per-user default; phrase + pattern translation in shared components so every screen switches to Hindi
 - [x] Global search (`⌘K`): bookings, guests, mobile, rooms
 - [x] Activity log helper (`logActivity`) and counters (FDR/OTA/WEB, invoice numbers)
 - [x] Formatting helpers: ₹ Indian format (₹3,97,474), IST dates, GST calculator

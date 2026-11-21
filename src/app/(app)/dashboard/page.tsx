@@ -37,7 +37,7 @@ export const metadata: Metadata = { title: 'Dashboard' };
 export default async function DashboardPage() {
   const ctx = await requireContext('dashboard.view');
   await releaseExpiredHolds(actorFromContext(ctx));
-  const { t } = await getT();
+  const { t, tr } = await getT();
 
   const [tiles, trends, tasks, updates, todays, tonight] = await Promise.all([
     getTiles(ctx),
@@ -50,13 +50,13 @@ export default async function DashboardPage() {
 
   const hour = toIST(new Date()).getHours();
   const greeting = hour < 12 ? t('dash.greeting.morning') : hour < 17 ? t('dash.greeting.afternoon') : t('dash.greeting.evening');
-  const month = monthName(todayIST());
+  const month = tr(monthName(todayIST()));
   const biz = ctx.property.businessDate;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow={formatDayLong(biz)}
+        eyebrow={tr(formatDayLong(biz))}
         title={`${greeting}, ${ctx.user.name.split(' ')[0]}`}
         description={`Here is ${ctx.property.name} today. ${tiles.checkIns - tiles.checkInsDone} arrivals and ${tiles.checkOuts - tiles.checkOutsDone} departures still to handle.`}
         actions={
@@ -117,18 +117,18 @@ export default async function DashboardPage() {
             title={
               <span className="flex items-center gap-2">
                 {t('dash.todaysTask')}
-                <span className="font-medium text-ink-400">· {formatDayLong(biz)}</span>
+                <span className="font-medium text-ink-400">· {tr(formatDayLong(biz))}</span>
               </span>
             }
             description="Created automatically. Every item has its own button."
             action={
               tasks.length > 0 ? (
                 <Badge tone={tasks.some((x) => x.severity === 'danger') ? 'danger' : 'warning'} dot>
-                  {tasks.length} open
+                  {tr(`${tasks.length} open`)}
                 </Badge>
               ) : (
                 <Badge tone="success" dot>
-                  All clear
+                  {tr('All clear')}
                 </Badge>
               )
             }
@@ -148,18 +148,18 @@ export default async function DashboardPage() {
         <div className="space-y-6">
           {/* Tonight */}
           <Card>
-            <CardHeader icon={<BedDouble className="h-4 w-4" />} title="Tonight" description="Occupancy for the business date" action={<Link href="/rooms/calendar" className="text-xs font-semibold text-brand-600 hover:text-brand-700">Calendar →</Link>} />
+            <CardHeader icon={<BedDouble className="h-4 w-4" />} title="Tonight" description="Occupancy for the business date" action={<Link href="/rooms/calendar" className="text-xs font-semibold text-brand-600 hover:text-brand-700">{tr('Calendar →')}</Link>} />
             <div className="flex items-center gap-5 px-5 py-4">
               <OccupancyRing value={tonight.occupancy} />
               <dl className="grid flex-1 grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <dt className="text-xs text-ink-500">Rooms sold</dt>
+                  <dt className="text-xs text-ink-500">{tr('Rooms sold')}</dt>
                   <dd className="num font-bold text-ink-900">
                     {tonight.booked} <span className="font-normal text-ink-400">/ {tonight.sellable}</span>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-ink-500">Blocked</dt>
+                  <dt className="text-xs text-ink-500">{tr('Blocked')}</dt>
                   <dd className="num font-bold text-ink-900">{tonight.blocked}</dd>
                 </div>
                 <div>
@@ -181,7 +181,7 @@ export default async function DashboardPage() {
                     <span className="min-w-0 flex-1 truncate text-ink-700">{type.name}</span>
                     <span className="flex items-center gap-1.5">
                       <span className={`h-1.5 w-1.5 rounded-full ${tone}`} />
-                      <span className="num text-xs font-semibold text-ink-900">{Math.max(type.available, 0)} left</span>
+                      <span className="num text-xs font-semibold text-ink-900">{tr(`${Math.max(type.available, 0)} left`)}</span>
                     </span>
                   </li>
                 );

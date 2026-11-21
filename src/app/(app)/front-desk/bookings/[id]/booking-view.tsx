@@ -32,6 +32,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTr } from '@/i18n/client';
 import { formatDateTime, formatDay, formatDayShort, formatINR, ID_TYPE_LABELS, MEAL_PLAN_LABELS, PAYMENT_MODE_LABELS, sourceLabel, timeAgo } from '@/lib/format';
 import type { BookingDetail } from '@/server/services/frontoffice';
 import { cancelBookingAction, confirmHoldAction, extendHoldAction, noShowAction, restoreBookingAction } from '@/server/actions/reservations';
@@ -69,6 +70,7 @@ export function BookingView({
   const router = useRouter();
   const toast = useToast();
   const { run, pending } = useRun();
+  const tr = useTr();
   const activeRooms = data.rooms.filter((r) => ['reserved', 'in_house'].includes(r.status));
   // Dashboard "Check in now" / "Check out" / "Assign" buttons land here with ?do=…
   const [dialog, setDialog] = useState<Dialogs>(() => {
@@ -129,7 +131,7 @@ export function BookingView({
               {b.otaRef && <span className="font-mono text-xs text-ink-500">Ref {b.otaRef}</span>}
             </div>
             <p className="mt-1.5 text-sm text-ink-500">
-              Booked {formatDateTime(b.createdAt)}
+              {tr('Booked')} {formatDateTime(b.createdAt)}
               {data.createdByName ? ` by ${data.createdByName}` : ''}
               {b.status === 'hold' && b.holdUntil && (
                 <span className="ml-2 inline-flex items-center gap-1 font-semibold text-amber-700">
@@ -252,13 +254,13 @@ export function BookingView({
               {[
                 { label: 'Check-in', value: formatDayShort(b.checkIn), sub: b.arrivalTime ? `arriving ${b.arrivalTime}` : undefined },
                 { label: 'Check-out', value: formatDayShort(b.checkOut) },
-                { label: 'Bill to', value: b.billToName ?? 'Guest', sub: b.billTo !== 'guest' ? b.billTo : undefined },
+                { label: 'Bill to', value: b.billToName ?? tr('Guest'), sub: b.billTo !== 'guest' ? b.billTo : undefined },
                 { label: 'Booking value', value: formatINR(b.totalAmount), sub: b.discountAmount > 0 ? `incl. ${formatINR(b.discountAmount)} off` : 'incl. GST' },
               ].map((cell) => (
                 <div key={cell.label} className="bg-white px-5 py-3.5">
-                  <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">{cell.label}</p>
+                  <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">{tr(cell.label)}</p>
                   <p className="num mt-1 font-semibold text-ink-900">{cell.value}</p>
-                  {cell.sub && <p className="text-xs text-ink-500 capitalize">{cell.sub}</p>}
+                  {cell.sub && <p className="text-xs text-ink-500 capitalize">{tr(cell.sub)}</p>}
                 </div>
               ))}
             </div>
@@ -321,8 +323,8 @@ export function BookingView({
                   <tr className="bg-ink-50/50">
                     <td className="px-5 py-2.5 text-ink-500">{formatDayShort(b.checkIn)}</td>
                     <td className="px-2 py-2.5 font-medium text-ink-800">
-                      Room charges · {b.nights} night{b.nights === 1 ? '' : 's'}
-                      <span className="ml-2 text-xs font-normal text-ink-500">({formatINR(totals.roomPosted)} posted so far)</span>
+                      {tr('Room charges')} · {tr(`${b.nights} night${b.nights === 1 ? '' : 's'}`)}
+                      <span className="ml-2 text-xs font-normal text-ink-500">({formatINR(totals.roomPosted)} {tr('posted so far')})</span>
                     </td>
                     <td className="num px-5 py-2.5 text-right font-semibold text-ink-900">{formatINR(totals.room)}</td>
                     <td className="w-10" />
@@ -373,14 +375,14 @@ export function BookingView({
             </div>
             <div className="flex flex-wrap items-center justify-end gap-x-8 gap-y-2 border-t border-ink-200 bg-ink-50/60 px-5 py-3.5 text-sm">
               <span className="text-ink-500">
-                Total <strong className="num ml-1 text-ink-900">{formatINR(totals.grandTotal)}</strong>
+                {tr('Total')} <strong className="num ml-1 text-ink-900">{formatINR(totals.grandTotal)}</strong>
               </span>
               <span className="text-ink-500">
-                Paid <strong className="num ml-1 text-emerald-700">{formatINR(totals.paid)}</strong>
+                {tr('Paid')} <strong className="num ml-1 text-emerald-700">{formatINR(totals.paid)}</strong>
               </span>
               <span className="text-ink-500">
-                Balance{' '}
-                <strong className={cn('num ml-1 text-base', totals.balance > 0.5 ? 'text-amber-700' : 'text-emerald-700')}>{totals.balance > 0.5 ? formatINR(totals.balance) : 'Nil'}</strong>
+                {tr('Balance')}{' '}
+                <strong className={cn('num ml-1 text-base', totals.balance > 0.5 ? 'text-amber-700' : 'text-emerald-700')}>{totals.balance > 0.5 ? formatINR(totals.balance) : tr('Nil')}</strong>
               </span>
             </div>
           </Card>
@@ -421,7 +423,7 @@ export function BookingView({
                   {g.name}
                 </Link>
                 <p className="text-xs text-ink-500">
-                  {data.guestStays > 1 ? `${data.guestStays} stays · returning guest` : 'First stay'}
+                  {tr(data.guestStays > 1 ? `${data.guestStays} stays · returning guest` : 'First stay')}
                   {g.isVip && <Badge tone="warning" className="ml-1.5 px-1.5 py-0 text-[10px]">VIP</Badge>}
                 </p>
               </div>
@@ -450,7 +452,7 @@ export function BookingView({
               </div>
               <div className="flex items-center gap-2.5">
                 <IdCard className="h-4 w-4 text-ink-400" />
-                <span className="text-ink-800">{g.idType ? `${ID_TYPE_LABELS[g.idType] ?? g.idType} ${g.idNumberMasked ?? ''}` : <span className="text-ink-400">ID not collected yet</span>}</span>
+                <span className="text-ink-800">{g.idType ? `${ID_TYPE_LABELS[g.idType] ?? g.idType} ${g.idNumberMasked ?? ''}` : <span className="text-ink-400">{tr('ID not collected yet')}</span>}</span>
               </div>
               {(can.checkin || g.idPhotos.length > 0) && <GuestIdPhotos guestId={g.id} photos={g.idPhotos} editable={can.checkin} />}
               {g.isForeign && g.passportNumber && (
@@ -472,7 +474,7 @@ export function BookingView({
           </Card>
 
           <Card className="p-5">
-            <p className="text-xs font-semibold tracking-wide text-ink-400 uppercase">Balance due</p>
+            <p className="text-xs font-semibold tracking-wide text-ink-400 uppercase">{tr('Balance due')}</p>
             <p className={cn('num mt-1 text-3xl font-extrabold tracking-tight', totals.balance > 0.5 ? 'text-ink-900' : 'text-emerald-600')}>
               {totals.balance > 0.5 ? formatINR(totals.balance) : 'Fully paid'}
             </p>
@@ -480,7 +482,7 @@ export function BookingView({
               <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.min(100, totals.grandTotal > 0 ? (totals.paid / totals.grandTotal) * 100 : 0)}%` }} />
             </div>
             <p className="mt-2 text-xs text-ink-500">
-              {formatINR(totals.paid)} of {formatINR(totals.grandTotal)} paid
+              {tr(`${formatINR(totals.paid)} of ${formatINR(totals.grandTotal)} paid`)}
             </p>
             {totals.balance > 0.5 && ['confirmed', 'checked_in', 'hold'].includes(b.status) && (
               <div className="mt-4 grid grid-cols-2 gap-2">

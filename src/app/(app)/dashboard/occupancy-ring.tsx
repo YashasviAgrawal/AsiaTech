@@ -1,3 +1,5 @@
+import { tx } from '@/i18n/tx';
+
 /** Donut showing tonight's occupancy. The number sits inside, so the colour never stands alone (rule 6). */
 export function OccupancyRing({ value, size = 96 }: { value: number; size?: number }) {
   const stroke = 9;
@@ -25,7 +27,7 @@ export function OccupancyRing({ value, size = 96 }: { value: number; size?: numb
       <div className="absolute inset-0 grid place-items-center text-center">
         <div>
           <p className="num text-xl leading-none font-extrabold text-ink-900">{clamped}%</p>
-          <p className="mt-1 text-[10px] font-medium tracking-wide text-ink-400 uppercase">occupied</p>
+          <p className="mt-1 text-[10px] font-medium tracking-wide text-ink-400 uppercase">{tx('occupied')}</p>
         </div>
       </div>
     </div>

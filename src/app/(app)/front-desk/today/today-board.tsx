@@ -1,5 +1,6 @@
 'use client';
 
+import { useTr } from '@/i18n/client';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Clock, Crown, Globe2, LogIn, LogOut, Search, Sparkles } from 'lucide-react';
@@ -24,6 +25,7 @@ const HK_TONE: Record<string, string> = {
 };
 
 export function TodayBoard({ data, initialTab, businessDate, canCheckIn }: { data: Board; initialTab: Tab; businessDate: string; canCheckIn: boolean }) {
+  const tr = useTr();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [q, setQ] = useState('');
   const rows = tab === 'arrivals' ? data.arrivals : tab === 'inhouse' ? data.inHouse : data.departures;
@@ -55,7 +57,7 @@ export function TodayBoard({ data, initialTab, businessDate, canCheckIn }: { dat
             <span>
               <span className="num block text-2xl leading-none font-extrabold text-ink-900">{s.value}</span>
               <span className="mt-1 block text-xs text-ink-500">
-                {s.label} · {s.sub}
+                {tr(s.label)} · {tr(s.sub)}
               </span>
             </span>
           </button>
@@ -95,6 +97,7 @@ export function TodayBoard({ data, initialTab, businessDate, canCheckIn }: { dat
 }
 
 function BoardRow({ row, tab, businessDate, canCheckIn }: { row: Row; tab: Tab; businessDate: string; canCheckIn: boolean }) {
+  const tr = useTr();
   const late = tab === 'arrivals' && row.brStatus === 'reserved' && row.checkIn < businessDate;
   const action =
     tab === 'arrivals' && row.brStatus === 'reserved'
@@ -123,18 +126,18 @@ function BoardRow({ row, tab, businessDate, canCheckIn }: { row: Row; tab: Tab; 
               <Clock className="h-3 w-3" /> {row.arrivalTime}
             </span>
           )}
-          {late && <span className="ml-2 font-semibold text-rose-600">Arrival date passed</span>}
+          {late && <span className="ml-2 font-semibold text-rose-600">{tr('Arrival date passed')}</span>}
         </p>
       </div>
       {row.roomHk && tab === 'arrivals' && row.brStatus === 'reserved' && <span className={cn('badge capitalize', HK_TONE[row.roomHk])}>{row.roomHk.replace('_', ' ')}</span>}
       <div className="w-28 text-right">
-        <p className={cn('num text-sm font-bold', row.balance > 0.5 ? 'text-amber-700' : 'text-emerald-600')}>{row.balance > 0.5 ? formatINR(row.balance) : 'Paid'}</p>
-        <p className="text-[11px] text-ink-400">balance</p>
+        <p className={cn('num text-sm font-bold', row.balance > 0.5 ? 'text-amber-700' : 'text-emerald-600')}>{row.balance > 0.5 ? formatINR(row.balance) : tr('Paid')}</p>
+        <p className="text-[11px] text-ink-400">{tr('balance')}</p>
       </div>
       <div className="flex w-32 justify-end">
         {action && canCheckIn ? (
           <Link href={action.href} className={buttonClasses(action.label === 'Check in' ? 'primary' : 'secondary', 'sm')}>
-            <action.icon className="h-3.5 w-3.5" /> {action.label}
+            <action.icon className="h-3.5 w-3.5" /> {tr(action.label)}
           </Link>
         ) : (
           <span className="flex items-center gap-2">

@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState, useS
 import { createPortal } from 'react-dom';
 import { CheckCircle2, Info, TriangleAlert, X, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTr } from '@/i18n/client';
 
 type ToastTone = 'success' | 'error' | 'info' | 'warning';
 
@@ -37,6 +38,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     () => false,
   );
   const idRef = useRef(0);
+  const tr = useTr();
 
   const dismiss = useCallback((id: number) => setToasts((list) => list.filter((t) => t.id !== id)), []);
 
@@ -80,8 +82,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   )}
                   <Icon className={cn('mt-0.5 h-5 w-5 shrink-0', ICON_COLORS[toast.tone])} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-ink-900">{toast.title}</p>
-                    {toast.description && <p className="mt-0.5 text-xs text-ink-500">{toast.description}</p>}
+                    <p className="text-sm font-semibold text-ink-900">{tr(toast.title)}</p>
+                    {toast.description && <p className="mt-0.5 text-xs text-ink-500">{tr(toast.description)}</p>}
                   </div>
                   {toast.action && (
                     <button
@@ -91,7 +93,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                         await toast.action?.onClick();
                       }}
                     >
-                      {toast.action.label}
+                      {tr(toast.action.label)}
                     </button>
                   )}
                   <button onClick={() => dismiss(toast.id)} className="shrink-0 text-ink-300 transition hover:text-ink-600" aria-label="Dismiss">

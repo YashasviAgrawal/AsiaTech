@@ -68,11 +68,12 @@ housekeeping phone screen ✅ · activity log ✅
 |-------|--------|
 | `npm run typecheck` | clean |
 | `npm run lint` | clean (React Compiler rules on) |
-| `npm test` | 12 unit tests pass (GST slabs, tax split, amount in words, financial year, duplicates, formatting) |
+| `npm test` | 16 unit tests pass (incl. Hindi phrase + pattern translation) (GST slabs, tax split, amount in words, financial year, duplicates, formatting) |
 | `npm run build` | production build passes, all routes compile |
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
 | Inventory integrity | seeded `booked` counts match booking rooms on every date; availability never negative |
+| Hindi | Dashboard, Today board, booking page, POS, money and settings checked in Hindi: page chrome, task sentences ("… का चेक-आउट करें"), dates and months translated; data (names, room types, menu) stays as entered; English mode unchanged |
 | Exports and undo | Payments, Credit, Petty Cash, Activity Log export with the screen's filters (valid .xlsx, 403 without permission); Booking Report prints / saves as A4 landscape PDF; folio line void → Undo → void → Restore keeps the linked restaurant bill in step; POS order void → restore puts the room-bill line back; restore refused on another business day |
 | Uploads | fake image refused; ID uploaded + webcam scan (fake camera) saved on the guest at check-in; private file 200 for staff, login redirect for anonymous; room photos + cover order on the booking page; logo/cover on the booking page for anonymous visitors; CSS-injection link refused |
 | Change booking | +1 night, upgrade Standard → Deluxe Family and add a room: blocked while a type is sold out, then saved; `booked` still matches booking rooms on every date (SQL check), OTAs pushed, activity log written. In-house guest extended: room kept, agreed nights kept at ₹2,300 |
@@ -89,7 +90,7 @@ Production readiness:
 Product follow-ups:
 - [x] "Change booking" dialog (dates, add/remove rooms, room type upgrade, plan, occupancy) with a live availability re-check
 - [x] Guest ID scan at check-in (webcam or phone camera, private storage), room type photos, logo and cover photo upload
-- [ ] Hindi for every screen: the shell, Home tiles and the housekeeping phone screen are translated; other screens fall back to English
+- [x] Hindi on every screen: shared components translate their text (headers, labels, buttons, tables, tabs, dialogs, badges, filters, toasts), plus ~640 phrases and sentence patterns. Follow-up: a few long sentences inside individual screens are still English
 - [ ] Owner summary screen for phones
 - [ ] Integration tests for server actions (unit tests cover the money maths today)
 
@@ -98,6 +99,9 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-21
+- **Hindi everywhere (rule 7):** phrase dictionary (English text is the key) and anchored sentence patterns for names,
+  numbers and dates. Shared components translate their plain-string text automatically, on the server and in the
+  browser, so every screen switches to Hindi; dashboard tasks, Today board and booking page translated in detail.
 - **Exports and undo:** Excel for Payments (with totals by mode), Credit Report (with ageing sheet), Petty Cash (running
   balance) and Activity Log, all using the same filters as the screen. Booking Report "Print / PDF" (A4 landscape with
   totals). Voids can be undone: bill lines (Undo in the toast or Restore on the row), restaurant orders (Undo, or Restore

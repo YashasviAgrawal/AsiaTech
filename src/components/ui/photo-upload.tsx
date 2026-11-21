@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Camera, ImagePlus, Loader2, RotateCcw, Star, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { tx } from '@/i18n/tx';
 import { uploadImageAction } from '@/server/actions/files';
 import { Button } from './button';
 import { Dialog } from './dialog';
@@ -274,7 +275,7 @@ export function PhotoGrid({
               onClick={() => setCameraOpen(true)}
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-ink-900 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-ink-800"
             >
-              <Camera className="h-4 w-4" /> {scanLabel}
+              <Camera className="h-4 w-4" /> {tx(scanLabel)}
             </button>
           )}
           <button
@@ -286,7 +287,7 @@ export function PhotoGrid({
               !webcam && 'flex-col',
             )}
           >
-            <ImagePlus className={webcam ? 'h-4 w-4' : 'h-5 w-5'} /> {webcam ? 'Upload' : addLabel}
+            <ImagePlus className={webcam ? 'h-4 w-4' : 'h-5 w-5'} /> {tx(webcam ? 'Upload' : addLabel)}
           </button>
           <input
             ref={fileRef}

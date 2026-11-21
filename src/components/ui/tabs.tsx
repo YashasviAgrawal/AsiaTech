@@ -1,5 +1,6 @@
 'use client';
 
+import { tx } from '@/i18n/tx';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
@@ -29,7 +30,7 @@ export function Tabs<T extends string>({
         const active = item.value === value;
         const inner = (
           <>
-            {item.label}
+            {tx(item.label)}
             {item.count !== undefined && (
               <span
                 className={cn(

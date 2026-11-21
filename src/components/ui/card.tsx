@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowUpRight, TrendingDown, TrendingUp } from 'lucide-react';
 import { Sparkline } from './sparkline';
 import { cn } from '@/lib/utils';
+import { tx } from '@/i18n/tx';
 
 export function Card({ children, className, as: Tag = 'section' }: { children: ReactNode; className?: string; as?: 'section' | 'div' | 'article' }) {
   return <Tag className={cn('card', className)}>{children}</Tag>;
@@ -26,8 +27,8 @@ export function CardHeader({
       <div className="flex min-w-0 items-center gap-2.5">
         {icon && <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600">{icon}</span>}
         <div className="min-w-0">
-          <h2 className="truncate text-[15px] font-bold text-ink-900">{title}</h2>
-          {description && <p className="mt-0.5 line-clamp-2 text-xs text-ink-500">{description}</p>}
+          <h2 className="truncate text-[15px] font-bold text-ink-900">{tx(title)}</h2>
+          {description && <p className="mt-0.5 line-clamp-2 text-xs text-ink-500">{tx(description)}</p>}
         </div>
       </div>
       {action}
@@ -51,9 +52,9 @@ export function PageHeader({
   return (
     <div className={cn('mb-6 flex flex-wrap items-end justify-between gap-4', className)}>
       <div className="min-w-0">
-        {eyebrow && <p className="mb-1 text-xs font-semibold tracking-wider text-brand-600 uppercase">{eyebrow}</p>}
-        <h1 className="text-2xl font-bold tracking-tight text-ink-900 sm:text-[28px]">{title}</h1>
-        {description && <p className="mt-1 max-w-2xl text-sm text-ink-500">{description}</p>}
+        {eyebrow && <p className="mb-1 text-xs font-semibold tracking-wider text-brand-600 uppercase">{tx(eyebrow)}</p>}
+        <h1 className="text-2xl font-bold tracking-tight text-ink-900 sm:text-[28px]">{tx(title)}</h1>
+        {description && <p className="mt-1 max-w-2xl text-sm text-ink-500">{tx(description)}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -119,7 +120,7 @@ export function StatTile({
         <ArrowUpRight className="h-4 w-4 text-ink-300 transition-all duration-300 ease-smooth group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-ink-700" />
       </div>
       <p className="num relative mt-3 text-[26px] leading-none font-semibold tracking-tight text-ink-950">{value}</p>
-      <p className="relative mt-1.5 text-xs font-medium text-ink-500">{label}</p>
+      <p className="relative mt-1.5 text-xs font-medium text-ink-500">{tx(label)}</p>
       <div className="relative mt-2 flex min-h-7 items-end justify-between gap-2">
         <div className="min-w-0">
           {trend && trend.delta !== null && (
@@ -135,7 +136,7 @@ export function StatTile({
               {trend.delta}%<span className="ml-0.5 font-medium opacity-70">{trend.compare.includes('month') ? 'MoM' : 'WoW'}</span>
             </p>
           )}
-          {hint && <p className="mt-1 truncate text-[11px] text-ink-400">{hint}</p>}
+          {hint && <p className="mt-1 truncate text-[11px] text-ink-400">{tx(hint)}</p>}
         </div>
         {trend && trend.series.some((v) => v > 0) && <Sparkline values={trend.series} className={cn('shrink-0', t.spark)} width={72} height={26} />}
       </div>
@@ -167,8 +168,8 @@ export function EmptyState({
       )}
     >
       {icon && <div className="mb-3 grid h-12 w-12 place-items-center rounded-full bg-ink-50 text-ink-400">{icon}</div>}
-      <p className="text-base font-semibold text-ink-800">{title}</p>
-      {description && <p className="mt-1 max-w-sm text-sm text-ink-500">{description}</p>}
+      <p className="text-base font-semibold text-ink-800">{tx(title)}</p>
+      {description && <p className="mt-1 max-w-sm text-sm text-ink-500">{tx(description)}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
@@ -185,7 +186,7 @@ export function Spinner({ className }: { className?: string }) {
 export function DetailRow({ label, value, className }: { label: ReactNode; value: ReactNode; className?: string }) {
   return (
     <div className={cn('flex items-start justify-between gap-4 py-2', className)}>
-      <dt className="text-sm text-ink-500">{label}</dt>
+      <dt className="text-sm text-ink-500">{tx(label)}</dt>
       <dd className="text-right text-sm font-medium text-ink-900">{value}</dd>
     </div>
   );
@@ -220,8 +221,8 @@ export function Alert({
     <div className={cn('flex items-start gap-3 rounded-xl border p-3.5 text-sm', styles, className)} role="alert">
       {icon && <span className="mt-0.5 shrink-0">{icon}</span>}
       <div className="min-w-0 flex-1">
-        {title && <p className="font-semibold">{title}</p>}
-        {children && <div className={cn(title ? 'mt-0.5' : undefined, 'leading-relaxed opacity-90')}>{children}</div>}
+        {title && <p className="font-semibold">{tx(title)}</p>}
+        {children && <div className={cn(title ? 'mt-0.5' : undefined, 'leading-relaxed opacity-90')}>{tx(children)}</div>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>

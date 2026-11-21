@@ -1,5 +1,6 @@
 'use client';
 
+import { tx } from '@/i18n/tx';
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
@@ -92,9 +93,9 @@ export function Dialog({
             {icon && <span className="mt-0.5 shrink-0">{icon}</span>}
             <div className="min-w-0 flex-1">
               <h2 id={titleId} className="text-base font-bold text-ink-900">
-                {title}
+                {tx(title)}
               </h2>
-              {description && <p className="mt-0.5 text-sm text-ink-500">{description}</p>}
+              {description && <p className="mt-0.5 text-sm text-ink-500">{tx(description)}</p>}
             </div>
             <button onClick={onClose} className="-mr-1 rounded-md p-1 text-ink-400 transition hover:bg-ink-100 hover:text-ink-700" aria-label="Close">
               <X className="h-5 w-5" />
@@ -165,7 +166,7 @@ function ConfirmDialogInner({
             Go back
           </Button>
           <Button variant={variant} loading={loading} disabled={requireReason && reason.trim().length < 3} onClick={() => onConfirm(reason.trim())}>
-            {confirmLabel}
+            {tx(confirmLabel)}
           </Button>
         </>
       }
@@ -209,8 +210,8 @@ export function Drawer({
         <aside className={cn('absolute inset-y-0 right-0 flex w-full animate-enter flex-col bg-white shadow-lift', widths[width])}>
           <div className="flex items-start gap-3 border-b border-ink-100 px-5 py-4">
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-bold text-ink-900">{title}</h2>
-              {description && <p className="mt-0.5 text-sm text-ink-500">{description}</p>}
+              <h2 className="text-base font-bold text-ink-900">{tx(title)}</h2>
+              {description && <p className="mt-0.5 text-sm text-ink-500">{tx(description)}</p>}
             </div>
             <button onClick={onClose} className="rounded-md p-1 text-ink-400 transition hover:bg-ink-100 hover:text-ink-700" aria-label="Close">
               <X className="h-5 w-5" />

@@ -1,5 +1,6 @@
 'use client';
 
+import { tx } from '@/i18n/tx';
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
@@ -21,7 +22,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return (
     <button ref={ref} type={type} className={buttonClasses(variant, size, className)} disabled={disabled || loading} {...props}>
       {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-      {children}
+      {tx(children)}
     </button>
   );
 });
@@ -42,7 +43,7 @@ export function ButtonLink({
 } & Omit<React.ComponentProps<typeof Link>, 'href' | 'className'>) {
   return (
     <Link href={href} className={buttonClasses(variant, size, className)} {...props}>
-      {children}
+      {tx(children)}
     </Link>
   );
 }

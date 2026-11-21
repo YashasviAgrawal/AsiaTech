@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { AlertOctagon, ArrowRight, BedDouble, Clock, Globe, LogIn, LogOut, RefreshCw, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTr } from '@/i18n/client';
 import type { TaskItem } from '@/server/services/dashboard';
 
 const KIND_ICON = {
@@ -24,6 +25,7 @@ const SEVERITY = {
 };
 
 export function TasksList({ tasks }: { tasks: TaskItem[] }) {
+  const tr = useTr();
   const [showAll, setShowAll] = useState(false);
   const visible = showAll ? tasks : tasks.slice(0, 7);
   return (
@@ -38,14 +40,14 @@ export function TasksList({ tasks }: { tasks: TaskItem[] }) {
                 <Icon className="h-4 w-4" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className={cn('truncate text-[13px] font-semibold', task.severity === 'danger' ? 'text-rose-800' : 'text-ink-800')}>{task.title}</p>
-                {task.detail && <p className="mt-0.5 truncate text-xs text-ink-500">{task.detail}</p>}
+                <p className={cn('truncate text-[13px] font-semibold', task.severity === 'danger' ? 'text-rose-800' : 'text-ink-800')}>{tr(task.title)}</p>
+                {task.detail && <p className="mt-0.5 truncate text-xs text-ink-500">{tr(task.detail)}</p>}
               </div>
               <Link
                 href={task.action.href}
                 className={cn('inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold shadow-sm transition active:scale-[0.97]', s.button)}
               >
-                {task.action.label}
+                {tr(task.action.label)}
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </li>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTr } from '@/i18n/client';
 import { useState } from 'react';
 import Link from 'next/link';
 import { CalendarDays } from 'lucide-react';
@@ -24,6 +25,7 @@ export function BookingsTabs({
   inHouse: DashboardBookingRow[];
   canAssign: boolean;
 }) {
+  const tr = useTr();
   const { t } = useT();
   const [tab, setTab] = useState<TabKey>('created');
   const rows = tab === 'created' ? createdToday : tab === 'arriving' ? arriving : inHouse;
@@ -93,7 +95,7 @@ export function BookingsTabs({
                   )}
                 </Td>
                 <Td className="num text-right font-semibold whitespace-nowrap">
-                  {row.balance > 0.5 ? <span className="text-amber-700">{formatINR(row.balance)}</span> : <span className="text-emerald-600">Paid</span>}
+                  {row.balance > 0.5 ? <span className="text-amber-700">{formatINR(row.balance)}</span> : <span className="text-emerald-600">{tr('Paid')}</span>}
                 </Td>
                 <Td>
                   <StatusBadge status={row.status} />

@@ -1,5 +1,7 @@
 'use client';
 
+import { useTr } from '@/i18n/client';
+import { tx } from '@/i18n/tx';
 import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { AlertCircle, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,7 +21,7 @@ export function Field({ label, hint, error, required, children, className, htmlF
     <div className={className}>
       {label && (
         <label className="label" htmlFor={htmlFor}>
-          {label}
+          {tx(label)}
           {required && <span className="ml-0.5 text-brand-600">*</span>}
         </label>
       )}
@@ -27,10 +29,10 @@ export function Field({ label, hint, error, required, children, className, htmlF
       {error ? (
         <p className="mt-1.5 flex items-center gap-1 text-xs text-rose-600">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          {error}
+          {tx(error)}
         </p>
       ) : hint ? (
-        <p className="mt-1.5 text-xs text-ink-500">{hint}</p>
+        <p className="mt-1.5 text-xs text-ink-500">{tx(hint)}</p>
       ) : null}
     </div>
   );
@@ -38,7 +40,8 @@ export function Field({ label, hint, error, required, children, className, htmlF
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean; leading?: ReactNode; trailing?: ReactNode };
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ className, invalid, leading, trailing, ...props }, ref) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ className, invalid, leading, trailing, placeholder, ...props }, ref) {
+  const tr = useTr();
   const input = (
     <input
       ref={ref}
@@ -50,6 +53,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ c
         className,
       )}
       aria-invalid={invalid || undefined}
+      placeholder={placeholder ? tr(placeholder) : placeholder}
       {...props}
     />
   );
@@ -64,10 +68,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ c
 });
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea(
-  { className, ...props },
+  { className, placeholder, ...props },
   ref,
 ) {
-  return <textarea ref={ref} className={cn('input min-h-[88px] resize-y', className)} {...props} />;
+  const tr = useTr();
+  return <textarea ref={ref} className={cn('input min-h-[88px] resize-y', className)} placeholder={placeholder ? tr(placeholder) : placeholder} {...props} />;
 });
 
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean }>(function Select(
@@ -104,8 +109,8 @@ export function Checkbox({
         {...props}
       />
       <span>
-        <span className="font-medium text-ink-800">{label}</span>
-        {description && <span className="mt-0.5 block text-xs text-ink-500">{description}</span>}
+        <span className="font-medium text-ink-800">{tx(label)}</span>
+        {description && <span className="mt-0.5 block text-xs text-ink-500">{tx(description)}</span>}
       </span>
     </label>
   );
@@ -214,7 +219,7 @@ export function Segmented<T extends string>({
             value === option.value ? 'bg-white text-ink-900 shadow-card' : 'text-ink-500 hover:text-ink-800',
           )}
         >
-          {option.label}
+          {tx(option.label)}
         </button>
       ))}
     </div>
