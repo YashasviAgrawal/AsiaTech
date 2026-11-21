@@ -20,6 +20,7 @@ import {
   Tag,
   TriangleAlert,
   XCircle,
+  Smartphone,
 } from 'lucide-react';
 import { cn, initials } from '@/lib/utils';
 import { timeAgo } from '@/lib/format';
@@ -175,6 +176,7 @@ function LanguageToggle() {
 }
 
 function AccountMenu({ data }: { data: ShellData }) {
+  const router = useRouter();
   const { t } = useT();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
@@ -232,6 +234,11 @@ function AccountMenu({ data }: { data: ShellData }) {
             <p className="text-[13px] font-semibold text-ink-900">{data.user.name}</p>
             {data.user.email && <p className="truncate text-xs text-ink-500">{data.user.email}</p>}
           </div>
+          {data.permissions.some((p) => p === '*' || p === 'money.view') && (
+            <MenuItem icon={<Smartphone className="h-4 w-4" />} onClick={() => (close(), router.push('/owner'))}>
+              Owner view (phone)
+            </MenuItem>
+          )}
           <form action={signOutAction}>
             <button type="submit" className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-rose-600 transition hover:bg-rose-50">
               <LogOut className="h-4 w-4" />
