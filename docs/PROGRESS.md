@@ -68,12 +68,13 @@ housekeeping phone screen ✅ · activity log ✅
 |-------|--------|
 | `npm run typecheck` | clean |
 | `npm run lint` | clean (React Compiler rules on) |
-| `npm test` | 24 unit tests pass (money maths, Hindi phrases and patterns, secrets sealing, rate limiter) |
+| `npm test` | 28 unit tests pass (money maths, Hindi phrases and patterns, secrets sealing, rate limiter, S3 signing) |
 | `npm run test:integration` | 3 DB-backed tests pass on a freshly seeded `hotel_os_test` (GST slabs, tax split, amount in words, financial year, duplicates, formatting) |
 | `npm run build` | production build passes, all routes compile |
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
 | Inventory integrity | seeded `booked` counts match booking rooms on every date; availability never negative |
+| S3 storage | SigV4 signature equals the AWS documentation example; put / get / delete against a local S3 stand-in; app `saveImage` → bucket → `readStoredFile` round trip with `STORAGE_DRIVER=s3` |
 | Hardening | OTA tokens sealed (seed + migrate re-seal, pushes still succeed; wrong key fails one channel with "reconnect", no crash); OTA webhook 120/min then 429, other IP unaffected; 8 failed sign-ins lock that account for 15 min (right password waits too) |
 | Platform admin | `/admin` is a 404 for hotel staff; super admin publishes a System Update → it appears on the front desk dashboard; suspending the organisation signs its staff out (super admin still in); re-activating lets them back in |
 | Multi-outlet POS | duplicate bill prefix refused; café added; switcher on terminal / menu / orders ("All outlets" hides day close); bills RST/26-27/00142 and CAFE/26-27/00001 in separate consecutive series; old counter carried over by migration; fresh reset + seed OK |
@@ -88,7 +89,8 @@ housekeeping phone screen ✅ · activity log ✅
 Production readiness:
 - [ ] Real providers: WhatsApp Business API (the console provider is in place), Razorpay live keys and webhook secret (adapter written, sandbox test pending), Channex certification (adapter written)
 - [x] Encrypt OTA credentials at rest (AES-256-GCM, `CREDENTIALS_KEY`)
-- [ ] Add an S3 / R2 driver to `src/server/storage.ts` (local disk driver in place); clean up uploads that were never attached to a record
+- [x] S3 / R2 / MinIO storage driver (`STORAGE_DRIVER=s3`, SigV4 without an SDK)
+- [ ] Clean up uploads that were never attached to a record
 - [x] Rate limiting on sign-in (failed attempts per network and per account), booking engine, payment and OTA webhooks (in-memory; Redis store for several instances)
 - [ ] Postgres Row-Level Security on `property_id`
 - [x] Super-admin console `/admin`: organisations and hotels (plan, suspend / re-activate), System Update editor
@@ -106,6 +108,9 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-21
+- **Cloud storage:** S3-compatible driver (AWS S3, Cloudflare R2, MinIO) selected with `STORAGE_DRIVER=s3`; files are
+  still served through `/files`, so private IDs and bills keep their permission check. Hindi finished on the restaurant
+  terminal and orders screens. Unit tests can no longer reach the integration suite or the dev database.
 - **Hardening:** OTA credentials encrypted at rest (AES-256-GCM, legacy rows sealed by `db:migrate`), rate limits on
   sign-in / booking engine / webhooks, DB-backed integration tests against a separate `_test` database.
 - **Platform admin (`/admin`):** organisations with their hotels (rooms, staff, 30-day bookings, last sign-in), plan

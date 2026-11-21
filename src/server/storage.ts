@@ -3,10 +3,12 @@ import { randomBytes } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { UserError } from './errors';
+import { s3ConfigFromEnv, s3Driver } from './storage-s3';
 
 /**
- * File storage behind one small interface. Today: local disk (`STORAGE_DIR`, default `.data/uploads`).
- * For production, add an S3 / R2 driver with the same three methods and pick it with `STORAGE_DRIVER`.
+ * File storage behind one small interface: local disk (`STORAGE_DIR`, default `.data/uploads`) or any S3-compatible
+ * bucket (AWS S3, Cloudflare R2, MinIO) with `STORAGE_DRIVER=s3`. Files are always served through /files, so
+ * private ones stay behind the app's permission check whichever driver stores them.
  *
  * Keys look like `prv/<propertyId>/ids/<random>.jpg`:
  * - `pub/…` files (room photos, logo, hero) are served to anyone, cached for a year (names never change).
@@ -56,8 +58,9 @@ let driver: StorageDriver | null = null;
 function storage(): StorageDriver {
   if (driver) return driver;
   const name = process.env.STORAGE_DRIVER || 'local';
-  if (name !== 'local') throw new Error(`Storage driver "${name}" is not set up. Use STORAGE_DRIVER=local or add the driver in src/server/storage.ts.`);
-  driver = localDriver();
+  if (name === 's3') driver = s3Driver(s3ConfigFromEnv());
+  else if (name === 'local') driver = localDriver();
+  else throw new Error(`Unknown STORAGE_DRIVER "${name}". Use local or s3.`);
   return driver;
 }
 
