@@ -1,6 +1,6 @@
 /**
- * Background worker: `npm run worker`. Drains the OTA push queue, releases expired holds and runs the monthly
- * zero-bookings check. Phase 1 uses the database as the queue; swap for Redis + BullMQ when volume grows.
+ * Background worker: `npm run worker`. Drains the OTA push queue, releases expired holds, removes unused uploads
+ * every hour and runs the monthly zero-bookings check. Phase 1 uses the database as the queue; swap for Redis + BullMQ when volume grows.
  */
 import 'dotenv/config';
 import { and, eq, gte, sql } from 'drizzle-orm';
@@ -10,6 +10,7 @@ import { processSyncQueue } from '../services/channels';
 import { releaseExpiredHolds } from '../services/bookings';
 import { systemActor } from '../services/actor';
 import { sendMessage } from '../services/messaging';
+import { sweepUnusedUploads } from '../services/uploads';
 import { addDay, todayIST } from '../../lib/format';
 
 let running = true;
@@ -43,9 +44,15 @@ async function tick() {
 async function main() {
   console.log('[worker] started');
   let lastDaily = '';
+  let lastSweep = 0;
   while (running) {
     try {
       await tick();
+      if (Date.now() - lastSweep > 60 * 60_000) {
+        lastSweep = Date.now();
+        const { deleted } = await sweepUnusedUploads();
+        if (deleted) console.log(`[worker] removed ${deleted} unused upload(s)`);
+      }
       if (lastDaily !== todayIST()) {
         lastDaily = todayIST();
         await zeroBookingsCheck();

@@ -2,6 +2,8 @@ import 'server-only';
 import { randomBytes } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { db } from '@/db';
+import { uploads } from '@/db/schema';
 import { UserError } from './errors';
 import { s3ConfigFromEnv, s3Driver } from './storage-s3';
 
@@ -93,7 +95,9 @@ export async function saveImage(propertyId: string, folder: Folder, file: File):
   if (!ext) throw new UserError('Upload a JPG, PNG or WebP photo. (iPhone HEIC photos: take the photo from this screen instead.)');
   const key = `${FOLDERS[folder]}/${propertyId}/${folder}/${Date.now().toString(36)}${randomBytes(6).toString('hex')}.${ext}`;
   await storage().put(key, bytes, CONTENT_TYPES[ext]);
-  return `/files/${key}`;
+  const url = `/files/${key}`;
+  await db.insert(uploads).values({ propertyId, url, folder, bytes: bytes.length });
+  return url;
 }
 
 export async function readStoredFile(key: string) {
@@ -110,5 +114,11 @@ export function isOwnFile(url: string, propertyId: string, folder: Folder): bool
 /** Delete a stored file by URL (ignores URLs that are not ours). */
 export async function removeFile(url: string, propertyId: string, folder: Folder) {
   if (!isOwnFile(url, propertyId, folder)) return;
+  await storage().remove(url.slice('/files/'.length));
+}
+
+/** Delete a stored file by its /files URL, whatever property or folder (used by the cleanup job). */
+export async function deleteStoredFile(url: string) {
+  if (!url.startsWith('/files/') || !parseKey(url.slice('/files/'.length))) return;
   await storage().remove(url.slice('/files/'.length));
 }

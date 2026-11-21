@@ -96,4 +96,4 @@ src/
 | `npm run test:integration` | Resets and seeds `hotel_os_test` (or `TEST_DATABASE_URL`, must end in `_test`), then runs the DB-backed tests: concurrent last-room sales, change booking, cancel, sold-out change refused |
 | `npm run db:generate` | New migration from schema changes |
 | `npm run db:migrate` · `db:seed` · `db:reset` | Database |
-| `npm run worker` | Background jobs (OTA push queue, holds, alerts) |
+| `npm run worker` | Background jobs (OTA push queue, holds, alerts, hourly removal of unused uploads) |

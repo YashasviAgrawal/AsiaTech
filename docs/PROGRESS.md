@@ -74,6 +74,7 @@ housekeeping phone screen ✅ · activity log ✅
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
 | Inventory integrity | seeded `booked` counts match booking rooms on every date; availability never negative |
+| Unused uploads | registry row written on upload; sweep removed 2 old unattached files, kept the old file still on a guest and a fresh unattached one; removing an ID photo in the app leaves it for the next sweep |
 | S3 storage | SigV4 signature equals the AWS documentation example; put / get / delete against a local S3 stand-in; app `saveImage` → bucket → `readStoredFile` round trip with `STORAGE_DRIVER=s3` |
 | Hardening | OTA tokens sealed (seed + migrate re-seal, pushes still succeed; wrong key fails one channel with "reconnect", no crash); OTA webhook 120/min then 429, other IP unaffected; 8 failed sign-ins lock that account for 15 min (right password waits too) |
 | Platform admin | `/admin` is a 404 for hotel staff; super admin publishes a System Update → it appears on the front desk dashboard; suspending the organisation signs its staff out (super admin still in); re-activating lets them back in |
@@ -90,7 +91,7 @@ Production readiness:
 - [ ] Real providers: WhatsApp Business API (the console provider is in place), Razorpay live keys and webhook secret (adapter written, sandbox test pending), Channex certification (adapter written)
 - [x] Encrypt OTA credentials at rest (AES-256-GCM, `CREDENTIALS_KEY`)
 - [x] S3 / R2 / MinIO storage driver (`STORAGE_DRIVER=s3`, SigV4 without an SDK)
-- [ ] Clean up uploads that were never attached to a record
+- [x] Hourly worker job removes uploads no record uses (abandoned uploads, removed ID copies) after 24 h, on any storage driver
 - [x] Rate limiting on sign-in (failed attempts per network and per account), booking engine, payment and OTA webhooks (in-memory; Redis store for several instances)
 - [ ] Postgres Row-Level Security on `property_id`
 - [x] Super-admin console `/admin`: organisations and hotels (plan, suspend / re-activate), System Update editor
@@ -108,6 +109,8 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-21
+- **Unused uploads:** `uploads` registry (`0004_uploads_registry`) and an hourly worker sweep that deletes files nobody
+  references after 24 hours, so removed guest ID copies really go away.
 - **Cloud storage:** S3-compatible driver (AWS S3, Cloudflare R2, MinIO) selected with `STORAGE_DRIVER=s3`; files are
   still served through `/files`, so private IDs and bills keep their permission check. Hindi finished on the restaurant
   terminal and orders screens. Unit tests can no longer reach the integration suite or the dev database.

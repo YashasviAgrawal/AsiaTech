@@ -123,3 +123,20 @@ export const jobs = pgTable(
   },
   (t) => [index('jobs_status_run_idx').on(t.status, t.runAt)],
 );
+
+/**
+ * Every stored upload. Lets the worker delete files nobody uses (abandoned uploads, removed ID photos) on any
+ * storage driver without listing the bucket.
+ */
+export const uploads = pgTable(
+  'uploads',
+  {
+    id: pk(),
+    propertyId: propertyRef(),
+    url: text('url').notNull(),
+    folder: text('folder').notNull(),
+    bytes: integer('bytes').notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index('uploads_created_idx').on(t.createdAt), index('uploads_url_idx').on(t.url)],
+);
