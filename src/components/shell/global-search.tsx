@@ -40,6 +40,12 @@ const GROUP_LABELS: Record<SearchResult['type'], string> = {
 };
 
 export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => void }) {
+  // Mounted only while open, so every search starts empty.
+  if (!open || typeof document === 'undefined') return null;
+  return <SearchPanel onClose={onClose} />;
+}
+
+function SearchPanel({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const { t } = useT();
   const [query, setQuery] = useState('');
@@ -49,24 +55,16 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) {
-      setQuery('');
-      setResults([]);
-      setActive(0);
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
-  }, [open]);
+    const frame = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     const q = query.trim();
-    if (q.length < 2) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
+    if (q.length < 2) return;
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
+      setLoading(true);
       try {
         const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: controller.signal });
         const data = (await response.json()) as { results: SearchResult[] };
@@ -96,9 +94,6 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
     router.push(result.href);
   }
 
-  if (!open || typeof document === 'undefined') return null;
-
-  let lastType: string | null = null;
 
   return createPortal(
     <div className="fixed inset-0 z-[120] flex items-start justify-center p-3 pt-[10vh]" role="dialog" aria-modal="true" aria-label="Search">
@@ -131,7 +126,7 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
         </div>
 
         <div className="scrollbar-thin max-h-[55vh] overflow-y-auto p-2">
-          {query.trim().length >= 2 && !loading && results.length === 0 && (
+          {query.trim().length >= 2 && !loading && list.length === 0 && (
             <div className="px-3 py-6 text-center">
               <p className="text-sm font-medium text-ink-700">No booking, guest or room matches &ldquo;{query}&rdquo;</p>
               <button
@@ -144,8 +139,7 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
           )}
           {list.map((result, index) => {
             const Icon = result.type === 'action' && result.id === 'new' ? ConciergeBell : ICONS[result.type];
-            const header = result.type !== lastType ? GROUP_LABELS[result.type] : null;
-            lastType = result.type;
+            const header = result.type !== list[index - 1]?.type ? GROUP_LABELS[result.type] : null;
             return (
               <div key={`${result.type}-${result.id}`}>
                 {header && <p className="px-3 pt-2.5 pb-1 text-[11px] font-semibold tracking-wider text-ink-400 uppercase">{header}</p>}

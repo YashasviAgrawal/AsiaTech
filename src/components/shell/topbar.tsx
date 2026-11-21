@@ -20,6 +20,8 @@ import {
   Tag,
   TriangleAlert,
   XCircle,
+  ShieldCheck,
+  Smartphone,
 } from 'lucide-react';
 import { cn, initials } from '@/lib/utils';
 import { timeAgo } from '@/lib/format';
@@ -175,6 +177,7 @@ function LanguageToggle() {
 }
 
 function AccountMenu({ data }: { data: ShellData }) {
+  const router = useRouter();
   const { t } = useT();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
@@ -232,6 +235,16 @@ function AccountMenu({ data }: { data: ShellData }) {
             <p className="text-[13px] font-semibold text-ink-900">{data.user.name}</p>
             {data.user.email && <p className="truncate text-xs text-ink-500">{data.user.email}</p>}
           </div>
+          {data.permissions.some((p) => p === '*' || p === 'money.view') && (
+            <MenuItem icon={<Smartphone className="h-4 w-4" />} onClick={() => (close(), router.push('/owner'))}>
+              Owner view (phone)
+            </MenuItem>
+          )}
+          {data.user.isSuperAdmin && (
+            <MenuItem icon={<ShieldCheck className="h-4 w-4" />} onClick={() => (close(), router.push('/admin'))}>
+              Platform admin
+            </MenuItem>
+          )}
           <form action={signOutAction}>
             <button type="submit" className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-rose-600 transition hover:bg-rose-50">
               <LogOut className="h-4 w-4" />
@@ -248,7 +261,7 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
   const { t } = useT();
   const can = (p: Parameters<typeof hasPermission>[1]) => hasPermission(data.permissions, p);
   return (
-    <header className="sticky top-0 z-30 border-b border-ink-200/80 bg-white/85 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-ink-200/70 bg-white/75 shadow-[0_1px_0_0_rgb(255_255_255/0.6)_inset] backdrop-blur-xl backdrop-saturate-150">
       <div className="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
         <button onClick={onOpenMenu} className="grid h-9 w-9 place-items-center rounded-lg text-ink-600 hover:bg-ink-100 lg:hidden" aria-label="Open menu">
           <Menu className="h-5 w-5" />
@@ -270,7 +283,7 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
         </button>
 
         <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
-          <div className="mr-1 hidden sm:block">
+          <div className="mr-0.5 sm:mr-1">
             <LanguageToggle />
           </div>
           <div className="hidden items-center gap-0.5 xl:flex">
@@ -286,6 +299,7 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
               <Headset className="h-[18px] w-[18px]" />
             </IconLink>
           </div>
+          <span className="hidden sm:contents">
           <IconLink
             href="/messages"
             label={t('top.whatsapp')}
@@ -294,6 +308,7 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
             <MessageCircle className="h-[18px] w-[18px] text-emerald-600" />
           </IconLink>
           <AppsGrid data={data} />
+          </span>
           <Notifications data={data} />
           <div className="mx-1 hidden h-6 w-px bg-ink-200 sm:block" />
           <AccountMenu data={data} />

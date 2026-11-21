@@ -1,5 +1,6 @@
 'use client';
 
+import { tx } from '@/i18n/tx';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -101,7 +102,7 @@ export function MenuItem({
       )}
     >
       {icon && <span className="shrink-0 text-ink-400">{icon}</span>}
-      {children}
+      {tx(children)}
     </button>
   );
 }

@@ -1,9 +1,10 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle2, Info, TriangleAlert, X, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTr } from '@/i18n/client';
 
 type ToastTone = 'success' | 'error' | 'info' | 'warning';
 
@@ -30,10 +31,14 @@ const ICON_COLORS = { success: 'text-emerald-500', error: 'text-rose-500', info:
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const [mounted, setMounted] = useState(false);
+  // false during SSR and hydration, true afterwards: the portal only renders in the browser.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const idRef = useRef(0);
-
-  useEffect(() => setMounted(true), []);
+  const tr = useTr();
 
   const dismiss = useCallback((id: number) => setToasts((list) => list.filter((t) => t.id !== id)), []);
 
@@ -69,13 +74,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               return (
                 <div
                   key={toast.id}
-                  className="pointer-events-auto flex w-full max-w-sm animate-fade-up items-start gap-3 rounded-xl border border-ink-200 bg-white p-3.5 shadow-lift"
+                  className="pointer-events-auto relative flex w-full max-w-sm animate-fade-up items-start gap-3 overflow-hidden rounded-2xl border border-ink-200/80 bg-white/95 p-3.5 shadow-lift backdrop-blur"
                   role="status"
                 >
+                  {toast.action && (
+                    <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-brand-500/70" style={{ animation: `toast-countdown ${toast.duration}ms linear forwards` }} />
+                  )}
                   <Icon className={cn('mt-0.5 h-5 w-5 shrink-0', ICON_COLORS[toast.tone])} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-ink-900">{toast.title}</p>
-                    {toast.description && <p className="mt-0.5 text-xs text-ink-500">{toast.description}</p>}
+                    <p className="text-sm font-semibold text-ink-900">{tr(toast.title)}</p>
+                    {toast.description && <p className="mt-0.5 text-xs text-ink-500">{tr(toast.description)}</p>}
                   </div>
                   {toast.action && (
                     <button
@@ -85,7 +93,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                         await toast.action?.onClick();
                       }}
                     >
-                      {toast.action.label}
+                      {tr(toast.action.label)}
                     </button>
                   )}
                   <button onClick={() => dismiss(toast.id)} className="shrink-0 text-ink-300 transition hover:text-ink-600" aria-label="Dismiss">

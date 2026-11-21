@@ -18,7 +18,7 @@ export const channels = pgTable(
     propertyId: propertyRef(),
     ota: text('ota', { enum: OTAS }).notNull(),
     hotelCode: text('hotel_code'),
-    /** Access token or API key. Encrypt at rest before production. */
+    /** Access token or API key, sealed with AES-256-GCM (`src/server/secrets.ts`). Never read it directly: use openSecrets(). */
     credentials: jsonb('credentials').$type<Record<string, string>>().notNull().default({}),
     status: text('status', { enum: ['disconnected', 'pending', 'connected', 'error'] }).notNull().default('disconnected'),
     /** Listing health reported by the OTA (e.g. Booking.com "parked_business"). */

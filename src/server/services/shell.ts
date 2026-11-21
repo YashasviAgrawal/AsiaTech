@@ -40,7 +40,7 @@ export async function getShellData(ctx: AppContext): Promise<ShellData> {
     .where(and(eq(hkTasks.propertyId, pid), eq(hkTasks.assignedTo, ctx.userId), inArray(hkTasks.status, ['pending', 'in_progress'])));
 
   return {
-    user: { name: ctx.user.name, email: ctx.user.email, roleName: ctx.role.name },
+    user: { name: ctx.user.name, email: ctx.user.email, roleName: ctx.role.name, isSuperAdmin: ctx.user.isSuperAdmin },
     property: {
       id: ctx.property.id,
       name: ctx.property.name,

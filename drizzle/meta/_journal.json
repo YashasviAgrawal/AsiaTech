@@ -8,6 +8,34 @@
       "when": 1795199066005,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795200854987,
+      "tag": "0001_form_c",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795201608392,
+      "tag": "0002_room_ooo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795241719489,
+      "tag": "0003_outlet_bill_series",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795256839012,
+      "tag": "0004_uploads_registry",
+      "breakpoints": true
     }
   ]
 }

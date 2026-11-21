@@ -4,6 +4,7 @@ import { db, type DbOrTx, type Tx } from '@/db';
 import { channels, inventory, roomTypes, rooms, syncLogs } from '@/db/schema';
 import { addDay, dateRange, formatDayShort, stayDates } from '@/lib/format';
 import { UserError } from '../errors';
+import { syncChannelsSoon } from '../sync-soon';
 
 /** How far ahead inventory rows are kept (and pushed to OTAs). */
 export const INVENTORY_HORIZON_DAYS = 400;
@@ -158,6 +159,7 @@ export async function queueAriPush(
     .from(channels)
     .where(and(eq(channels.propertyId, propertyId), eq(channels.status, 'connected'), eq(channels.isActive, true)));
   if (connected.length === 0) return;
+  syncChannelsSoon(propertyId);
   await tx.insert(syncLogs).values(
     connected.map((channel) => ({
       propertyId,

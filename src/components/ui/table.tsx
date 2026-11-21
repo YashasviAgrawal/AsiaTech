@@ -1,3 +1,4 @@
+import { tx } from '@/i18n/tx';
 import type { ReactNode, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -18,7 +19,7 @@ export function THead({ children }: { children: ReactNode }) {
 export function Th({ children, className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th className={cn('px-4 py-2.5 font-semibold whitespace-nowrap first:pl-5 last:pr-5', className)} {...props}>
-      {children}
+      {tx(children)}
     </th>
   );
 }

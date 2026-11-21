@@ -51,6 +51,8 @@ export const rooms = pgTable(
     floor: text('floor'),
     hkStatus: text('hk_status', { enum: HK_STATUSES }).notNull().default('clean'),
     oooReason: text('ooo_reason'),
+    /** Out of order until this date (exclusive); inventory is blocked for those nights. */
+    oooUntil: date('ooo_until', { mode: 'string' }),
     notes: text('notes'),
     sortOrder: integer('sort_order').notNull().default(0),
     isActive: boolean('is_active').notNull().default(true),

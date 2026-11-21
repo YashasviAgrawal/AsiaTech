@@ -15,21 +15,25 @@
     "db:reset": "tsx src/db/reset.ts && npm run db:migrate && npm run db:seed",
     "db:studio": "drizzle-kit studio",
     "worker": "tsx --conditions=react-server src/server/jobs/worker.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:integration": "DATABASE_URL=${TEST_DATABASE_URL:-postgresql://hotel:hotel@localhost:5432/hotel_os_test} npm run db:reset && vitest run --config vitest.integration.mts"
   },
   "engines": {
     "node": ">=20.9"
   },
   "dependencies": {
+    "@fontsource-variable/noto-sans-devanagari": "^5.3.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.4",
     "exceljs": "^4.4.0",
+    "geist": "^1.9.2",
     "jose": "^6.2.18",
     "lucide-react": "^1.77.0",
     "next": "^16.4.6",
     "pg": "^8.23.1",
+    "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "server-only": "^0.0.1",
@@ -40,6 +44,7 @@
     "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^22.20.5",
     "@types/pg": "^8.23.1",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "dotenv": "^18.0.10",

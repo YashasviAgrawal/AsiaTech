@@ -12,7 +12,9 @@ import {
   activityLog,
   bookingRooms,
   bookings,
+  channelMappings,
   channels,
+  counters,
   folioLines,
   guests,
   hkChecklistItems,
@@ -45,11 +47,12 @@ import {
 } from './schema';
 import { SYSTEM_ROLES } from '../server/auth/permissions';
 import { DEFAULT_ROOM_SLABS, splitTax } from '../lib/gst';
-import { addDay, stayDates, todayIST } from '../lib/format';
+import { addDay, financialYear, stayDates, todayIST } from '../lib/format';
 import { nameKey, round2 } from '../lib/utils';
 import { ensureInventory, INVENTORY_HORIZON_DAYS } from '../server/services/inventory';
 import { createBooking, insertPayment } from '../server/services/bookings';
 import type { Actor } from '../server/services/actor';
+import { sealSecrets } from '../server/secrets';
 
 const PASSWORD = 'Hotel@123';
 
@@ -282,16 +285,16 @@ async function main() {
   const channelRows = await db
     .insert(channels)
     .values([
-      { propertyId: portico.id, ota: 'makemytrip' as const, hotelCode: 'MMT-208411', credentials: { accessToken: 'demo-mmt-token' }, status: 'connected' as const, listingStatus: 'open' as const, commissionPercent: 18, lastSyncAt: new Date() },
-      { propertyId: portico.id, ota: 'goibibo' as const, hotelCode: 'GI-208411', credentials: { accessToken: 'demo-mmt-token' }, status: 'connected' as const, listingStatus: 'open' as const, commissionPercent: 18, lastSyncAt: new Date() },
+      { propertyId: portico.id, ota: 'makemytrip' as const, hotelCode: 'MMT-208411', credentials: sealSecrets({ accessToken: 'demo-mmt-token' }), status: 'connected' as const, listingStatus: 'open' as const, commissionPercent: 18, lastSyncAt: new Date() },
+      { propertyId: portico.id, ota: 'goibibo' as const, hotelCode: 'GI-208411', credentials: sealSecrets({ accessToken: 'demo-mmt-token' }), status: 'connected' as const, listingStatus: 'open' as const, commissionPercent: 18, lastSyncAt: new Date() },
       {
         propertyId: portico.id,
         ota: 'booking_com' as const,
         hotelCode: '9182736',
-        credentials: { apiKey: 'demo-channex-key' },
+        credentials: sealSecrets({ apiKey: 'demo-channex-key' }),
         status: 'connected' as const,
         listingStatus: 'parked_business' as const,
-        listingMessage: 'Property not bookable on Booking.com. Reason: Parked business (contract or bank details pending).',
+        listingMessage: 'Contract or bank details are pending in the Booking.com extranet.',
         commissionPercent: 15,
         lastSyncAt: new Date(Date.now() - 1000 * 60 * 42),
       },
@@ -300,6 +303,15 @@ async function main() {
       { propertyId: portico.id, ota: 'airbnb' as const, status: 'disconnected' as const },
     ])
     .returning();
+
+  // Room/rate mapping for the connected OTAs.
+  for (const ch of channelRows.filter((c) => c.status === 'connected')) {
+    await db.insert(channelMappings).values(
+      types.flatMap((t) =>
+        t.plans.map((plan) => ({ propertyId: portico.id, channelId: ch.id, roomTypeId: t.id, ratePlanId: plan.id, otaRoomId: `${ch.ota.toUpperCase()}-${t.code}`, otaRateId: `${t.code}-${plan.meal}` })),
+      ),
+    );
+  }
 
   /* ── bookings: ~25 days back to ~30 days ahead, created through the booking service ─ */
   const actorBase: Actor = { propertyId: portico.id, userId: frontDesk.id, businessDate: today, settings: portico.settings, shortCode: 'SRP' };
@@ -375,7 +387,7 @@ async function main() {
   // Deluxe 103 is out of order and blocked for the next two weeks (AsiaTech shows "Blocked 1").
   // Blocked before bookings are generated, so the booking service never sells it.
   const room103 = types[0].roomIds.find((r) => r.number === '103')!;
-  await db.update(rooms).set({ hkStatus: 'out_of_order', oooReason: 'AC compressor replacement' }).where(eq(rooms.id, room103.id));
+  await db.update(rooms).set({ hkStatus: 'out_of_order', oooReason: 'AC compressor replacement', oooUntil: addDay(today, 15) }).where(eq(rooms.id, room103.id));
   for (const d of stayDates(today, addDay(today, 15))) {
     await db
       .update(inventory)
@@ -629,7 +641,7 @@ async function main() {
         propertyId: portico.id,
         outletId: outlet.id,
         orderNo: `KOT${String(orderSerial).padStart(5, '0')}`,
-        billNo: settled ? `RST/${String(++billSerial).padStart(5, '0')}` : null,
+        billNo: settled ? `RST/${financialYear(day).slice(2)}/${String(++billSerial).padStart(5, '0')}` : null,
         orderType: type,
         tableId: type === 'dine_in' ? pick(tables).id : null,
         bookingId: guest?.bookingId ?? null,
@@ -695,6 +707,12 @@ async function main() {
   if (inHouse[1]) await posOrder(today, 'room', 'room_transfer', [[9, 2], [13, 4], [17, 2]], inHouse[1]);
   await posOrder(today, 'dine_in', null, [[4, 1], [13, 3], [8, 1]]);
 
+  // Number series continue after the seeded orders.
+  await db.insert(counters).values([
+    { propertyId: portico.id, key: 'kot', value: orderSerial },
+    { propertyId: portico.id, key: `posbill:RST:${financialYear(today)}`, value: billSerial },
+  ]);
+
   /* ── money ─────────────────────────────────────────────────────── */
   await db.insert(pettyCash).values([
     { propertyId: portico.id, entryDate: addDay(today, -6), type: 'opening', amount: 10000, description: 'Opening balance for the month', createdBy: accountant.id, approvedBy: owner.id },
@@ -736,7 +754,7 @@ async function main() {
   ]);
 
   await db.insert(promotions).values([
-    { propertyId: portico.id, name: 'Early bird 10%', type: 'early_bird', discountType: 'percent', value: 10, conditionValue: 15, channels: ['makemytrip', 'goibibo', 'booking_com'], isActive: true, pushedAt: new Date(Date.now() - 86400_000 * 4) },
+    { propertyId: portico.id, name: 'Early bird 10%', type: 'early_bird', discountType: 'percent', value: 10, conditionValue: 15, channels: ['makemytrip', 'goibibo', 'booking_com', 'web'], isActive: true, pushedAt: new Date(Date.now() - 86400_000 * 4) },
     { propertyId: portico.id, name: 'Weekend last-minute 15%', type: 'last_minute', discountType: 'percent', value: 15, conditionValue: 2, channels: ['makemytrip', 'goibibo'], isActive: true },
     { propertyId: portico.id, name: 'Stay 3, save 12%', type: 'long_stay', discountType: 'percent', value: 12, conditionValue: 3, channels: ['makemytrip', 'goibibo', 'booking_com'], isActive: false },
     { propertyId: portico.id, name: 'Direct booking coupon', type: 'coupon', discountType: 'flat', value: 300, couponCode: 'PORTICO300', channels: ['web'], isActive: true },
@@ -751,6 +769,8 @@ async function main() {
   ]);
 
   /* ── platform: tasks, system updates, notifications, activity ─────── */
+  // Bookings created above raised their own notifications; keep only a curated set for the demo.
+  await db.delete(notifications);
   await db.insert(tasks).values({
     propertyId: portico.id,
     type: 'ota_listing',
@@ -796,6 +816,9 @@ async function main() {
     { propertyId: portico.id, userId: manager.id, entityType: 'inventory', action: 'block', summary: `Blocked 1 Deluxe Double Bed Room from ${today} for 15 days (room 103 out of order)` },
     { propertyId: portico.id, userId: owner.id, entityType: 'promotion', action: 'create', summary: 'Created promotion "Early bird 10%" and pushed to MakeMyTrip, Goibibo, Booking.com' },
   ]);
+
+  // Pushes queued while generating history are already "sent".
+  await db.execute(sql`UPDATE sync_logs SET status = 'success', processed_at = created_at, response = '{"message":"Accepted (seed)"}'::jsonb WHERE status = 'queued'`);
 
   const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(bookings);
   const [{ guestCount }] = await db.select({ guestCount: sql<number>`count(*)::int` }).from(guests);

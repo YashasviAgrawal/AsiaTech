@@ -1,3 +1,4 @@
+import { tx } from '@/i18n/tx';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +28,7 @@ export function Badge({ children, tone = 'neutral', dot, className }: { children
   return (
     <span className={cn('badge', TONE_BADGE[tone], className)}>
       {dot && <span className={cn('h-1.5 w-1.5 rounded-full', TONE_DOT[tone])} aria-hidden />}
-      {children}
+      {tx(children)}
     </span>
   );
 }
@@ -92,7 +93,7 @@ export function StatusBadge({ status, className, label }: { status: string; clas
   const meta = statusMeta(status);
   return (
     <Badge tone={meta.tone} dot className={className}>
-      {label ?? meta.label}
+      {tx(label ?? meta.label)}
     </Badge>
   );
 }

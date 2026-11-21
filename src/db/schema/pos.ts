@@ -19,7 +19,7 @@ export const posOutlets = pgTable('pos_outlets', {
   kotPrinterWidth: integer('kot_printer_width').notNull().default(80),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: createdAt(),
-});
+}, (t) => [uniqueIndex('pos_outlets_code_uq').on(t.propertyId, t.code)]);
 
 export const posCategories = pgTable('pos_categories', {
   id: pk(),

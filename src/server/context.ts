@@ -1,9 +1,9 @@
 import 'server-only';
 import { cache } from 'react';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { properties, propertyMembers, roles, users, type PropertySettings, type PropertyBranding } from '@/db/schema';
+import { organizations, properties, propertyMembers, roles, users, type PropertySettings, type PropertyBranding } from '@/db/schema';
 import { readSession } from './auth/session';
 import { hasPermission, type Permission } from './auth/permissions';
 import { ActionError } from './errors';
@@ -62,12 +62,16 @@ export const getContext = cache(async (): Promise<AppContext | null> => {
       roleKey: roles.key,
       roleName: roles.name,
       permissions: roles.permissions,
+      orgActive: organizations.isActive,
     })
     .from(propertyMembers)
     .innerJoin(properties, eq(properties.id, propertyMembers.propertyId))
+    .innerJoin(organizations, eq(organizations.id, properties.organizationId))
     .innerJoin(roles, eq(roles.id, propertyMembers.roleId))
     .where(and(eq(propertyMembers.userId, user.id), eq(propertyMembers.isActive, true)))
-    .orderBy(properties.name);
+    .orderBy(properties.name)
+    // A suspended organisation locks its staff out; the platform team can still look in.
+    .then((rows) => rows.filter((m) => m.orgActive || user.isSuperAdmin));
 
   if (memberships.length === 0) return null;
 
@@ -127,5 +131,18 @@ export async function actionContext(permission?: Permission): Promise<AppContext
   const ctx = await getContext();
   if (!ctx) throw new ActionError('Your session has expired. Please sign in again.');
   if (permission && !ctx.can(permission)) throw new ActionError('You do not have permission to do this.');
+  return ctx;
+}
+
+/** Platform console pages: only super admins; everyone else gets a plain 404 (the page "does not exist"). */
+export async function requireSuperAdmin(): Promise<AppContext> {
+  const ctx = await requireContext();
+  if (!ctx.user.isSuperAdmin) notFound();
+  return ctx;
+}
+
+export async function superAdminActionContext(): Promise<AppContext> {
+  const ctx = await actionContext();
+  if (!ctx.user.isSuperAdmin) throw new ActionError('Only the platform team can do this.');
   return ctx;
 }

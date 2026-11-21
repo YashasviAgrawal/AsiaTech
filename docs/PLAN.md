@@ -142,124 +142,124 @@ and tests. All database tables are created in M0, so modules never need disrupti
 ### M0 · Foundation (project base)
 **Goal:** a running, signed-in, multi-tenant shell with the Tixit design system. Every module plugs into it.
 
-- [ ] Next.js 16 + TypeScript + Tailwind v4 project, lint, strict TS
-- [ ] Tixit design tokens (brand rose / ink slate, radii, shadows, motion) and the UI kit (Button, Card, Badge, Pill, Input, Select, Dialog, ConfirmDialog, Drawer, Tabs, Table, EmptyState, Skeleton, Toast with Undo)
-- [ ] PostgreSQL + Drizzle: **full schema for all modules** (≈40 tables) and the first migration
-- [ ] Auth: login (email or mobile + password), httpOnly JWT session, logout, login history
-- [ ] Tenancy: organizations → properties → property_members (role per property) and `requireContext()`
-- [ ] Roles and permissions (owner, manager, front_desk, housekeeping, restaurant, accountant)
-- [ ] App shell: dark sidebar with the 9 sections, top bar (search, EN/हिं, promotions, booking engine, support, WhatsApp, apps grid, notifications, property switcher, user menu), mobile drawer
-- [ ] i18n: `t()` dictionary (English + Hindi), language cookie, per-user default
-- [ ] Global search (`⌘K`): bookings, guests, mobile, rooms
-- [ ] Activity log helper (`logActivity`) and counters (FDR/OTA/WEB, invoice numbers)
-- [ ] Formatting helpers: ₹ Indian format (₹3,97,474), IST dates, GST calculator
-- [ ] Seed: Shri Ram Portico, 4 room types (3 / 4 / 12 / 4 rooms), rate plans, staff users, sample bookings that match the screenshots
+- [x] Next.js 16 + TypeScript + Tailwind v4 project, lint, strict TS
+- [x] Tixit design tokens (brand rose / ink slate, radii, shadows, motion) and the UI kit (Button, Card, Badge, Pill, Input, Select, Dialog, ConfirmDialog, Drawer, Tabs, Table, EmptyState, Skeleton, Toast with Undo)
+- [x] PostgreSQL + Drizzle: **full schema for all modules** (≈40 tables) and the first migration
+- [x] Auth: login (email or mobile + password), httpOnly JWT session, logout, login history
+- [x] Tenancy: organizations → properties → property_members (role per property) and `requireContext()`
+- [x] Roles and permissions (owner, manager, front_desk, housekeeping, restaurant, accountant)
+- [x] App shell: dark sidebar with the 9 sections, top bar (search, EN/हिं, promotions, booking engine, support, WhatsApp, apps grid, notifications, property switcher, user menu), mobile drawer
+- [x] i18n: `t()` dictionary (English + Hindi), language cookie, per-user default; phrase + pattern translation in shared components so every screen switches to Hindi
+- [x] Global search (`⌘K`): bookings, guests, mobile, rooms
+- [x] Activity log helper (`logActivity`) and counters (FDR/OTA/WEB, invoice numbers)
+- [x] Formatting helpers: ₹ Indian format (₹3,97,474), IST dates, GST calculator
+- [x] Seed: Shri Ram Portico, 4 room types (3 / 4 / 12 / 4 rooms), rate plans, staff users, sample bookings that match the screenshots
 
 ### M1 · Property Setup & Settings
 **Goal:** the hotel can describe itself and its staff. Features **#7, #33, #34**, rule 9.
 
-- [ ] Hotel Details: name, legal name, GSTIN (validated), state code, address, phone/email, check-in/out time, invoice prefix and footer, tax slabs
-- [ ] User Management: invite or add staff, role per property, activate/deactivate, reset password, **login history**
-- [ ] Roles: permission matrix view (system roles; custom roles later)
-- [ ] Branding: logo, brand colour, booking-page hero/photos, live preview
-- [ ] Notifications settings: **zero-bookings monthly email** (no bookings for 3 months), daily summary toggle
-- [ ] Property switcher (one login, many hotels) in the top bar
-- [ ] **Guided setup wizard**: hotel details → rooms → rates → OTA connection → go live
+- [x] Hotel Details: name, legal name, GSTIN (validated), state code, address, phone/email, check-in/out time, invoice prefix and footer, tax slabs
+- [x] User Management: invite or add staff, role per property, activate/deactivate, reset password, **login history**
+- [x] Roles: permission matrix view (system roles; custom roles later)
+- [x] Branding: logo, brand colour, booking-page hero, live preview · 🟡 image upload (URLs today)
+- [x] Notifications settings: **zero-bookings monthly email** (no bookings for 3 months), daily summary toggle
+- [x] Property switcher (one login, many hotels) in the top bar
+- [x] **Guided setup wizard**: hotel details → rooms → rates → OTA connection → go live
 
 ### M2 · Rooms, Rates & Inventory
 **Goal:** the hotel controls what it sells and at what price. Features **#19 – #24**.
 
-- [ ] Room and Rate Plan: room types (name, total rooms, max adults/children, extra beds, amenities, photos), room numbers (floor, status), rate plans with meal plans **EP / CP / MAP / AP**, cancellation policy
-- [ ] **Availability Calendar**: room types down the side, 15 dates across, rows Available / Booked / Blocked, colour rule (red 0 left · amber partly used · green all free), Pre/Next and date search, sticky header and first column
-- [ ] Click a cell to edit (set available or blocked, stop-sell) with an inline popover
-- [ ] **Bulk Update**: date range, weekdays, room types → **preview table → confirm → Undo**
-- [ ] **Download Inventory** to Excel
-- [ ] **Rate Management**: price per date for 1/2/3 adults and extra bed, min stay, stop-sell; bulk rate update with preview
-- [ ] Inventory engine: auto-create 365 days of rows, row-locked `reserve()` / `release()`, OOO rooms counted as blocked
-- [ ] Every change queues an ARI push (picked up by M9)
+- [x] Room and Rate Plan: room types (name, total rooms, max adults/children, extra beds, amenities, photos), room numbers (floor, status), rate plans with meal plans **EP / CP / MAP / AP**, cancellation policy
+- [x] **Availability Calendar**: room types down the side, 15 dates across, rows Available / Booked / Blocked, colour rule (red 0 left · amber partly used · green all free), Pre/Next and date search, sticky header and first column
+- [x] Click a cell to edit (set available or blocked, stop-sell) with an inline popover
+- [x] **Bulk Update**: date range, weekdays, room types → **preview table → confirm → Undo**
+- [x] **Download Inventory** to Excel
+- [x] **Rate Management**: price per date for 1/2/3 adults and extra bed, min stay, stop-sell; bulk rate update with preview
+- [x] Inventory engine: auto-create 365 days of rows, row-locked `reserve()` / `release()`, OOO rooms counted as blocked
+- [x] Every change queues an ARI push (picked up by M9)
 
 ### M3 · Reservations & Guests
 **Goal:** taking a booking takes seconds. Features **#14, #15, #17**, global search, duplicate-guest warning.
 
-- [ ] **Make A Reservation**, one page: dates (today → tomorrow) → room type and count (live availability) → meal plan → guest (search by mobile; returning guests autofill) → discount → advance payment → Save
-- [ ] Live price panel: nightly breakdown, extra beds, discount, **auto GST slab**, grand total
-- [ ] FDR booking number, WhatsApp confirmation in the same step
-- [ ] **Hold Booking**: same form with "hold until"; Confirm / Extend / Release; auto-release on expiry
-- [ ] Booking detail page: rooms, guest, folio, payments, timeline (activity log)
-- [ ] Modify dates/rooms (re-checks inventory), **Cancel** with confirm + reason + undo window, No-show
-- [ ] **Booking Report**: filters (dates, source, status, room type), search, totals, export Excel
-- [ ] Guest directory: profiles, stay history, **duplicate warning and merge** ("Vivek Agrawal" vs "Vivek Agewal")
+- [x] **Make A Reservation**, one page: dates (today → tomorrow) → room type and count (live availability) → meal plan → guest (search by mobile; returning guests autofill) → discount → advance payment → Save
+- [x] Live price panel: nightly breakdown, extra beds, discount, **auto GST slab**, grand total
+- [x] FDR booking number, WhatsApp confirmation in the same step
+- [x] **Hold Booking**: same form with "hold until"; Confirm / Extend / Release; auto-release on expiry
+- [x] Booking detail page: rooms, guest, folio, payments, timeline (activity log)
+- [x] **Cancel** with confirm + reason + undo, No-show · change dates/rooms/room type/plan from the "Change booking" dialog (and Room Chart drag for single-room stays)
+- [x] **Booking Report**: filters (dates, source, status, room type), search, totals, export Excel, **Print / PDF**
+- [x] Guest directory: profiles, stay history, **duplicate warning and merge** ("Vivek Agrawal" vs "Vivek Agewal")
 
 ### M4 · Front Office Operations
 **Goal:** arrivals and departures are one click. Features **#16, #22**, check-in/out, Form-III, GST invoice.
 
-- [ ] **Today Check (In-Out)**: tabs Arrivals · In-House · Departures with one-click Check in / Check out
-- [ ] Check-in: assign room (clean rooms first), guest ID upload (masked number), advance payment, **print registration card**
-- [ ] **Form-III helper** for foreign guests: passport/visa fields and a 24-hour FRRO countdown
-- [ ] Check-out: full folio (room + restaurant + extras), settle payment, **GST invoice** (CGST/SGST, invoice no. per FY) with **UPI QR**; room → *dirty* and a cleaning task is created
-- [ ] Folio: post extras, discounts, payments; void with reason
-- [ ] **Room Chart**: rooms down the side, dates across, a coloured bar per stay, hover for guest and balance, **drag to move/extend**, click an empty cell to book
-- [ ] Assign / change room from anywhere (dashboard "Assign" button)
+- [x] **Today Check (In-Out)**: tabs Arrivals · In-House · Departures with one-click Check in / Check out
+- [x] Check-in: assign room (clean rooms first), guest ID (masked number) with **ID scan** (webcam / phone camera, private storage), advance payment, **print registration card** with the ID copy
+- [x] **Form-III helper** for foreign guests: passport/visa fields and a 24-hour FRRO countdown
+- [x] Check-out: full folio (room + restaurant + extras), settle payment, **GST invoice** (CGST/SGST, invoice no. per FY) with **UPI QR**; room → *dirty* and a cleaning task is created
+- [x] Folio: post extras, discounts, payments; void with reason
+- [x] **Room Chart**: rooms down the side, dates across, a coloured bar per stay, hover for guest and balance, **drag to move/extend**, click an empty cell to book
+- [x] Assign / change room from anywhere (dashboard "Assign" button)
 
 ### M5 · Home Dashboard & Command Centre
 **Goal:** one screen tells the front desk what to do next. Features **#1 – #6, #8**, rules 2 and 4.
 
-- [ ] 12 tiles in 2 rows of 6 (Today's Bookings / Earning / Check In / Check Out, Month Bookings / Earning, 6 POS tiles), **every tile clickable**, Indian ₹ format
-- [ ] **Today's Task**: auto-generated (pending check-ins and check-outs, rooms not assigned, OTA listing problems such as "Parked business", failed syncs, unpaid balances, holds expiring), each with its action button
-- [ ] **System Update** panel (posted from a super-admin screen)
-- [ ] **Today's Bookings** table (Booking ID, Source, Name, Check In, Check Out, Room Name, Room Assigned, Status) with an **Assign** button
-- [ ] Notifications centre (badge): new bookings, cancellations, sync errors; mark read
-- [ ] Owner's phone view (tiles + occupancy at a glance)
+- [x] 12 tiles in 2 rows of 6 (Today's Bookings / Earning / Check In / Check Out, Month Bookings / Earning, 6 POS tiles), **every tile clickable**, Indian ₹ format
+- [x] **Today's Task**: auto-generated (pending check-ins and check-outs, rooms not assigned, OTA listing problems such as "Parked business", failed syncs, unpaid balances, holds expiring), each with its action button
+- [x] **System Update** panel, posted from the super-admin console (`/admin`)
+- [x] **Today's Bookings** table (Booking ID, Source, Name, Check In, Check Out, Room Name, Room Assigned, Status) with an **Assign** button
+- [x] Notifications centre (badge): new bookings, cancellations, sync errors; mark read
+- [x] Owner's phone view (responsive dashboard: tiles 2-up, occupancy card) · 🟡 dedicated owner summary screen pending
 
 ### M6 · Housekeeping
 **Goal:** clean, inspected rooms with no paper. Feature **#28**, Hindi phone screen.
 
-- [ ] Room status board: **Clean / Dirty / Inspected / Out of Order**, filter by floor/type, one-tap status change
-- [ ] Checklist master: one item per thing, grouped **Cleaning / Amenities / Maintenance**, **duplicates blocked (case-insensitive)**, drag-to-sort, assign items to room types; a clean-up tool merges the legacy duplicates ("AC" ×2, "bath soap" ×3)
-- [ ] Tasks: auto-created at check-out; assign to staff; inspect with **OK / Problem / Missing** per item
-- [ ] **Problem → repair ticket** automatically; ticket list (open → resolved)
-- [ ] Phone-first `/housekeeping/my` screen in Hindi with big tap targets
+- [x] Room status board: **Clean / Dirty / Inspected / Out of Order**, filter by floor/type, one-tap status change
+- [x] Checklist master: one item per thing, grouped **Cleaning / Amenities / Maintenance**, **duplicates blocked (case-insensitive)**, drag-to-sort, assign items to room types; a clean-up tool merges the legacy duplicates ("AC" ×2, "bath soap" ×3)
+- [x] Tasks: auto-created at check-out; assign to staff; inspect with **OK / Problem / Missing** per item
+- [x] **Problem → repair ticket** automatically; ticket list (open → resolved)
+- [x] Phone-first `/housekeeping/my` screen in Hindi with big tap targets
 
 ### M7 · Restaurant POS
 **Goal:** a fast restaurant till that talks to the room bill. Feature **#27** and POS tiles.
 
-- [ ] Outlets, menu categories and items (price, GST %, veg/non-veg, availability), tables
-- [ ] Order types: **dine-in, take-away, room order, in-house**
-- [ ] Order screen: tap to add, quantities, notes, **KOT print** (58/80 mm print page)
-- [ ] Bill with GST (CGST/SGST) and a separate GST bill number series
-- [ ] Settle: **cash / card / UPI / Room Transfer** (posts to the in-house guest's folio)
-- [ ] **Close the day** per outlet (totals by mode)
+- [x] Outlets, menu categories and items (price, GST %, veg/non-veg, availability), tables
+- [x] Order types: **dine-in, take-away, room order, in-house**
+- [x] Order screen: tap to add, quantities, notes, **KOT print** (58/80 mm print page)
+- [x] Bill with GST (CGST/SGST) and a separate GST bill number series
+- [x] Settle: **cash / card / UPI / Room Transfer** (posts to the in-house guest's folio)
+- [x] **Close the day** per outlet (totals by mode) · **several outlets** (restaurant, café, bar) with their own menu, tables and GST bill series
 
 ### M8 · Money & Night Audit
 **Goal:** every rupee is accounted for and the day closes cleanly. Features **#18, #29, #30, #31**.
 
-- [ ] Payments ledger (all modes), receipts
-- [ ] **Request Money**: amount + purpose → Razorpay/UPI link → WhatsApp/SMS; when paid, the money is added to the bill automatically (webhook)
-- [ ] **Petty Cash**: opening balance, top-ups, expenses with a bill photo, approval, daily closing balance
-- [ ] **Credit Report**: amounts owed by guests, companies, agents and OTAs, aged 0–30 / 31–60 / 61–90 / 90+ days
-- [ ] **Night Audit** wizard: mark no-shows → post room charges → check POS days are closed → match cash → lock the day (advance the business date) → email the report
+- [x] Payments ledger (all modes), receipts
+- [x] **Request Money**: amount + purpose → Razorpay/UPI link → WhatsApp/SMS; when paid, the money is added to the bill automatically (webhook)
+- [x] **Petty Cash**: opening balance, top-ups, expenses with a bill photo, approval, daily closing balance
+- [x] **Credit Report**: amounts owed by guests, companies, agents and OTAs, aged 0–30 / 31–60 / 61–90 / 90+ days
+- [x] **Night Audit** wizard: mark no-shows → post room charges → check POS days are closed → match cash → lock the day (advance the business date) → email the report
 
 ### M9 · Channels & Booking Engine
 **Goal:** sell everywhere without double-selling. Features **#11, #12, #25, #26**, overbooking guard.
 
-- [ ] Channel connections: MakeMyTrip, Goibibo, Booking.com, Agoda, Expedia, Airbnb (status, hotel code, token)
-- [ ] Room/rate **mapping** per channel
-- [ ] ARI push queue: every inventory/rate change is pushed within seconds; **sync log with Retry**
-- [ ] Inbound OTA bookings (webhook) → `OTA…` bookings through the same locked `reserve()`
-- [ ] Listing health alerts (e.g. *Booking.com: Parked business*) with a **Fix listing** action
-- [ ] **Promotions**: early bird, last minute, long stay, coupon; push to OTAs in one click
-- [ ] **OTA Reviews**: all reviews in one list, rating summary, reply
-- [ ] **Public booking engine** `/book/[slug]`: dates → rooms → guest → pay → `WEB…` booking
+- [x] Channel connections: MakeMyTrip, Goibibo, Booking.com, Agoda, Expedia, Airbnb (status, hotel code, token)
+- [x] Room/rate **mapping** per channel
+- [x] ARI push queue: every inventory/rate change is pushed within seconds; **sync log with Retry**
+- [x] Inbound OTA bookings (webhook) → `OTA…` bookings through the same locked `reserve()`
+- [x] Listing health alerts (e.g. *Booking.com: Parked business*) with a **Fix listing** action
+- [x] **Promotions**: early bird, last minute, long stay, coupon; push to OTAs in one click
+- [x] **OTA Reviews**: all reviews in one list, rating summary, reply
+- [x] **Public booking engine** `/book/[slug]`: dates → rooms → guest → pay → `WEB…` booking
 
 ### M10 · Reports, Communication & Audit
 **Goal:** every number can be exported, and nothing happens silently. Features **#9, #10, #13, #32**, activity log.
 
-- [ ] Reports hub with export (Excel/PDF): bookings, occupancy, revenue by source, collections, **GST**, restaurant sales, credit, housekeeping, Night Audit
-- [ ] Charts: occupancy and ADR/RevPAR trend
-- [ ] WhatsApp centre: templates (confirmation, payment link, invoice), message log
-- [ ] **Zero-bookings monthly email** job and daily summary email
-- [ ] **Activity log** viewer (who changed which rate, discount or booking, and when)
-- [ ] Apps grid and Support (help articles, contact)
+- [x] Reports hub with export (Excel/PDF): bookings, occupancy, revenue by source, collections, **GST**, restaurant sales, credit, housekeeping, Night Audit
+- [x] Charts: occupancy and ADR/RevPAR trend
+- [x] WhatsApp centre: templates (confirmation, payment link, invoice), message log
+- [x] **Zero-bookings monthly email** job and daily summary email
+- [x] **Activity log** viewer (who changed which rate, discount or booking, and when)
+- [x] Apps grid and Support (help articles, contact)
 
 ---
 
