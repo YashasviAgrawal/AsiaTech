@@ -709,7 +709,7 @@ async function main() {
   // Number series continue after the seeded orders.
   await db.insert(counters).values([
     { propertyId: portico.id, key: 'kot', value: orderSerial },
-    { propertyId: portico.id, key: `posbill:${financialYear(today)}`, value: billSerial },
+    { propertyId: portico.id, key: `posbill:RST:${financialYear(today)}`, value: billSerial },
   ]);
 
   /* ── money ─────────────────────────────────────────────────────── */

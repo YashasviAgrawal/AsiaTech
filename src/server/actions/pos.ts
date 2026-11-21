@@ -9,7 +9,7 @@ import { actionContext } from '../context';
 import { runAction } from '../action';
 import { UserError } from '../errors';
 import { actorFromContext } from '../services/actor';
-import { billOrder, closeDay, reopenOrder, restoreOrder, sendKot, setDiscount, settleOrder, voidItem, voidOrder } from '../services/pos';
+import { billOrder, closeDay, reopenOrder, restoreOrder, saveOutlet, sendKot, setDiscount, settleOrder, voidItem, voidOrder } from '../services/pos';
 
 function refresh() {
   revalidatePath('/restaurant', 'layout');
@@ -177,4 +177,20 @@ export async function removeTableAction(id: string) {
     refresh();
     return { ok: true };
   }, 'Table removed.');
+}
+
+const outletSchema = z.object({
+  id: z.string().uuid().nullable().optional(),
+  name: z.string().trim().min(2, 'Enter the outlet name').max(60),
+  code: z.string().trim().min(2).max(5),
+  defaultTaxRate: z.number().min(0).max(28),
+});
+
+export async function saveOutletAction(input: z.input<typeof outletSchema>) {
+  return runAction(async () => {
+    const ctx = await actionContext('pos.manage');
+    const result = await saveOutlet(actorFromContext(ctx), outletSchema.parse(input));
+    refresh();
+    return result;
+  }, 'Outlet saved.');
 }

@@ -73,6 +73,7 @@ housekeeping phone screen ✅ · activity log ✅
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
 | Inventory integrity | seeded `booked` counts match booking rooms on every date; availability never negative |
+| Multi-outlet POS | duplicate bill prefix refused; café added; switcher on terminal / menu / orders ("All outlets" hides day close); bills RST/26-27/00142 and CAFE/26-27/00001 in separate consecutive series; old counter carried over by migration; fresh reset + seed OK |
 | Owner phone view | `/owner` on iPhone 13: earnings today (rooms + restaurant, WoW, sparkline), occupancy with per-type bars, desk counts, collected today by mode, money owed, month so far, needs-attention list; no horizontal scroll; Hindi checked |
 | Hindi | Dashboard, Today board, booking page, POS, money and settings checked in Hindi: page chrome, task sentences ("… का चेक-आउट करें"), dates and months translated; data (names, room types, menu) stays as entered; English mode unchanged |
 | Exports and undo | Payments, Credit, Petty Cash, Activity Log export with the screen's filters (valid .xlsx, 403 without permission); Booking Report prints / saves as A4 landscape PDF; folio line void → Undo → void → Restore keeps the linked restaurant bill in step; POS order void → restore puts the room-bill line back; restore refused on another business day |
@@ -100,6 +101,9 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-21
+- **Multi-outlet POS:** add/rename outlets (restaurant, café, bar, room service), outlet switcher on the terminal, menu
+  and orders screens, one GST bill series per outlet (`0003_outlet_bill_series` carries the old counter over), day close
+  per outlet.
 - **Owner phone view (`/owner`):** one-scroll summary for the owner on a phone, linked from the account menu.
 - **Hindi everywhere (rule 7):** phrase dictionary (English text is the key) and anchored sentence patterns for names,
   numbers and dates. Shared components translate their plain-string text automatically, on the server and in the

@@ -25,7 +25,7 @@ import { logActivity, nextCounter } from '../audit';
 import type { Actor } from './actor';
 
 export async function getPosTerminal(propertyId: string, outletId?: string) {
-  const outlets = await db.select().from(posOutlets).where(and(eq(posOutlets.propertyId, propertyId), eq(posOutlets.isActive, true))).orderBy(asc(posOutlets.name));
+  const outlets = await db.select().from(posOutlets).where(and(eq(posOutlets.propertyId, propertyId), eq(posOutlets.isActive, true))).orderBy(asc(posOutlets.createdAt));
   const outlet = outlets.find((o) => o.id === outletId) ?? outlets[0];
   if (!outlet) return null;
   const [categories, items, tables, openOrders, inHouse] = await Promise.all([
@@ -203,8 +203,9 @@ export async function billOrder(actor: Actor, orderId: string) {
     if (order.total <= 0) throw new UserError('The order is empty.');
     if (!order.billNo) {
       const fy = financialYear(actor.businessDate);
-      const serial = await nextCounter(tx, actor.propertyId, `posbill:${fy}`);
       const [outlet] = await tx.select({ code: posOutlets.code }).from(posOutlets).where(eq(posOutlets.id, order.outletId));
+      // One consecutive bill series per outlet and financial year (GST).
+      const serial = await nextCounter(tx, actor.propertyId, `posbill:${outlet.code}:${fy}`);
       await tx.update(posOrders).set({ billNo: `${outlet.code}/${fy.slice(2)}/${String(serial).padStart(5, '0')}`, status: 'billed' }).where(eq(posOrders.id, orderId));
     } else {
       await tx.update(posOrders).set({ status: 'billed' }).where(eq(posOrders.id, orderId));
@@ -347,7 +348,7 @@ export async function closeDay(actor: Actor, outletId: string) {
   return totals;
 }
 
-export async function listOrders(propertyId: string, filters: { from: string; to: string; mode?: string; type?: string; status?: string }) {
+export async function listOrders(propertyId: string, filters: { from: string; to: string; mode?: string; type?: string; status?: string; outletId?: string }) {
   return db
     .select({
       id: posOrders.id,
@@ -376,6 +377,7 @@ export async function listOrders(propertyId: string, filters: { from: string; to
     .where(
       and(
         eq(posOrders.propertyId, propertyId),
+        filters.outletId ? eq(posOrders.outletId, filters.outletId) : undefined,
         sql`${posOrders.businessDate} BETWEEN ${filters.from}::date AND ${filters.to}::date`,
         filters.mode ? sql`${posOrders.settlementMode} = ${filters.mode}` : undefined,
         filters.type ? sql`${posOrders.orderType} = ${filters.type}` : undefined,
@@ -384,4 +386,39 @@ export async function listOrders(propertyId: string, filters: { from: string; to
     )
     .orderBy(desc(posOrders.createdAt))
     .limit(500);
+}
+
+/** Add or rename an outlet (restaurant, rooftop café, bar…). Each outlet has its own menu, tables and bill series. */
+export async function saveOutlet(actor: Actor, input: { id?: string | null; name: string; code: string; defaultTaxRate: number }) {
+  const code = input.code.trim().toUpperCase();
+  if (!/^[A-Z]{2,5}$/.test(code)) throw new UserError('Bill prefix: 2 to 5 capital letters, e.g. RST or CAFE.');
+  return db.transaction(async (tx) => {
+    const [clash] = await tx
+      .select({ id: posOutlets.id })
+      .from(posOutlets)
+      .where(and(eq(posOutlets.propertyId, actor.propertyId), eq(posOutlets.code, code), input.id ? ne(posOutlets.id, input.id) : undefined));
+    if (clash) throw new UserError(`Another outlet already uses the bill prefix ${code}.`);
+    if (input.id) {
+      const [before] = await tx.select().from(posOutlets).where(and(eq(posOutlets.id, input.id), eq(posOutlets.propertyId, actor.propertyId)));
+      if (!before) throw new UserError('Outlet not found.');
+      if (before.code !== code) {
+        const [billed] = await tx.select({ n: sql<number>`count(*)::int` }).from(posOrders).where(and(eq(posOrders.outletId, before.id), sql`${posOrders.billNo} IS NOT NULL`));
+        if (billed.n > 0) throw new UserError('Bills were already printed with this prefix, so it cannot change. Rename the outlet instead.');
+      }
+      await tx.update(posOutlets).set({ name: input.name.trim(), code, defaultTaxRate: input.defaultTaxRate }).where(eq(posOutlets.id, before.id));
+      await logActivity({ propertyId: actor.propertyId, userId: actor.userId, entityType: 'pos_outlet', entityId: before.id, action: 'update', summary: `Updated outlet ${input.name}` }, tx);
+      return { id: before.id };
+    }
+    const [created] = await tx.insert(posOutlets).values({ propertyId: actor.propertyId, name: input.name.trim(), code, defaultTaxRate: input.defaultTaxRate }).returning({ id: posOutlets.id });
+    await logActivity({ propertyId: actor.propertyId, userId: actor.userId, entityType: 'pos_outlet', entityId: created.id, action: 'create', summary: `Added outlet ${input.name} (bills ${code}/…)` }, tx);
+    return { id: created.id };
+  });
+}
+
+export async function listOutlets(propertyId: string) {
+  return db
+    .select({ id: posOutlets.id, name: posOutlets.name, code: posOutlets.code, defaultTaxRate: posOutlets.defaultTaxRate })
+    .from(posOutlets)
+    .where(and(eq(posOutlets.propertyId, propertyId), eq(posOutlets.isActive, true)))
+    .orderBy(asc(posOutlets.createdAt));
 }

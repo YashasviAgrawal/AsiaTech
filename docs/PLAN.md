@@ -228,7 +228,7 @@ and tests. All database tables are created in M0, so modules never need disrupti
 - [x] Order screen: tap to add, quantities, notes, **KOT print** (58/80 mm print page)
 - [x] Bill with GST (CGST/SGST) and a separate GST bill number series
 - [x] Settle: **cash / card / UPI / Room Transfer** (posts to the in-house guest's folio)
-- [x] **Close the day** per outlet (totals by mode)
+- [x] **Close the day** per outlet (totals by mode) · **several outlets** (restaurant, café, bar) with their own menu, tables and GST bill series
 
 ### M8 · Money & Night Audit
 **Goal:** every rupee is accounted for and the day closes cleanly. Features **#18, #29, #30, #31**.

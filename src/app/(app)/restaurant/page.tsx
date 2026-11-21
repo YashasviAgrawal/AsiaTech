@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ClipboardList, Settings2, UtensilsCrossed } from 'lucide-react';
 import { requireContext } from '@/server/context';
+import { OutletSwitcher } from './outlet-switcher';
 import { getPosTerminal } from '@/server/services/pos';
 import { formatDayShort } from '@/lib/format';
 import { EmptyState, PageHeader } from '@/components/ui/card';
@@ -22,11 +23,12 @@ export default async function RestaurantPage({ searchParams }: { searchParams: P
         title={data.outlet.name}
         actions={
           <>
-            <Link href="/restaurant/orders" className={buttonClasses('outline')}>
+            <OutletSwitcher outlets={data.outlets} current={data.outlet.id} basePath="/restaurant" />
+            <Link href={`/restaurant/orders?outlet=${data.outlet.id}`} className={buttonClasses('outline')}>
               <ClipboardList className="h-4 w-4" /> Orders & day close
             </Link>
             {ctx.can('pos.manage') && (
-              <Link href="/restaurant/menu" className={buttonClasses('outline')}>
+              <Link href={`/restaurant/menu?outlet=${data.outlet.id}`} className={buttonClasses('outline')}>
                 <Settings2 className="h-4 w-4" /> Menu & tables
               </Link>
             )}
