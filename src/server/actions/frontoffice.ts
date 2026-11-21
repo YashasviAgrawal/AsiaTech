@@ -7,7 +7,7 @@ import { actionContext } from '../context';
 import { runAction } from '../action';
 import { UserError } from '../errors';
 import { actorFromContext } from '../services/actor';
-import { assignRoom, checkIn, checkOut, markFormC, moveStay, postCharge, recordPayment, roomOptions, updateGuestIdPhotos, voidFolioLine } from '../services/frontoffice';
+import { assignRoom, checkIn, checkOut, markFormC, moveStay, postCharge, recordPayment, roomOptions, restoreFolioLine, updateGuestIdPhotos, voidFolioLine } from '../services/frontoffice';
 
 function refresh() {
   revalidatePath('/', 'layout');
@@ -101,10 +101,19 @@ export async function postChargeAction(input: z.input<typeof chargeSchema>) {
 export async function voidFolioLineAction(lineId: string, reason: string) {
   return runAction(async () => {
     const ctx = await actionContext('bookings.edit');
-    await voidFolioLine(actorFromContext(ctx), lineId, reason);
+    const result = await voidFolioLine(actorFromContext(ctx), lineId, reason);
     refresh();
-    return { ok: true };
+    return result;
   }, 'Line voided.');
+}
+
+export async function restoreFolioLineAction(lineId: string) {
+  return runAction(async () => {
+    const ctx = await actionContext('bookings.edit');
+    const result = await restoreFolioLine(actorFromContext(ctx), z.string().uuid().parse(lineId));
+    refresh();
+    return result;
+  }, 'Line restored.');
 }
 
 const paymentSchema = z.object({

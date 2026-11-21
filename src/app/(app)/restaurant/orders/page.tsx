@@ -4,6 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { posDayCloses, posOutlets } from '@/db/schema';
 import { requireContext } from '@/server/context';
+import { RestoreOrderButton } from './restore-button';
 import { dayTotals, listOrders } from '@/server/services/pos';
 import { formatDateTime, formatINR, formatNumber, monthStart, PAYMENT_MODE_LABELS, titleCase } from '@/lib/format';
 import { Card, EmptyState, PageHeader } from '@/components/ui/card';
@@ -16,6 +17,7 @@ export const metadata: Metadata = { title: 'Restaurant orders' };
 
 export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ date?: string; from?: string; to?: string; mode?: string; type?: string; status?: string }> }) {
   const ctx = await requireContext('pos.use');
+  const canRestore = ctx.can('pos.void');
   const p = await searchParams;
   const biz = ctx.property.businessDate;
   const from = p.date === 'month' ? monthStart(biz) : p.from ?? biz;
@@ -99,8 +101,9 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                     <Td className="text-xs whitespace-nowrap">{formatDateTime(o.createdAt)}</Td>
                     <Td>{o.settlementMode ? PAYMENT_MODE_LABELS[o.settlementMode] : '—'}</Td>
                     <Td className="num text-right font-semibold">{formatINR(o.total)}</Td>
-                    <Td>
+                    <Td className="whitespace-nowrap">
                       <StatusBadge status={o.status} />
+                      {o.status === 'void' && canRestore && o.businessDate === ctx.property.businessDate && <RestoreOrderButton orderId={o.id} />}
                     </Td>
                   </Tr>
                 ))}

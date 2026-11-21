@@ -9,6 +9,9 @@ import { formatDayShort, parseDay, stayDates, addDay } from '@/lib/format';
 import { round2 } from '@/lib/utils';
 import { actionContext } from '../context';
 import { runAction } from '../action';
+import { actorFromContext } from '../services/actor';
+import { restoreFolioLine } from '../services/frontoffice';
+import { restoreItem, restoreOrder } from '../services/pos';
 import { UserError } from '../errors';
 import { logActivity } from '../audit';
 import { ensureInventory, queueAriPush } from '../services/inventory';
@@ -249,6 +252,19 @@ export async function undoChangeAction(logId: string) {
           await queueAriPush(tx, ctx.propertyId, { from: dates[0], to: dates[dates.length - 1], kind: 'rates' });
         }
         revalidatePath('/rooms/rates');
+      } else if (log.entityType === 'booking' && log.action === 'void_line') {
+        if (!ctx.can('bookings.edit')) throw new UserError('You do not have permission to do this.');
+        await restoreFolioLine(actorFromContext(ctx), (log.before as { lineId: string }).lineId, tx);
+        await tx.update(activityLog).set({ undoneAt: new Date() }).where(eq(activityLog.id, logId));
+        revalidatePath('/', 'layout');
+        return { ok: true };
+      } else if (log.entityType === 'pos_order' && (log.action === 'void' || log.action === 'void_item')) {
+        if (!ctx.can('pos.void')) throw new UserError('You do not have permission to do this.');
+        if (log.action === 'void') await restoreOrder(actorFromContext(ctx), log.entityId!, tx);
+        else await restoreItem(actorFromContext(ctx), log.before as { itemId: string; status: string; notes: string | null }, tx);
+        await tx.update(activityLog).set({ undoneAt: new Date() }).where(eq(activityLog.id, logId));
+        revalidatePath('/', 'layout');
+        return { ok: true };
       } else {
         throw new UserError('This change cannot be undone automatically.');
       }

@@ -372,7 +372,7 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
         loading={pending}
         onConfirm={async (reason) => {
           if (!selected) return;
-          const r = await run(() => voidOrderAction(selected.id, reason));
+          const r = await run(() => voidOrderAction(selected.id, reason), { undoable: true });
           if (r.ok) {
             setVoidOrderOpen(false);
             setSelectedId(null);
@@ -387,7 +387,7 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
         confirmLabel="Void item"
         loading={pending}
         onConfirm={async (reason) => {
-          if (voidItemId) await run(() => voidItemAction(voidItemId, reason), { onSuccess: () => setVoidItemId(null) });
+          if (voidItemId) await run(() => voidItemAction(voidItemId, reason), { undoable: true, onSuccess: () => setVoidItemId(null) });
         }}
       />
     </div>

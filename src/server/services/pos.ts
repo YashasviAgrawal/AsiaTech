@@ -2,6 +2,7 @@ import 'server-only';
 import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { db, type Tx } from '@/db';
 import {
+  activityLog,
   bookingRooms,
   bookings,
   folioLines,
@@ -154,8 +155,34 @@ export async function voidItem(actor: Actor, itemId: string, reason: string) {
     if (order.status !== 'open') throw new UserError('Re-open the bill to change items.');
     await tx.update(posOrderItems).set({ status: 'void', notes: `VOID: ${reason}` }).where(eq(posOrderItems.id, itemId));
     await recalc(tx, order.id);
-    await logActivity({ propertyId: actor.propertyId, userId: actor.userId, entityType: 'pos_order', entityId: order.id, action: 'void_item', summary: `Voided ${item.quantity} × ${item.name} on ${order.orderNo} · ${reason}` }, tx);
+    const logId = await logActivity(
+      {
+        propertyId: actor.propertyId,
+        userId: actor.userId,
+        entityType: 'pos_order',
+        entityId: order.id,
+        action: 'void_item',
+        summary: `Voided ${item.quantity} × ${item.name} on ${order.orderNo} · ${reason}`,
+        before: { itemId: item.id, status: item.status, notes: item.notes },
+      },
+      tx,
+    );
+    return { logId };
   });
+}
+
+/** Undo a voided item while the order is still open. */
+export async function restoreItem(actor: Actor, snapshot: { itemId: string; status: string; notes: string | null }, tx: Tx) {
+  const [item] = await tx.select().from(posOrderItems).where(and(eq(posOrderItems.id, snapshot.itemId), eq(posOrderItems.propertyId, actor.propertyId)));
+  if (!item || item.status !== 'void') throw new UserError('This item is not void any more.');
+  const [order] = await tx.select().from(posOrders).where(eq(posOrders.id, item.orderId)).for('update');
+  if (order.status !== 'open') throw new UserError('The bill is already printed or closed. Re-open it to change items.');
+  await tx
+    .update(posOrderItems)
+    .set({ status: snapshot.status as typeof item.status, notes: snapshot.notes })
+    .where(eq(posOrderItems.id, item.id));
+  await recalc(tx, order.id);
+  await logActivity({ propertyId: actor.propertyId, userId: actor.userId, entityType: 'pos_order', entityId: order.id, action: 'restore_item', summary: `Restored ${item.quantity} × ${item.name} on ${order.orderNo}` }, tx);
 }
 
 export async function setDiscount(actor: Actor, orderId: string, discount: number) {
@@ -232,15 +259,64 @@ export async function settleOrder(actor: Actor, orderId: string, input: { mode: 
 }
 
 export async function voidOrder(actor: Actor, orderId: string, reason: string) {
-  await db.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
     const [order] = await tx.select().from(posOrders).where(and(eq(posOrders.id, orderId), eq(posOrders.propertyId, actor.propertyId))).for('update');
     if (!order) throw new UserError('Order not found.');
-    if (order.status === 'settled' && order.settlementMode === 'room_transfer') {
-      await tx.update(folioLines).set({ isVoid: true, voidReason: `POS void: ${reason}` }).where(eq(folioLines.posOrderId, orderId));
+    if (order.status === 'void') throw new UserError('This order is already void.');
+    const roomTransfer = order.status === 'settled' && order.settlementMode === 'room_transfer';
+    if (roomTransfer) {
+      await tx.update(folioLines).set({ isVoid: true, voidReason: `POS void: ${reason}` }).where(and(eq(folioLines.posOrderId, orderId), eq(folioLines.isVoid, false)));
     }
     await tx.update(posOrders).set({ status: 'void', voidReason: reason }).where(eq(posOrders.id, orderId));
-    await logActivity({ propertyId: actor.propertyId, userId: actor.userId, entityType: 'pos_order', entityId: orderId, action: 'void', summary: `Voided ${order.orderNo} (${formatINR(order.total)}) · ${reason}` }, tx);
+    const logId = await logActivity(
+      {
+        propertyId: actor.propertyId,
+        userId: actor.userId,
+        entityType: 'pos_order',
+        entityId: orderId,
+        action: 'void',
+        summary: `Voided ${order.orderNo} (${formatINR(order.total)}) · ${reason}`,
+        before: { orderId, status: order.status, settlementMode: order.settlementMode, roomTransfer },
+      },
+      tx,
+    );
+    return { logId };
   });
+}
+
+/**
+ * Undo a voided order: back to the state it had (open, billed or settled). Only on the same business day and before
+ * the restaurant day is closed, so closed-day totals never change. A room-transfer bill goes back on the guest's bill.
+ */
+export async function restoreOrder(actor: Actor, orderId: string, tx?: Tx) {
+  const run = async (t: Tx) => {
+    const [order] = await t.select().from(posOrders).where(and(eq(posOrders.id, orderId), eq(posOrders.propertyId, actor.propertyId))).for('update');
+    if (!order) throw new UserError('Order not found.');
+    if (order.status !== 'void') throw new UserError('This order is not void.');
+    if (order.businessDate !== actor.businessDate) throw new UserError('Only orders from today’s business date can be restored.');
+    const [closed] = await t.select({ id: posDayCloses.id }).from(posDayCloses).where(and(eq(posDayCloses.outletId, order.outletId), eq(posDayCloses.businessDate, order.businessDate)));
+    if (closed) throw new UserError('The restaurant day is already closed.');
+    // What it was before the void: the last void log for this order holds the snapshot.
+    const [log] = await t
+      .select({ before: activityLog.before })
+      .from(activityLog)
+      .where(and(eq(activityLog.propertyId, actor.propertyId), eq(activityLog.entityType, 'pos_order'), eq(activityLog.entityId, order.id), eq(activityLog.action, 'void')))
+      .orderBy(desc(activityLog.createdAt))
+      .limit(1);
+    const before = (log?.before ?? { status: order.billNo ? 'billed' : 'open', settlementMode: null, roomTransfer: false }) as { status: typeof order.status; settlementMode: typeof order.settlementMode; roomTransfer: boolean };
+    if (before.roomTransfer) {
+      const lines = await t.select({ bookingId: folioLines.bookingId }).from(folioLines).where(eq(folioLines.posOrderId, order.id));
+      for (const { bookingId } of lines) {
+        const [booking] = await t.select({ status: bookings.status, bookingNo: bookings.bookingNo }).from(bookings).where(eq(bookings.id, bookingId));
+        if (booking?.status === 'checked_out') throw new UserError(`${booking.bookingNo} has checked out, so the bill cannot go back on the room.`);
+      }
+      await t.update(folioLines).set({ isVoid: false, voidReason: null }).where(and(eq(folioLines.posOrderId, order.id), sql`${folioLines.voidReason} LIKE 'POS void:%'`));
+    }
+    await t.update(posOrders).set({ status: before.status, settlementMode: before.settlementMode, voidReason: null }).where(eq(posOrders.id, order.id));
+    await logActivity({ propertyId: actor.propertyId, userId: actor.userId, entityType: 'pos_order', entityId: order.id, action: 'restore', summary: `Restored ${order.orderNo} (${formatINR(order.total)})` }, t);
+    return { orderNo: order.orderNo };
+  };
+  return tx ? run(tx) : db.transaction(run);
 }
 
 export async function dayTotals(outletId: string, businessDate: string) {

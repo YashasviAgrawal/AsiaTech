@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils';
 import { formatDateTime, formatDay, formatDayShort, formatINR, ID_TYPE_LABELS, MEAL_PLAN_LABELS, PAYMENT_MODE_LABELS, sourceLabel, timeAgo } from '@/lib/format';
 import type { BookingDetail } from '@/server/services/frontoffice';
 import { cancelBookingAction, confirmHoldAction, extendHoldAction, noShowAction, restoreBookingAction } from '@/server/actions/reservations';
-import { updateGuestIdPhotosAction, voidFolioLineAction } from '@/server/actions/frontoffice';
+import { restoreFolioLineAction, updateGuestIdPhotosAction, voidFolioLineAction } from '@/server/actions/frontoffice';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Badge, StatusBadge } from '@/components/ui/badge';
@@ -340,7 +340,17 @@ export function BookingView({
                         <td className={cn('num px-5 py-2.5 text-right font-medium', line.total < 0 ? 'text-emerald-700' : 'text-ink-900')}>{formatINR(line.total)}</td>
                         <td className="pr-3 text-right">
                           {!line.isVoid && can.edit && b.status === 'checked_in' && (
-                            <VoidButton onVoid={(reason) => run(() => voidFolioLineAction(line.id, reason))} />
+                            <VoidButton onVoid={(reason) => run(() => voidFolioLineAction(line.id, reason), { undoable: true })} />
+                          )}
+                          {line.isVoid && can.edit && b.status === 'checked_in' && (
+                            <button
+                              type="button"
+                              onClick={() => run(() => restoreFolioLineAction(line.id))}
+                              className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-semibold text-brand-600 no-underline transition hover:bg-brand-50"
+                              title="Put this line back on the bill"
+                            >
+                              <RotateCcw className="h-3 w-3" /> Restore
+                            </button>
                           )}
                         </td>
                       </tr>

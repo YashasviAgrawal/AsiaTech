@@ -9,7 +9,7 @@ import { actionContext } from '../context';
 import { runAction } from '../action';
 import { UserError } from '../errors';
 import { actorFromContext } from '../services/actor';
-import { billOrder, closeDay, reopenOrder, sendKot, setDiscount, settleOrder, voidItem, voidOrder } from '../services/pos';
+import { billOrder, closeDay, reopenOrder, restoreOrder, sendKot, setDiscount, settleOrder, voidItem, voidOrder } from '../services/pos';
 
 function refresh() {
   revalidatePath('/restaurant', 'layout');
@@ -44,9 +44,9 @@ export async function sendKotAction(input: z.input<typeof kotSchema>) {
 export async function voidItemAction(itemId: string, reason: string) {
   return runAction(async () => {
     const ctx = await actionContext('pos.void');
-    await voidItem(actorFromContext(ctx), itemId, reason);
+    const result = await voidItem(actorFromContext(ctx), itemId, reason);
     refresh();
-    return { ok: true };
+    return result;
   }, 'Item voided.');
 }
 
@@ -91,10 +91,19 @@ export async function settleOrderAction(orderId: string, mode: 'cash' | 'card' |
 export async function voidOrderAction(orderId: string, reason: string) {
   return runAction(async () => {
     const ctx = await actionContext('pos.void');
-    await voidOrder(actorFromContext(ctx), orderId, reason);
+    const result = await voidOrder(actorFromContext(ctx), orderId, reason);
     refresh();
-    return { ok: true };
+    return result;
   }, 'Order voided.');
+}
+
+export async function restoreOrderAction(orderId: string) {
+  return runAction(async () => {
+    const ctx = await actionContext('pos.void');
+    const result = await restoreOrder(actorFromContext(ctx), z.string().uuid().parse(orderId));
+    refresh();
+    return result;
+  }, 'Order restored.');
 }
 
 export async function closeDayAction(outletId: string) {

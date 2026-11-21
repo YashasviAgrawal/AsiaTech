@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { requireContext } from '@/server/context';
+import { ExportButton } from '@/components/ui/export-button';
 import { pettyCashLedger } from '@/server/services/money';
 import { addDay, monthStart } from '@/lib/format';
 import { PageHeader } from '@/components/ui/card';
@@ -16,7 +17,12 @@ export default async function PettyCashPage({ searchParams }: { searchParams: Pr
   const ledger = await pettyCashLedger(ctx.propertyId, from, to);
   return (
     <div>
-      <PageHeader eyebrow="Money" title="Petty Cash" description="Small cash expenses with a bill photo. The closing balance is what should be in the cash box." />
+      <PageHeader
+        eyebrow="Money"
+        title="Petty Cash"
+        description="Small cash expenses with a bill photo. The closing balance is what should be in the cash box."
+        actions={<ExportButton href={`/api/exports/money/petty-cash?${new URLSearchParams({ from, to })}`} />}
+      />
       <FilterBar className="mb-4" fields={[{ key: 'from', type: 'date', label: 'From' }, { key: 'to', type: 'date', label: 'To' }]} />
       <PettyCash ledger={JSON.parse(JSON.stringify(ledger))} canManage={ctx.can('money.manage')} canApprove={['owner', 'manager', 'accountant'].includes(ctx.role.key)} />
     </div>

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Download, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { requireContext } from '@/server/context';
+import { ExportButton } from '@/components/ui/export-button';
 import { roomTypeList, searchBookings, type BookingFilters } from '@/server/services/reports-bookings';
 import { formatDay, formatINR, formatNumber, OTA_LABELS, sourceLabel, SOURCE_LABELS } from '@/lib/format';
 import { Card, EmptyState, PageHeader } from '@/components/ui/card';
@@ -38,9 +39,7 @@ export default async function BookingReportPage({ searchParams }: { searchParams
         description={params.created === 'today' ? 'Bookings made today.' : params.created === 'month' ? 'Bookings made this month.' : 'Search and export every booking.'}
         actions={
           <>
-            <a href={`/api/exports/bookings?${exportQuery}`} className={buttonClasses('outline')}>
-              <Download className="h-4 w-4" /> Export Excel
-            </a>
+            <ExportButton href={`/api/exports/bookings?${exportQuery}`} printHref={`/print/bookings?${exportQuery}`} />
             {ctx.can('bookings.create') && (
               <Link href="/front-desk/reservations/new" className={buttonClasses('primary')}>
                 <Plus className="h-4 w-4" /> New booking

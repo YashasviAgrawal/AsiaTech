@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { and, desc, eq, ilike, isNotNull, sql } from 'drizzle-orm';
 import { History, Undo2 } from 'lucide-react';
-import { db } from '@/db';
-import { activityLog, users } from '@/db/schema';
 import { requireContext } from '@/server/context';
+import { activityFilterOptions, listActivity } from '@/server/services/activity';
+import { ExportButton } from '@/components/ui/export-button';
 import { formatDateTime, titleCase } from '@/lib/format';
 import { initials } from '@/lib/utils';
 import { Card, EmptyState, PageHeader } from '@/components/ui/card';
@@ -21,32 +20,17 @@ const ENTITY_LINK: Record<string, (id: string) => string> = {
 export default async function ActivityPage({ searchParams }: { searchParams: Promise<{ q?: string; entity?: string; user?: string }> }) {
   const ctx = await requireContext('activity.view');
   const { q, entity, user } = await searchParams;
-  const [rows, people, entities] = await Promise.all([
-    db
-      .select({ log: activityLog, userName: users.name })
-      .from(activityLog)
-      .leftJoin(users, eq(users.id, activityLog.userId))
-      .where(
-        and(
-          eq(activityLog.propertyId, ctx.propertyId),
-          q ? ilike(activityLog.summary, `%${q}%`) : undefined,
-          entity ? eq(activityLog.entityType, entity) : undefined,
-          user ? eq(activityLog.userId, user) : undefined,
-        ),
-      )
-      .orderBy(desc(activityLog.createdAt))
-      .limit(200),
-    db
-      .selectDistinct({ id: users.id, name: users.name })
-      .from(activityLog)
-      .innerJoin(users, eq(users.id, activityLog.userId))
-      .where(and(eq(activityLog.propertyId, ctx.propertyId), isNotNull(activityLog.userId))),
-    db.selectDistinct({ entity: activityLog.entityType }).from(activityLog).where(eq(activityLog.propertyId, ctx.propertyId)).orderBy(sql`1`),
-  ]);
+  const [rows, { people, entities }] = await Promise.all([listActivity(ctx.propertyId, { q, entity, user }), activityFilterOptions(ctx.propertyId)]);
+  const exportQuery = new URLSearchParams(Object.entries({ q, entity, user }).filter((e): e is [string, string] => Boolean(e[1]))).toString();
 
   return (
     <div>
-      <PageHeader eyebrow="Reports" title="Activity Log" description="Who changed which rate, discount or booking, and when. Changes with a snapshot can be undone from where they were made." />
+      <PageHeader
+        eyebrow="Reports"
+        title="Activity Log"
+        description="Who changed which rate, discount or booking, and when. Changes with a snapshot can be undone from where they were made."
+        actions={<ExportButton href={`/api/exports/money/activity${exportQuery ? `?${exportQuery}` : ''}`} />}
+      />
       <FilterBar
         className="mb-4"
         fields={[

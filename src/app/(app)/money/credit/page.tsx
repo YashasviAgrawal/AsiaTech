@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Building2, Globe, Plane, User } from 'lucide-react';
 import { requireContext } from '@/server/context';
+import { ExportButton } from '@/components/ui/export-button';
 import { AGE_BUCKETS, creditReport } from '@/server/services/money';
 import { formatDay, formatINR, OTA_LABELS } from '@/lib/format';
 import { Card, EmptyState, PageHeader } from '@/components/ui/card';
@@ -22,7 +23,12 @@ export default async function CreditPage() {
   const report = await creditReport(ctx.propertyId, ctx.property.businessDate);
   return (
     <div>
-      <PageHeader eyebrow="Money" title="Credit Report" description="Who still owes money, grouped by guest, company, travel agent and OTA, and aged by days since check-out." />
+      <PageHeader
+        eyebrow="Money"
+        title="Credit Report"
+        description="Who still owes money, grouped by guest, company, travel agent and OTA, and aged by days since check-out."
+        actions={<ExportButton href="/api/exports/money/credit" />}
+      />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
         <div className="rounded-xl bg-ink-900 p-4 text-white shadow-card">
           <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">Total owed</p>

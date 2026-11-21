@@ -356,11 +356,43 @@ export async function voidFolioLine(actor: Actor, lineId: string, reason: string
     if (booking.status === 'checked_out') throw new UserError('This booking is closed.');
     await tx.update(folioLines).set({ isVoid: true, voidReason: reason }).where(eq(folioLines.id, lineId));
     if (line.posOrderId) await tx.update(posOrders).set({ status: 'billed', settlementMode: null }).where(eq(posOrders.id, line.posOrderId));
-    await logActivity(
-      { propertyId: actor.propertyId, userId: actor.userId, entityType: 'booking', entityId: line.bookingId, action: 'void', summary: `Voided "${line.description}" ${formatINR(line.total)} · ${reason}` },
+    const logId = await logActivity(
+      {
+        propertyId: actor.propertyId,
+        userId: actor.userId,
+        entityType: 'booking',
+        entityId: line.bookingId,
+        action: 'void_line',
+        summary: `Voided "${line.description}" ${formatINR(line.total)} · ${reason}`,
+        before: { lineId: line.id },
+      },
       tx,
     );
+    return { logId };
   });
+}
+
+/** Undo a voided bill line. A restaurant bill sent to the room goes back to "settled to room" if nobody re-settled it. */
+export async function restoreFolioLine(actor: Actor, lineId: string, tx?: Tx) {
+  const run = async (t: Tx) => {
+    const [line] = await t.select().from(folioLines).where(and(eq(folioLines.id, lineId), eq(folioLines.propertyId, actor.propertyId))).for('update');
+    if (!line) throw new UserError('Line not found.');
+    if (!line.isVoid) throw new UserError('This line is not void.');
+    const [booking] = await t.select().from(bookings).where(eq(bookings.id, line.bookingId));
+    if (booking.status === 'checked_out') throw new UserError('This booking is closed, so its bill cannot change.');
+    if (line.posOrderId) {
+      const [order] = await t.select().from(posOrders).where(eq(posOrders.id, line.posOrderId)).for('update');
+      if (order && order.status !== 'billed') throw new UserError(`Restaurant bill ${order.billNo ?? order.orderNo} was ${order.status === 'void' ? 'voided' : 'settled another way'} since. Restore it from the restaurant instead.`);
+      await t.update(posOrders).set({ status: 'settled', settlementMode: 'room_transfer' }).where(eq(posOrders.id, line.posOrderId));
+    }
+    await t.update(folioLines).set({ isVoid: false, voidReason: null }).where(eq(folioLines.id, line.id));
+    await logActivity(
+      { propertyId: actor.propertyId, userId: actor.userId, entityType: 'booking', entityId: line.bookingId, action: 'restore_line', summary: `Restored "${line.description}" ${formatINR(line.total)} on ${booking.bookingNo}` },
+      t,
+    );
+    return { bookingNo: booking.bookingNo };
+  };
+  return tx ? run(tx) : db.transaction(run);
 }
 
 export async function recordPayment(actor: Actor, input: { bookingId: string; amount: number; mode: PaymentMode; reference?: string | null; refund?: boolean }) {

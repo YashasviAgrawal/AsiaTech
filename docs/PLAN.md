@@ -187,7 +187,7 @@ and tests. All database tables are created in M0, so modules never need disrupti
 - [x] **Hold Booking**: same form with "hold until"; Confirm / Extend / Release; auto-release on expiry
 - [x] Booking detail page: rooms, guest, folio, payments, timeline (activity log)
 - [x] **Cancel** with confirm + reason + undo, No-show · change dates/rooms/room type/plan from the "Change booking" dialog (and Room Chart drag for single-room stays)
-- [x] **Booking Report**: filters (dates, source, status, room type), search, totals, export Excel
+- [x] **Booking Report**: filters (dates, source, status, room type), search, totals, export Excel, **Print / PDF**
 - [x] Guest directory: profiles, stay history, **duplicate warning and merge** ("Vivek Agrawal" vs "Vivek Agewal")
 
 ### M4 · Front Office Operations

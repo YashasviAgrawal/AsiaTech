@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { requireContext } from '@/server/context';
+import { ExportButton } from '@/components/ui/export-button';
 import { listPayments } from '@/server/services/money';
 import { addDay, formatDateTime, formatINR, PAYMENT_MODE_LABELS, titleCase } from '@/lib/format';
 import { Card, EmptyState, PageHeader } from '@/components/ui/card';
@@ -19,7 +20,12 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
 
   return (
     <div>
-      <PageHeader eyebrow="Money" title="Payments" description="Every rupee received or refunded at the front desk, by mode. Restaurant bills are under Restaurant → Orders." />
+      <PageHeader
+        eyebrow="Money"
+        title="Payments"
+        description="Every rupee received or refunded at the front desk, by mode. Restaurant bills are under Restaurant → Orders."
+        actions={<ExportButton href={`/api/exports/money/payments?${new URLSearchParams({ from, to, ...(p.mode ? { mode: p.mode } : {}), ...(p.kind ? { kind: p.kind } : {}) })}`} />}
+      />
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <div className="rounded-xl border border-ink-900 bg-ink-900 p-4 text-white shadow-card">
           <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">Collected</p>
