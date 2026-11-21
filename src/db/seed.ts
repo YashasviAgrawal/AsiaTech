@@ -753,7 +753,7 @@ async function main() {
   ]);
 
   await db.insert(promotions).values([
-    { propertyId: portico.id, name: 'Early bird 10%', type: 'early_bird', discountType: 'percent', value: 10, conditionValue: 15, channels: ['makemytrip', 'goibibo', 'booking_com'], isActive: true, pushedAt: new Date(Date.now() - 86400_000 * 4) },
+    { propertyId: portico.id, name: 'Early bird 10%', type: 'early_bird', discountType: 'percent', value: 10, conditionValue: 15, channels: ['makemytrip', 'goibibo', 'booking_com', 'web'], isActive: true, pushedAt: new Date(Date.now() - 86400_000 * 4) },
     { propertyId: portico.id, name: 'Weekend last-minute 15%', type: 'last_minute', discountType: 'percent', value: 15, conditionValue: 2, channels: ['makemytrip', 'goibibo'], isActive: true },
     { propertyId: portico.id, name: 'Stay 3, save 12%', type: 'long_stay', discountType: 'percent', value: 12, conditionValue: 3, channels: ['makemytrip', 'goibibo', 'booking_com'], isActive: false },
     { propertyId: portico.id, name: 'Direct booking coupon', type: 'coupon', discountType: 'flat', value: 300, couponCode: 'PORTICO300', channels: ['web'], isActive: true },

@@ -144,19 +144,38 @@ async function buildValues(propertyId: string, payload: { roomTypeId?: string | 
 
 /** Drain the outbox: push queued ARI updates to each OTA, retrying failures with back-off (max 5 tries). */
 export async function processSyncQueue(propertyId?: string, limit = 50) {
-  const due = await db
-    .select({ log: syncLogs, channel: channels })
-    .from(syncLogs)
-    .innerJoin(channels, eq(channels.id, syncLogs.channelId))
-    .where(
-      and(
-        propertyId ? eq(syncLogs.propertyId, propertyId) : undefined,
-        eq(syncLogs.direction, 'push'),
-        or(eq(syncLogs.status, 'queued'), and(eq(syncLogs.status, 'failed'), lte(syncLogs.nextRetryAt, new Date()), sql`${syncLogs.retries} < 5`)),
-      ),
-    )
-    .orderBy(asc(syncLogs.createdAt))
-    .limit(limit);
+  // Claim work atomically (SKIP LOCKED) so two drains running at once never send the same update twice.
+  const claimed = await db.transaction(async (tx) => {
+    const rows = await tx
+      .select({ id: syncLogs.id, status: syncLogs.status })
+      .from(syncLogs)
+      .where(
+        and(
+          propertyId ? eq(syncLogs.propertyId, propertyId) : undefined,
+          eq(syncLogs.direction, 'push'),
+          or(
+            eq(syncLogs.status, 'queued'),
+            and(eq(syncLogs.status, 'failed'), lte(syncLogs.nextRetryAt, new Date()), sql`${syncLogs.retries} < 5`),
+            // Reclaim work left "processing" by a crashed drain.
+            and(eq(syncLogs.status, 'processing'), lte(syncLogs.createdAt, new Date(Date.now() - 5 * 60_000))),
+          ),
+        ),
+      )
+      .orderBy(asc(syncLogs.createdAt))
+      .limit(limit)
+      .for('update', { skipLocked: true });
+    if (rows.length) await tx.update(syncLogs).set({ status: 'processing' }).where(inArray(syncLogs.id, rows.map((r) => r.id)));
+    return new Map(rows.map((r) => [r.id, r.status]));
+  });
+  if (claimed.size === 0) return { processed: 0, ok: 0, failed: 0 };
+  const due = (
+    await db
+      .select({ log: syncLogs, channel: channels })
+      .from(syncLogs)
+      .innerJoin(channels, eq(channels.id, syncLogs.channelId))
+      .where(inArray(syncLogs.id, [...claimed.keys()]))
+      .orderBy(asc(syncLogs.createdAt))
+  ).map((row) => ({ ...row, log: { ...row.log, status: claimed.get(row.log.id) ?? row.log.status } }));
   let ok = 0;
   let failed = 0;
   // Coalesce: many queued updates for the same channel + kind + room type become one push over the merged

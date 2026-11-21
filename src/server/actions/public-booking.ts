@@ -14,6 +14,7 @@ import { quoteStay } from '../services/pricing';
 import { requestMoney } from '../services/money';
 import { sendMessage } from '../services/messaging';
 import { bookingConfirmationText } from '../services/templates';
+import { bestPromotion } from '../services/promotions';
 
 /*
  * Public booking engine actions. No login: everything is looked up by the property slug and validated strictly.
@@ -26,6 +27,21 @@ async function propertyBySlug(slug: string) {
   const [p] = await db.select().from(properties).where(eq(properties.slug, slug));
   if (!p || p.status === 'suspended') throw new UserError('This hotel is not taking online bookings.');
   return p;
+}
+
+/**
+ * The discount a web guest gets: the bigger of their coupon and the best automatic promotion
+ * (early bird, last minute, long stay). Worked out on the server, never trusted from the browser.
+ */
+async function webDiscount(
+  propertyId: string,
+  input: { checkIn: string; checkOut: string; roomTypeId: string; coupon?: string | null; estimatedTotal: number },
+): Promise<{ type: 'percent' | 'flat'; value: number; name: string } | null> {
+  const coupon = await couponDiscount(propertyId, input.coupon);
+  const promo = await bestPromotion(propertyId, { checkIn: input.checkIn, checkOut: input.checkOut, bookedOn: todayIST(), channel: 'web', roomTypeId: input.roomTypeId, estimatedTotal: input.estimatedTotal });
+  const value = (d: { type: 'percent' | 'flat'; value: number } | null) => (!d ? 0 : d.type === 'percent' ? (input.estimatedTotal * d.value) / 100 : d.value);
+  const candidates = [coupon && { ...coupon }, promo && { ...promo.discount, name: promo.name }].filter(Boolean) as { type: 'percent' | 'flat'; value: number; name: string }[];
+  return candidates.sort((a, b) => value(b) - value(a))[0] ?? null;
 }
 
 async function couponDiscount(propertyId: string, code?: string | null) {
@@ -45,7 +61,7 @@ export async function searchStayAction(input: { slug: string; checkIn: string; c
     if (data.checkIn < todayIST()) throw new UserError('Choose a check-in date from today.');
     if (nights <= 0 || nights > 30) throw new UserError('Choose between 1 and 30 nights.');
     const p = await propertyBySlug(data.slug);
-    const discount = await couponDiscount(p.id, data.coupon);
+    await couponDiscount(p.id, data.coupon); // validates the code early with a clear message
     const availability = await getStayAvailability(p.id, data.checkIn, data.checkOut);
     const types = await db.select().from(roomTypes).where(and(eq(roomTypes.propertyId, p.id), eq(roomTypes.isActive, true))).orderBy(asc(roomTypes.sortOrder));
     const plans = await db.select().from(ratePlans).where(and(eq(ratePlans.propertyId, p.id), eq(ratePlans.isActive, true))).orderBy(asc(ratePlans.sortOrder));
@@ -58,13 +74,22 @@ export async function searchStayAction(input: { slug: string; checkIn: string; c
       const adultsPerRoom = Math.min(type.maxAdults, Math.ceil(data.adults / roomsNeeded));
       const options = [];
       for (const plan of plans.filter((pl) => pl.roomTypeId === type.id)) {
-        const q = await quoteStay(db, p.id, p.settings, {
-          checkIn: data.checkIn,
-          checkOut: data.checkOut,
-          rooms: Array.from({ length: roomsNeeded }, () => ({ roomTypeId: type.id, ratePlanId: plan.id, adults: adultsPerRoom, children: 0, extraBeds: 0 })),
-          discount: discount ? { type: discount.type, value: discount.value } : null,
+        const rooms = Array.from({ length: roomsNeeded }, () => ({ roomTypeId: type.id, ratePlanId: plan.id, adults: adultsPerRoom, children: 0, extraBeds: 0 }));
+        const base = await quoteStay(db, p.id, p.settings, { checkIn: data.checkIn, checkOut: data.checkOut, rooms });
+        const discount = await webDiscount(p.id, { checkIn: data.checkIn, checkOut: data.checkOut, roomTypeId: type.id, coupon: data.coupon, estimatedTotal: base.roomAmount });
+        const q = discount ? await quoteStay(db, p.id, p.settings, { checkIn: data.checkIn, checkOut: data.checkOut, rooms, discount }) : base;
+        options.push({
+          ratePlanId: plan.id,
+          name: plan.name,
+          mealPlan: plan.mealPlan,
+          policy: plan.cancellationPolicy,
+          total: q.totalAmount,
+          tax: q.taxAmount,
+          discount: q.discountAmount,
+          promotion: discount && q.discountAmount > 0 ? discount.name : null,
+          restriction: q.restrictions[0] ? capitalise(q.restrictions[0].message.replace(`${type.name} · ${plan.name} `, '')) : null,
+          perNight: Math.round(q.totalAmount / nights / roomsNeeded),
         });
-        options.push({ ratePlanId: plan.id, name: plan.name, mealPlan: plan.mealPlan, policy: plan.cancellationPolicy, total: q.totalAmount, tax: q.taxAmount, discount: q.discountAmount, perNight: Math.round(q.totalAmount / nights / roomsNeeded) });
       }
       results.push({
         id: type.id,
@@ -81,7 +106,7 @@ export async function searchStayAction(input: { slug: string; checkIn: string; c
         options,
       });
     }
-    return { nights, results, coupon: discount?.name ?? null };
+    return { nights, results, coupon: data.coupon ? data.coupon.toUpperCase() : null };
   });
 }
 
@@ -109,17 +134,19 @@ export async function publicBookAction(input: z.input<typeof bookSchema>) {
     const data = bookSchema.parse(input);
     if (data.checkIn < todayIST()) throw new UserError('Check-in cannot be in the past.');
     const p = await propertyBySlug(data.slug);
-    const discount = await couponDiscount(p.id, data.coupon);
+    const rooms = Array.from({ length: data.rooms }, () => ({ roomTypeId: data.roomTypeId, ratePlanId: data.ratePlanId, adults: data.adultsPerRoom, children: 0, extraBeds: 0 }));
+    const base = await quoteStay(db, p.id, p.settings, { checkIn: data.checkIn, checkOut: data.checkOut, rooms });
+    const discount = await webDiscount(p.id, { checkIn: data.checkIn, checkOut: data.checkOut, roomTypeId: data.roomTypeId, coupon: data.coupon, estimatedTotal: base.roomAmount });
     const actor = { ...(await systemActor(p.id)), userId: null };
     const result = await createBooking(actor, {
       source: 'web',
       guest: { name: data.guest.name, mobile: data.guest.mobile, email: data.guest.email, city: data.guest.city ?? null },
       checkIn: data.checkIn,
       checkOut: data.checkOut,
-      rooms: Array.from({ length: data.rooms }, () => ({ roomTypeId: data.roomTypeId, ratePlanId: data.ratePlanId, adults: data.adultsPerRoom, children: 0, extraBeds: 0 })),
+      rooms,
       discount: discount ? { type: discount.type, value: discount.value } : null,
       specialRequests: data.specialRequests ?? null,
-      internalNotes: discount ? `Coupon ${data.coupon?.toUpperCase()} (${discount.name})` : null,
+      internalNotes: discount ? `Booking engine discount: ${discount.name}` : null,
     });
     const [type] = await db.select({ name: roomTypes.name }).from(roomTypes).where(eq(roomTypes.id, data.roomTypeId));
     const [plan] = await db.select({ mealPlan: ratePlans.mealPlan }).from(ratePlans).where(eq(ratePlans.id, data.ratePlanId));
@@ -154,4 +181,8 @@ export async function publicBookAction(input: z.input<typeof bookSchema>) {
     }
     return { bookingNo: result.bookingNo, total: result.totalAmount, paymentUrl };
   });
+}
+
+function capitalise(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }

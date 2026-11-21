@@ -133,7 +133,7 @@ export function BookingEngine({ hotel, defaults }: { hotel: Hotel; defaults: { c
       <main className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section className="space-y-4">
           {error && <p className="rounded-xl bg-rose-50 p-3 text-sm font-medium text-rose-700 ring-1 ring-rose-200">{error}</p>}
-          {results?.coupon && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">Coupon applied: {results.coupon}</p>}
+          {results?.coupon && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">Coupon {results.coupon} is valid. The best saving is applied to each price.</p>}
           {!results && searching && <Loader2 className="mx-auto mt-10 h-6 w-6 animate-spin text-ink-400" />}
           {results?.results.map((room) => {
             const soldOut = room.available < room.roomsNeeded;
@@ -177,8 +177,11 @@ export function BookingEngine({ hotel, defaults }: { hotel: Hotel; defaults: { c
                         return (
                           <li key={opt.ratePlanId} className={cn('flex flex-wrap items-center gap-3 p-3', active && 'bg-ink-50')}>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold text-ink-900">{MEAL_PLAN_LABELS[opt.mealPlan]}</p>
-                              <p className="text-xs text-ink-500">{opt.policy}</p>
+                              <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold text-ink-900">
+                                {MEAL_PLAN_LABELS[opt.mealPlan]}
+                                {opt.promotion && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">{opt.promotion}</span>}
+                              </p>
+                              <p className="text-xs text-ink-500">{opt.restriction ? <span className="font-semibold text-amber-700">{opt.restriction}</span> : opt.policy}</p>
                             </div>
                             <div className="text-right">
                               {opt.discount > 0 && <p className="num text-xs text-ink-400 line-through">{formatINR(opt.total + opt.discount)}</p>}
@@ -188,7 +191,7 @@ export function BookingEngine({ hotel, defaults }: { hotel: Hotel; defaults: { c
                               </p>
                             </div>
                             <button
-                              disabled={soldOut}
+                              disabled={soldOut || Boolean(opt.restriction)}
                               onClick={() => setSelected({ room, option: opt })}
                               className={cn('h-10 rounded-xl px-4 text-sm font-bold transition active:scale-95 disabled:opacity-40', active ? 'text-white' : 'bg-white ring-1 ring-ink-300')}
                               style={active ? { backgroundColor: brand } : undefined}

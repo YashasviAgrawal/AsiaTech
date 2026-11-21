@@ -620,6 +620,17 @@ export function ReservationForm({
 
           <div className="space-y-2.5 p-5 text-sm">
             {shownQuoteError && <p className="rounded-lg bg-rose-50 p-2.5 text-xs text-rose-700">{shownQuoteError}</p>}
+            {shownQuote && shownQuote.restrictions.length > 0 && (
+              <div className="rounded-lg bg-amber-50 p-2.5 text-xs text-amber-900 ring-1 ring-amber-200">
+                <p className="font-semibold">Rate rules for these dates</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                  {shownQuote.restrictions.map((r) => (
+                    <li key={r.ratePlanId + r.kind}>{r.message}</li>
+                  ))}
+                </ul>
+                <p className="mt-1 text-amber-700">The booking engine and OTAs follow these rules. The front desk can still book.</p>
+              </div>
+            )}
             {!shownQuote && !shownQuoteError && <p className="text-ink-500">Add a room to see the price.</p>}
             {shownQuote && (
               <>

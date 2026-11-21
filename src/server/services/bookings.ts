@@ -63,6 +63,10 @@ export async function createBooking(actor: Actor, input: CreateBookingInput): Pr
       discount: input.discount,
     });
 
+    // Rate restrictions (min stay, stop-sell, closed to arrival) bind the booking engine. The front desk sees a
+    // warning and may override; OTA bookings arrive already confirmed by the OTA.
+    if (input.source === 'web' && quote.restrictions.length) throw new UserError(quote.restrictions[0].message);
+
     const reserveLines: ReserveLine[] = input.rooms.map((r) => ({ roomTypeId: r.roomTypeId, checkIn: input.checkIn, checkOut: input.checkOut, quantity: 1 }));
     await reserveInventory(tx, actor.propertyId, reserveLines, {
       allowOverbook: input.allowOverbook,
