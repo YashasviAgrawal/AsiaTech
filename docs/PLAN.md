@@ -206,7 +206,7 @@ and tests. All database tables are created in M0, so modules never need disrupti
 
 - [x] 12 tiles in 2 rows of 6 (Today's Bookings / Earning / Check In / Check Out, Month Bookings / Earning, 6 POS tiles), **every tile clickable**, Indian ₹ format
 - [x] **Today's Task**: auto-generated (pending check-ins and check-outs, rooms not assigned, OTA listing problems such as "Parked business", failed syncs, unpaid balances, holds expiring), each with its action button
-- [x] **System Update** panel · 🟡 super-admin screen to post updates pending (seeded for now)
+- [x] **System Update** panel, posted from the super-admin console (`/admin`)
 - [x] **Today's Bookings** table (Booking ID, Source, Name, Check In, Check Out, Room Name, Room Assigned, Status) with an **Assign** button
 - [x] Notifications centre (badge): new bookings, cancellations, sync errors; mark read
 - [x] Owner's phone view (responsive dashboard: tiles 2-up, occupancy card) · 🟡 dedicated owner summary screen pending

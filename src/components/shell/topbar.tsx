@@ -20,6 +20,7 @@ import {
   Tag,
   TriangleAlert,
   XCircle,
+  ShieldCheck,
   Smartphone,
 } from 'lucide-react';
 import { cn, initials } from '@/lib/utils';
@@ -237,6 +238,11 @@ function AccountMenu({ data }: { data: ShellData }) {
           {data.permissions.some((p) => p === '*' || p === 'money.view') && (
             <MenuItem icon={<Smartphone className="h-4 w-4" />} onClick={() => (close(), router.push('/owner'))}>
               Owner view (phone)
+            </MenuItem>
+          )}
+          {data.user.isSuperAdmin && (
+            <MenuItem icon={<ShieldCheck className="h-4 w-4" />} onClick={() => (close(), router.push('/admin'))}>
+              Platform admin
             </MenuItem>
           )}
           <form action={signOutAction}>

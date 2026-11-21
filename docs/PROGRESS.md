@@ -73,6 +73,7 @@ housekeeping phone screen ✅ · activity log ✅
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
 | Inventory integrity | seeded `booked` counts match booking rooms on every date; availability never negative |
+| Platform admin | `/admin` is a 404 for hotel staff; super admin publishes a System Update → it appears on the front desk dashboard; suspending the organisation signs its staff out (super admin still in); re-activating lets them back in |
 | Multi-outlet POS | duplicate bill prefix refused; café added; switcher on terminal / menu / orders ("All outlets" hides day close); bills RST/26-27/00142 and CAFE/26-27/00001 in separate consecutive series; old counter carried over by migration; fresh reset + seed OK |
 | Owner phone view | `/owner` on iPhone 13: earnings today (rooms + restaurant, WoW, sparkline), occupancy with per-type bars, desk counts, collected today by mode, money owed, month so far, needs-attention list; no horizontal scroll; Hindi checked |
 | Hindi | Dashboard, Today board, booking page, POS, money and settings checked in Hindi: page chrome, task sentences ("… का चेक-आउट करें"), dates and months translated; data (names, room types, menu) stays as entered; English mode unchanged |
@@ -86,7 +87,8 @@ Production readiness:
 - [ ] Real providers: WhatsApp Business API (the console provider is in place), Razorpay live keys and webhook secret (adapter written, sandbox test pending), Channex certification (adapter written)
 - [ ] Encrypt OTA credentials at rest. Add an S3 / R2 driver to `src/server/storage.ts` (local disk driver in place); clean up uploads that were never attached to a record
 - [ ] Rate limiting / bot protection on `/book/*`, `/pay/*` and webhooks
-- [ ] Postgres Row-Level Security on `property_id`; super-admin console (organisations, System Update editor)
+- [ ] Postgres Row-Level Security on `property_id`
+- [x] Super-admin console `/admin`: organisations and hotels (plan, suspend / re-activate), System Update editor
 - [ ] Server-side PDF for invoices (email attachment); thermal print agent for KOT (58/80 mm)
 
 Product follow-ups:
@@ -101,6 +103,8 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-21
+- **Platform admin (`/admin`):** organisations with their hotels (rooms, staff, 30-day bookings, last sign-in), plan
+  and suspend / re-activate (suspended organisations lock their staff out), System Update editor with drafts.
 - **Multi-outlet POS:** add/rename outlets (restaurant, café, bar, room service), outlet switcher on the terminal, menu
   and orders screens, one GST bill series per outlet (`0003_outlet_bill_series` carries the old counter over), day close
   per outlet.
