@@ -68,7 +68,7 @@ housekeeping phone screen ✅ · activity log ✅
 |-------|--------|
 | `npm run typecheck` | clean |
 | `npm run lint` | clean (React Compiler rules on) |
-| `npm test` | 28 unit tests pass (money maths, Hindi phrases and patterns, secrets sealing, rate limiter, S3 signing) |
+| `npm test` | 37 unit tests pass (money maths, Hindi phrases and patterns, secrets sealing, rate limiter, S3 signing, signed guest links, SMTP email with attachment, invoice PDF content incl. IGST / UPI QR / cancelled) |
 | `npm run test:integration` | 3 DB-backed tests pass on a freshly seeded `hotel_os_test` (GST slabs, tax split, amount in words, financial year, duplicates, formatting) |
 | `npm run build` | production build passes, all routes compile |
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
@@ -83,6 +83,7 @@ housekeeping phone screen ✅ · activity log ✅
 | Hindi | Dashboard, Today board, booking page, POS, money and settings checked in Hindi: page chrome, task sentences ("… का चेक-आउट करें"), dates and months translated; data (names, room types, menu) stays as entered; English mode unchanged |
 | Exports and undo | Payments, Credit, Petty Cash, Activity Log export with the screen's filters (valid .xlsx, 403 without permission); Booking Report prints / saves as A4 landscape PDF; folio line void → Undo → void → Restore keeps the linked restaurant bill in step; POS order void → restore puts the room-bill line back; restore refused on another business day |
 | Uploads | fake image refused; ID uploaded + webcam scan (fake camera) saved on the guest at check-in; private file 200 for staff, login redirect for anonymous; room photos + cover order on the booking page; logo/cover on the booking page for anonymous visitors; CSS-injection link refused |
+| Invoice PDF and sending | checked out a guest in the browser → "Send invoice" opened by itself with the guest's mobile and email filled in → sent on WhatsApp (signed link) and email (PDF attached, 47 KB) → logged on the booking's history; PDF text checked (GSTIN, CGST/SGST split, amount in words, "Fully paid"); balance-due bill shows the UPI QR for the right amount; guest link opens the PDF signed out, tampered or swapped tokens → 404, 30 requests/min then 429; staff route 401 signed out; Hindi dialog checked |
 | Change booking | +1 night, upgrade Standard → Deluxe Family and add a room: blocked while a type is sold out, then saved; `booked` still matches booking rooms on every date (SQL check), OTAs pushed, activity log written. In-house guest extended: room kept, agreed nights kept at ₹2,300 |
 
 ## Pending (next up)
@@ -95,7 +96,8 @@ Production readiness:
 - [x] Rate limiting on sign-in (failed attempts per network and per account), booking engine, payment and OTA webhooks (in-memory; Redis store for several instances)
 - [ ] Postgres Row-Level Security on `property_id`
 - [x] Super-admin console `/admin`: organisations and hotels (plan, suspend / re-activate), System Update editor
-- [ ] Server-side PDF for invoices (email attachment); thermal print agent for KOT (58/80 mm)
+- [x] Server-side PDF for invoices: download, email attachment over SMTP, signed WhatsApp link for the guest; "Send invoice" opens right after check-out
+- [ ] Thermal print agent for KOT (58/80 mm)
 
 Product follow-ups:
 - [x] "Change booking" dialog (dates, add/remove rooms, room type upgrade, plan, occupancy) with a live availability re-check
@@ -107,6 +109,13 @@ Product follow-ups:
 Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates incl./excl. GST at the desk, live OTA codes, printer models.
 
 ## Change log
+
+### 2026-11-25
+- **Invoice PDF and sending:** the GST invoice is rendered as a real PDF on the server (same content as the print page:
+  GSTIN, CGST/SGST or IGST, amount in words, UPI QR while money is owed, bank details). "Send invoice" on the booking
+  page, and on its own right after check-out: WhatsApp gets a short message with a signed link the guest opens without
+  signing in, email gets the PDF attached (SMTP, any mail service). Download PDF on the booking menu and the print page.
+  A mobile or email typed while sending is saved on the guest when they had none.
 
 ### 2026-11-21
 - **Unused uploads:** `uploads` registry (`0004_uploads_registry`) and an hourly worker sweep that deletes files nobody

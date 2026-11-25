@@ -31,27 +31,28 @@ interface StorageDriver {
 }
 
 function localDriver(): StorageDriver {
-  const root = path.resolve(process.env.STORAGE_DIR || path.join(process.cwd(), '.data', 'uploads'));
+  // Runtime data, not part of the app: the turbopackIgnore hints stop the build from tracing the whole project.
+  const root = path.resolve(/*turbopackIgnore: true*/ process.env.STORAGE_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), '.data', 'uploads'));
   const resolve = (key: string) => {
-    const full = path.resolve(root, key);
+    const full = path.resolve(/*turbopackIgnore: true*/ root, key);
     if (!full.startsWith(root + path.sep)) throw new Error('Bad storage key');
     return full;
   };
   return {
     async put(key, body) {
       const full = resolve(key);
-      await mkdir(path.dirname(full), { recursive: true });
-      await writeFile(full, body);
+      await mkdir(/*turbopackIgnore: true*/ path.dirname(full), { recursive: true });
+      await writeFile(/*turbopackIgnore: true*/ full, body);
     },
     async get(key) {
       try {
-        return await readFile(resolve(key));
+        return await readFile(/*turbopackIgnore: true*/ resolve(key));
       } catch {
         return null;
       }
     },
     async remove(key) {
-      await rm(resolve(key), { force: true });
+      await rm(/*turbopackIgnore: true*/ resolve(key), { force: true });
     },
   };
 }

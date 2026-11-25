@@ -42,9 +42,25 @@ export function paymentLinkText(input: { hotelName: string; guestName: string; a
   ].join('\n');
 }
 
-export function invoiceText(input: { hotelName: string; guestName: string; invoiceNo: string; total: number; url: string }) {
+export function invoiceText(input: { hotelName: string; guestName: string; invoiceNo: string; total: number; due: number; url: string }) {
   return [
-    `Thank you for staying at *${input.hotelName}*, ${input.guestName.split(' ')[0]}!`,
-    `Your GST invoice ${input.invoiceNo} for ${formatINR(input.total)}: ${input.url}`,
+    `Thank you for staying at *${input.hotelName}*, ${input.guestName.split(' ')[0]} 🙏`,
+    `Your GST invoice *${input.invoiceNo}* for ${formatINR(input.total)}${input.due > 0.5 ? ` (balance due ${formatINR(input.due)})` : ''}:`,
+    input.url,
+  ].join('\n');
+}
+
+export function invoiceEmailText(input: { hotelName: string; hotelPhone?: string | null; guestName: string; invoiceNo: string; total: number; due: number; upiId?: string | null; url: string }) {
+  return [
+    `Dear ${input.guestName.split(' ')[0]},`,
+    ``,
+    `Thank you for staying at ${input.hotelName}. Your GST invoice ${input.invoiceNo} for ${formatINR(input.total)} is attached as a PDF.`,
+    input.due > 0.5 ? `A balance of ${formatINR(input.due)} is due${input.upiId ? `; you can pay by UPI to ${input.upiId} or scan the QR code on the invoice` : ''}.` : `The invoice is fully paid.`,
+    ``,
+    `You can also open it online: ${input.url}`,
+    ``,
+    `Warm regards,`,
+    input.hotelName,
+    ...(input.hotelPhone ? [input.hotelPhone] : []),
   ].join('\n');
 }

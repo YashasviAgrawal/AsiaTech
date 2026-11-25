@@ -290,7 +290,7 @@ export function CheckInDialog({ data, onClose }: { data: BookingDetail; onClose:
   );
 }
 
-export function CheckOutDialog({ data, businessDate, onClose }: { data: BookingDetail; businessDate: string; onClose: () => void }) {
+export function CheckOutDialog({ data, businessDate, onClose, onCheckedOut }: { data: BookingDetail; businessDate: string; onClose: () => void; onCheckedOut?: (invoiceId: string) => void }) {
   const { booking: b, guest: g, totals } = data;
   const [amount, setAmount] = useState(Math.max(0, Math.round(totals.balance * 100) / 100));
   const [mode, setMode] = useState<'cash' | 'upi' | 'card' | 'bank_transfer'>('upi');
@@ -321,7 +321,9 @@ export function CheckOutDialog({ data, businessDate, onClose }: { data: BookingD
                 success: (d) => `Checked out · invoice ${d.invoiceNo}`,
                 onSuccess: (d) => {
                   onClose();
-                  toast.show({ tone: 'info', title: 'Room sent to housekeeping', description: 'It is marked dirty and a cleaning task was created.', action: { label: 'Print invoice', onClick: () => void window.open(`/print/invoice/${d.invoiceId}`, '_blank') } });
+                  // Straight into "Send invoice" while the guest is at the desk; without it, offer printing.
+                  if (onCheckedOut) onCheckedOut(d.invoiceId);
+                  else toast.show({ tone: 'info', title: 'Room sent to housekeeping', description: 'It is marked dirty and a cleaning task was created.', action: { label: 'Print invoice', onClick: () => void window.open(`/print/invoice/${d.invoiceId}`, '_blank') } });
                   router.refresh();
                 },
               })

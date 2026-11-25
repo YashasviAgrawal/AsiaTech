@@ -4,8 +4,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   devIndicators: false,
-  // `pg` and `exceljs` are Node-only; keep them out of the bundler.
-  serverExternalPackages: ['pg', 'exceljs', 'bcryptjs'],
+  // Node-only packages stay out of the bundler (@react-pdf/renderer is external by default).
+  serverExternalPackages: ['pg', 'exceljs', 'bcryptjs', 'nodemailer'],
   experimental: {
     serverActions: { bodySizeLimit: '6mb' },
   },

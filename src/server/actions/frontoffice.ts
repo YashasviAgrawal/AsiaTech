@@ -8,6 +8,10 @@ import { runAction } from '../action';
 import { UserError } from '../errors';
 import { actorFromContext } from '../services/actor';
 import { assignRoom, checkIn, checkOut, markFormC, moveStay, postCharge, recordPayment, roomOptions, restoreFolioLine, updateGuestIdPhotos, voidFolioLine } from '../services/frontoffice';
+import { loadInvoiceDocument } from '../services/invoice-doc';
+import { sendInvoice } from '../services/invoice-send';
+import { invoiceShareUrl } from '../share-links';
+import { invoiceText } from '../services/templates';
 
 function refresh() {
   revalidatePath('/', 'layout');
@@ -166,4 +170,42 @@ export async function updateGuestIdPhotosAction(guestId: string, urls: string[])
     revalidatePath('/', 'layout');
     return result;
   }, 'ID photos saved');
+}
+
+const sendInvoiceSchema = z.object({
+  invoiceId: z.string().uuid(),
+  whatsapp: z.string().max(20).optional().nullable(),
+  email: z.string().max(200).optional().nullable(),
+});
+
+export async function sendInvoiceAction(input: z.input<typeof sendInvoiceSchema>) {
+  return runAction(async () => {
+    const ctx = await actionContext('bookings.view');
+    const data = sendInvoiceSchema.parse(input);
+    const result = await sendInvoice(actorFromContext(ctx), data);
+    const failed = result.results.filter((r) => r.status === 'failed');
+    if (failed.length === result.results.length) throw new UserError(`Could not send: ${failed.map((f) => f.channel).join(', ')} is not set up. Check Settings → Notifications or send from your own WhatsApp.`);
+    refresh();
+    return result;
+  });
+}
+
+/** The signed guest link, for "Copy link" and "Open in WhatsApp" from the staff member's own phone. */
+export async function invoiceLinkAction(invoiceId: string) {
+  return runAction(async () => {
+    const ctx = await actionContext('bookings.view');
+    const doc = await loadInvoiceDocument(ctx.propertyId, invoiceId);
+    if (!doc) throw new UserError('Invoice not found.');
+    const url = invoiceShareUrl(doc.invoice.id);
+    return {
+      url,
+      mobile: doc.guest?.mobile ?? null,
+      email: doc.guest?.email ?? null,
+      invoiceNo: doc.invoice.invoiceNo,
+      total: doc.invoice.total,
+      due: doc.due,
+      status: doc.invoice.status,
+      text: invoiceText({ hotelName: doc.property.name, guestName: doc.guest?.name ?? doc.invoice.buyerName, invoiceNo: doc.invoice.invoiceNo, total: doc.invoice.total, due: doc.due, url }),
+    };
+  });
 }

@@ -524,6 +524,27 @@ export const hiPhrases: Record<string, string> = {
   'Pick a report, choose dates, export to Excel. Every number on screen can be downloaded.': 'रिपोर्ट चुनें, तारीखें चुनें, Excel में डाउनलोड करें। स्क्रीन का हर आँकड़ा डाउनलोड हो सकता है।',
   'No activity found': 'कोई बदलाव नहीं मिला',
   'No data for these dates': 'इन तारीखों का कोई डेटा नहीं',
+  // Send invoice
+  'Send invoice': 'बिल भेजें',
+  'Send invoice to guest': 'मेहमान को बिल भेजें',
+  'Download invoice PDF': 'बिल PDF डाउनलोड करें',
+  'Fully paid': 'पूरा भुगतान हो गया',
+  'Invoice sent by': 'बिल भेजा गया:',
+  failed: 'नहीं गया',
+  'Message preview': 'मैसेज कैसा दिखेगा',
+  'The email also carries the PDF.': 'ईमेल में PDF भी साथ जाएगी।',
+  'Download PDF': 'PDF डाउनलोड करें',
+  'Copy guest link': 'मेहमान का लिंक कॉपी करें',
+  Copied: 'कॉपी हो गया',
+  'Send from my WhatsApp': 'अपने WhatsApp से भेजें',
+  WhatsApp: 'WhatsApp',
+  'A short message with a link to the PDF': 'PDF के लिंक के साथ छोटा मैसेज',
+  'The PDF invoice is attached': 'PDF बिल साथ में जुड़ा होगा',
+  'Not now': 'अभी नहीं',
+  Send: 'भेजें',
+  'Checked out. The room is sent to housekeeping. Send the bill while the guest is still at the desk.': 'चेक-आउट हो गया। कमरा हाउसकीपिंग को भेज दिया गया है। मेहमान के डेस्क पर रहते हुए ही बिल भेज दें।',
+  'This invoice is cancelled and cannot be sent.': 'यह बिल रद्द है, इसे भेजा नहीं जा सकता।',
+  '10-digit mobile': '10 अंकों का मोबाइल नंबर',
 };
 
 const WEEKDAYS: Record<string, string> = {

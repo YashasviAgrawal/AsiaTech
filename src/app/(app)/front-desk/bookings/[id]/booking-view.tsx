@@ -47,9 +47,10 @@ import { useToast } from '@/components/ui/toast';
 import type { RoomTypeOption } from '@/server/services/room-options';
 import { AssignDialog, ChargeDialog, CheckInDialog, CheckOutDialog, FormCDialog, PaymentDialog } from './booking-dialogs';
 import { ModifyDialog } from './modify-dialog';
+import { SendInvoiceDialog } from './send-invoice-dialog';
 import { PhotoGrid } from '@/components/ui/photo-upload';
 
-type Dialogs = 'checkin' | 'checkout' | 'payment' | 'charge' | 'cancel' | 'noshow' | 'formc' | 'modify' | { assign: string } | null;
+type Dialogs = 'checkin' | 'checkout' | 'payment' | 'charge' | 'cancel' | 'noshow' | 'formc' | 'modify' | { assign: string } | { sendInvoice: string; afterCheckout?: boolean } | null;
 
 export function BookingView({
   data,
@@ -110,9 +111,16 @@ export function BookingView({
         <LogOut className="h-4 w-4" /> Check out
       </Button>
     ) : b.status === 'checked_out' && invoice ? (
-      <ButtonLink href={`/print/invoice/${invoice.id}`} target="_blank">
-        <Printer className="h-4 w-4" /> Print invoice
-      </ButtonLink>
+      <>
+        <ButtonLink variant="outline" href={`/print/invoice/${invoice.id}`} target="_blank">
+          <Printer className="h-4 w-4" /> Print invoice
+        </ButtonLink>
+        {invoice.status === 'issued' && (
+          <Button onClick={() => setDialog({ sendInvoice: invoice.id })}>
+            <Send className="h-4 w-4" /> Send invoice
+          </Button>
+        )}
+      </>
     ) : null;
 
   return (
@@ -166,9 +174,19 @@ export function BookingView({
                     Registration card
                   </MenuItem>
                   {invoice && (
-                    <MenuItem icon={<Receipt className="h-4 w-4" />} onClick={() => (closeMenu(), window.open(`/print/invoice/${invoice.id}`, '_blank'))}>
-                      GST invoice {invoice.invoiceNo}
-                    </MenuItem>
+                    <>
+                      <MenuItem icon={<Receipt className="h-4 w-4" />} onClick={() => (closeMenu(), window.open(`/print/invoice/${invoice.id}`, '_blank'))}>
+                        GST invoice {invoice.invoiceNo}
+                      </MenuItem>
+                      <MenuItem icon={<FileText className="h-4 w-4" />} onClick={() => (closeMenu(), window.open(`/api/invoices/${invoice.id}/pdf`, '_blank'))}>
+                        Download invoice PDF
+                      </MenuItem>
+                      {invoice.status === 'issued' && (
+                        <MenuItem icon={<Send className="h-4 w-4" />} onClick={() => (closeMenu(), setDialog({ sendInvoice: invoice.id }))}>
+                          Send invoice to guest
+                        </MenuItem>
+                      )}
+                    </>
                   )}
                   {g.mobile && (
                     <MenuItem
@@ -503,7 +521,8 @@ export function BookingView({
       </div>
 
       {dialog === 'checkin' && <CheckInDialog data={data} onClose={close} />}
-      {dialog === 'checkout' && <CheckOutDialog data={data} businessDate={businessDate} onClose={close} />}
+      {dialog === 'checkout' && <CheckOutDialog data={data} businessDate={businessDate} onClose={close} onCheckedOut={(invoiceId) => setDialog({ sendInvoice: invoiceId, afterCheckout: true })} />}
+      {typeof dialog === 'object' && dialog && 'sendInvoice' in dialog && <SendInvoiceDialog invoiceId={dialog.sendInvoice} afterCheckout={dialog.afterCheckout} onClose={close} />}
       {dialog === 'payment' && <PaymentDialog bookingId={b.id} balance={totals.balance} onClose={close} />}
       {dialog === 'charge' && <ChargeDialog bookingId={b.id} onClose={close} />}
       {dialog === 'modify' && <ModifyDialog data={data} roomTypes={roomTypes} businessDate={businessDate} onClose={close} />}
