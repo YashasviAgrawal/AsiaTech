@@ -14,7 +14,8 @@ import {
   systemUpdates,
   tasks,
 } from '@/db/schema';
-import { addDay, formatINR, monthStart, OTA_LABELS, todayIST } from '@/lib/format';
+import { addDay, formatINR, monthStart, OTA_LABELS, timeAgo, todayIST } from '@/lib/format';
+import { backupHealth } from './backup';
 import { round2 } from '@/lib/utils';
 import type { AppContext } from '../context';
 
@@ -262,6 +263,21 @@ export async function getTodaysTasks(ctx: AppContext): Promise<TaskItem[]> {
       detail: `${u.typeName} · arriving ${u.checkIn === bizDate ? 'today' : 'tomorrow'}`,
       action: { label: 'Assign', href: `/front-desk/bookings/${u.bookingId}?do=assign` },
     });
+  }
+
+  // The platform team (who run the server) also see a missed nightly backup here, not only in the console.
+  if (ctx.user.isSuperAdmin) {
+    const backups = await backupHealth();
+    if (backups.overdue) {
+      items.push({
+        id: 'backup-overdue',
+        kind: 'custom',
+        severity: 'danger',
+        title: backups.lastOk ? `No database backup since ${timeAgo(backups.lastOk.finishedAt ?? backups.lastOk.createdAt)}` : 'No database backup has been made yet',
+        detail: backups.lastError ? `Last try: ${backups.lastError}` : 'Check that the worker is running',
+        action: { label: 'Open backups', href: '/admin?tab=backups' },
+      });
+    }
   }
 
   const order = { danger: 0, warning: 1, info: 2 } as const;

@@ -14,6 +14,7 @@
     "db:seed": "tsx --conditions=react-server src/db/seed.ts",
     "db:reset": "tsx src/db/reset.ts && npm run db:migrate && npm run db:seed",
     "db:studio": "drizzle-kit studio",
+    "backup": "tsx src/db/backup.ts",
     "create-hotel": "tsx --conditions=react-server src/db/create-hotel.ts",
     "worker": "tsx --conditions=react-server src/server/jobs/worker.ts",
     "test": "vitest run",

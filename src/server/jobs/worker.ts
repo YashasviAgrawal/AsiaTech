@@ -1,6 +1,6 @@
 /**
  * Background worker: `npm run worker`. Drains the OTA push queue, releases expired holds, removes unused uploads
- * every hour and runs the monthly zero-bookings check. Phase 1 uses the database as the queue; swap for Redis + BullMQ when volume grows.
+ * every hour, runs the monthly zero-bookings check and makes the nightly backup (when BACKUP_DIR is set). Phase 1 uses the database as the queue; swap for Redis + BullMQ when volume grows.
  */
 import 'dotenv/config';
 import { and, eq, gte, sql } from 'drizzle-orm';
@@ -11,6 +11,7 @@ import { releaseExpiredHolds } from '../services/bookings';
 import { systemActor } from '../services/actor';
 import { sendMessage } from '../services/messaging';
 import { sweepUnusedUploads } from '../services/uploads';
+import { backupConfig, markInterruptedRuns, nextBackupDue, runBackup } from '../services/backup';
 import { addDay, todayIST } from '../../lib/format';
 
 let running = true;
@@ -41,13 +42,41 @@ async function tick() {
   if (sync.processed || released) console.log(`[worker] sync ${sync.ok} ok / ${sync.failed} failed · holds released ${released}`);
 }
 
+const backups = backupConfig();
+let backupRunning = false;
+
+/** Once a minute: a queued "Back up now" or tonight's backup. Runs beside the queue, which keeps draining. */
+async function backupCheck() {
+  if (backupRunning) return;
+  await markInterruptedRuns();
+  const due = await nextBackupDue(backups);
+  if (!due) return;
+  backupRunning = true;
+  console.log(`[worker] backup started (${due.trigger === 'console' ? 'asked for in the platform console' : 'nightly'})`);
+  runBackup(due.trigger, { runId: due.runId, config: backups })
+    .then((result) => {
+      if (result.status === 'busy') return console.log('[worker] backup skipped: another backup is running');
+      if (result.status === 'failed') return console.error(`[worker] backup failed: ${result.error}`);
+      const size = result.files.reduce((sum, f) => sum + f.bytes, 0);
+      const offsite = result.offsite ? (result.offsite.ok ? ` · copied to ${result.offsite.target}` : ` · off-site copy failed: ${result.offsite.error}`) : '';
+      console.log(`[worker] backup done: ${result.files.map((f) => f.name).join(', ')} (${(size / 1024 / 1024).toFixed(1)} MB)${offsite}`);
+    })
+    .catch((error) => console.error('[worker] backup failed', error))
+    .finally(() => (backupRunning = false));
+}
+
 async function main() {
-  console.log('[worker] started');
+  console.log(`[worker] started${backups.scheduled ? ` · nightly backup at ${String(backups.hour).padStart(2, '0')}:00 to ${backups.dir}` : ''}`);
   let lastDaily = '';
   let lastSweep = 0;
+  let lastBackupCheck = 0;
   while (running) {
     try {
       await tick();
+      if (Date.now() - lastBackupCheck > 60_000) {
+        lastBackupCheck = Date.now();
+        await backupCheck();
+      }
       if (Date.now() - lastSweep > 60 * 60_000) {
         lastSweep = Date.now();
         const { deleted } = await sweepUnusedUploads();
@@ -62,6 +91,7 @@ async function main() {
     }
     await new Promise((r) => setTimeout(r, 5000));
   }
+  while (backupRunning) await new Promise((r) => setTimeout(r, 1000));
   await pool.end();
 }
 

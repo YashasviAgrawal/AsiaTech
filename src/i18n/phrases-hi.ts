@@ -1526,6 +1526,55 @@ function ago(text: string) {
  * Sentences with numbers or names in them. Tried in order after the exact phrases; `$1`, `$2`… are the captured parts.
  * Keep each pattern anchored (^…$) so it only ever replaces a whole on-screen string.
  */
+// Platform console → Backups
+Object.assign(hiPhrases, {
+  "Every organisation and hotel on AsiaTech, the System Update cards hotels see on their dashboard, and the server's backups.":
+    'AsiaTech पर हर संस्था और होटल, वे सिस्टम अपडेट कार्ड जो होटल अपने डैशबोर्ड पर देखते हैं, और सर्वर के बैकअप।',
+  Backups: 'बैकअप',
+  'No recent backup': 'हाल का कोई बैकअप नहीं',
+  'Nightly backups are off on this server': 'इस सर्वर पर रात का बैकअप बंद है',
+  'Set BACKUP_DIR for the worker to turn them on (the Docker setup does this). Back up now still works while the worker runs.':
+    'चालू करने के लिए वर्कर में BACKUP_DIR सेट करें (Docker सेटअप यह अपने-आप करता है)। वर्कर चल रहा हो तो "अभी बैकअप लें" फिर भी काम करता है।',
+  'No backup has been made yet': 'अभी तक कोई बैकअप नहीं बना',
+  'The worker makes it every night. Check that the worker is running: docker compose ps': 'वर्कर इसे हर रात बनाता है। देखें कि वर्कर चल रहा है: docker compose ps',
+  'The last backup was not copied off the server': 'पिछला बैकअप सर्वर से बाहर कॉपी नहीं हुआ',
+  'Waiting for the worker': 'वर्कर का इंतज़ार',
+  'Backups are made by the worker. If this does not start in a minute, check that the worker is running.': 'बैकअप वर्कर बनाता है। एक मिनट में शुरू न हो तो देखें कि वर्कर चल रहा है।',
+  'Last good backup': 'पिछला सफल बैकअप',
+  Database: 'डेटाबेस',
+  Uploads: 'अपलोड',
+  'None yet': 'अभी कोई नहीं',
+  'On this server': 'इसी सर्वर पर',
+  'Only when asked': 'सिर्फ़ कहने पर',
+  'Copy off the server': 'सर्वर से बाहर कॉपी',
+  'Not set up': 'सेट नहीं है',
+  'Every backup is copied there too': 'हर बैकअप वहाँ भी कॉपी होता है',
+  'Set BACKUP_S3_BUCKET to keep copies in S3 or R2': 'S3 या R2 में कॉपी रखने के लिए BACKUP_S3_BUCKET सेट करें',
+  'Each backup has the whole database (every hotel) and the uploaded files (guest IDs, bills, photos).':
+    'हर बैकअप में पूरा डेटाबेस (सभी होटल) और अपलोड की गई फ़ाइलें (मेहमानों की ID, बिल, फ़ोटो) होती हैं।',
+  'Each backup has the whole database (every hotel). Uploaded files are already in S3 storage.': 'हर बैकअप में पूरा डेटाबेस (सभी होटल) होता है। अपलोड की गई फ़ाइलें पहले से S3 स्टोरेज में हैं।',
+  'Back up now': 'अभी बैकअप लें',
+  'Backing up…': 'बैकअप हो रहा है…',
+  'Waiting…': 'इंतज़ार…',
+  'No backups yet.': 'अभी कोई बैकअप नहीं।',
+  'Made by': 'कैसे बना',
+  Files: 'फ़ाइलें',
+  'Off-site copy': 'बाहर की कॉपी',
+  Nightly: 'रात का',
+  'Command line': 'कमांड लाइन',
+  Download: 'डाउनलोड',
+  'Removed from server': 'सर्वर से हटाई गई',
+  'Not copied': 'कॉपी नहीं हुई',
+  Running: 'चल रहा है',
+  'To restore a backup, follow deploy/README.md → Backups. Restoring replaces everything in the database, for every hotel.':
+    'बैकअप वापस लाने के लिए deploy/README.md → Backups देखें। वापस लाने पर डेटाबेस का सारा डेटा, हर होटल का, बदल जाता है।',
+  'Backup asked for. It starts within a minute.': 'बैकअप के लिए कह दिया। एक मिनट में शुरू होगा।',
+  'Asked for a backup now': 'अभी बैकअप के लिए कहा',
+  'No database backup has been made yet': 'अभी तक डेटाबेस का कोई बैकअप नहीं बना',
+  'Check that the worker is running': 'देखें कि वर्कर चल रहा है',
+  'Open backups': 'बैकअप खोलें',
+});
+
 export const hiPatterns: [RegExp, string | ((...groups: string[]) => string)][] = [
   [/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (\d+)(?:st|nd|rd|th) (\w+)$/, (d, n, m) => `${WEEKDAYS[d] ?? d}, ${n} ${MONTHS[m] ?? m}`],
   [/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), (\d+) (\w{3})$/, (d, n, m) => `${WEEKDAYS[d] ?? d}, ${n} ${MONTHS[m] ?? m}`],
@@ -1695,4 +1744,10 @@ export const hiPatterns: [RegExp, string | ((...groups: string[]) => string)][] 
   [/^If (\S+) has a login, a link is on its way\. It works once, for 30 minutes\. Check spam too\.$/, 'अगर $1 का लॉगिन है, तो लिंक भेजा जा रहा है। यह एक बार, 30 मिनट तक चलेगा। स्पैम फ़ोल्डर भी देखें।'],
   [/^Hello (.+)\. After this, you sign in with the new password on every device\.$/, 'नमस्ते $1। इसके बाद हर डिवाइस पर नए पासवर्ड से साइन इन करेंगे।'],
   [/^(Chrome|Safari|Edge|Firefox|Opera|Samsung Internet|Browser|Script) on (iPhone|iPad|Android|Windows|Mac|Chromebook|Linux)$/, (browser, os) => `${os} पर ${browser === 'Browser' ? 'ब्राउज़र' : browser === 'Script' ? 'स्क्रिप्ट' : browser}`],
+  [/^No backup since (.+)$/, (a) => `${ago(a)} से कोई बैकअप नहीं`],
+  [/^No database backup since (.+)$/, (a) => `${ago(a)} से डेटाबेस का कोई बैकअप नहीं`],
+  [/^Last try: (.+)$/s, 'पिछली कोशिश: $1'],
+  [/^Every night at (\d{2}:\d{2})$/, 'हर रात $1 बजे'],
+  [/^Kept (\d+) days$/, '$1 दिन रखे जाते हैं'],
+  [/^Downloaded backup (\S+)$/, 'बैकअप $1 डाउनलोड किया'],
 ];

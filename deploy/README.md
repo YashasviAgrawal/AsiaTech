@@ -59,15 +59,43 @@ New migrations apply on start, and the built-in roles pick up any new permission
 
 ## 5. Backups
 
-Everything lives in two Docker volumes: `asiatech_db` (Postgres) and `asiatech_uploads` (guest IDs, bills, photos; empty when `STORAGE_DRIVER=s3`).
+The worker backs up every night at 03:00 (India time) into the `asiatech_backups` volume, and keeps 14 days. Each backup is a dump of the whole database (every hotel) and, with local storage, an archive of the uploads (guest IDs, bills, photos). The first one is made as soon as the worker starts.
+
+See them in the **platform console → Backups**: when the last good backup was made, its size, any failure, **Back up now**, and a **Download** link for each file still on the server. A red dot on the tab means no good backup since last night.
+
+**Keep a copy off this server.** A backup on the same disk does not survive a dead disk or a lost VPS. Either download one regularly from the console, or let the worker copy every backup to a private S3 / R2 bucket: set `BACKUP_S3_BUCKET` plus the `S3_*` settings in `deploy/.env`, then `docker compose up -d`. The bucket keeps every copy; add a lifecycle rule there (for example "delete after 90 days").
+
+| Setting | Default | |
+|---------|---------|--|
+| `BACKUP_HOUR` | `3` | Hour of the night it starts (India time) |
+| `BACKUP_KEEP_DAYS` | `14` | Days kept on this server. The newest backup is never deleted |
+| `BACKUP_S3_BUCKET` | | Off-site copies under `backups/` in this bucket |
+
+A backup right now, from the command line: `docker compose exec worker npm run backup`
+
+### Restore
+
+Restoring replaces **everything** in the database, for every hotel, with the backup.
 
 ```bash
-# Nightly database dump (add to cron); keep copies off the server
-docker compose exec -T db pg_dump -U postgres -Fc hotel_os > backup-$(date +%F).dump
+# 1. Copy the backup out of the volume (or use a file downloaded from the console)
+docker compose cp worker:/data/backups/hotel_os-2026-11-26-0300.dump .
 
-# Restore into an empty database
-docker compose exec -T db pg_restore -U postgres -d hotel_os --clean --if-exists < backup-2026-11-26.dump
+# 2. Stop the app and the worker, restore the database, start again
+docker compose stop app worker
+docker compose exec -T db pg_restore -U postgres -d hotel_os --clean --if-exists --single-transaction < hotel_os-2026-11-26-0300.dump
+docker compose start app worker
 ```
+
+Uploads, if the photos and ID copies are lost too: `docker compose cp worker:/data/backups/uploads-2026-11-26-0300.tar.gz .`, then
+
+```bash
+docker compose run --rm -T --user root --entrypoint sh -v "$PWD:/restore:ro" tools -c 'tar -xzf /restore/uploads-2026-11-26-0300.tar.gz -C /data/uploads && chown -R node:node /data/uploads'
+```
+
+On a **new server**: do step 1 of this guide (`docker compose up -d`, which creates the empty database and its roles), then restore as above.
+
+Try a restore once on a spare machine, so you know it works before you need it.
 
 ## Day to day
 
@@ -78,6 +106,7 @@ docker compose exec -T db pg_restore -U postgres -d hotel_os --clean --if-exists
 | Restart | `docker compose restart app worker` |
 | Stop (data kept) | `docker compose down` |
 | Database shell | `docker compose exec db psql -U postgres hotel_os` |
+| Backup now | `docker compose exec worker npm run backup` |
 
 ## Providers
 

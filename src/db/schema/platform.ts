@@ -147,3 +147,26 @@ export const uploads = pgTable(
  * it in a database crash only resets the limits.
  */
 export const rateLimitHits = pgTable('rate_limit_hits', { key: text('key').notNull(), at: ts('at').notNull() }, (t) => [index('rate_limit_hits_key_idx').on(t.key, t.at)]);
+
+/**
+ * Database backups made by the worker (`BACKUP_DIR`) or `npm run backup`. Global: one backup covers every hotel.
+ * "Back up now" in the platform console adds a `queued` row; the worker picks it up within a minute.
+ */
+export const backupRuns = pgTable(
+  'backup_runs',
+  {
+    id: pk(),
+    status: text('status', { enum: ['queued', 'running', 'ok', 'failed'] }).notNull(),
+    trigger: text('trigger', { enum: ['schedule', 'manual', 'console'] }).notNull(),
+    requestedBy: uuid('requested_by').references(() => users.id, { onDelete: 'set null' }),
+    /** Files written to BACKUP_DIR: the database dump and, with local storage, an archive of the uploads. */
+    files: jsonb('files').$type<{ name: string; kind: 'database' | 'uploads'; bytes: number }[]>().notNull().default([]),
+    /** Off-site copy: null = not set up, otherwise where the files went or why the copy failed. */
+    offsite: jsonb('offsite').$type<{ ok: boolean; target: string; error?: string } | null>(),
+    error: text('error'),
+    startedAt: ts('started_at'),
+    finishedAt: ts('finished_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('backup_runs_created_idx').on(t.createdAt)],
+);

@@ -1,4 +1,8 @@
 import { createHash, createHmac } from 'node:crypto';
+import { createReadStream } from 'node:fs';
+import { stat } from 'node:fs/promises';
+import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 
 /**
  * Minimal S3-compatible client (AWS S3, Cloudflare R2, MinIO, DigitalOcean Spaces) for the storage layer:
@@ -108,6 +112,41 @@ export function s3Driver(config: S3Config) {
       if (!res.ok && res.status !== 404) throw new Error(`Storage delete failed (${res.status})`);
     },
   };
+}
+
+/**
+ * Streams a file from disk to one object (backups can be larger than is sensible to hold in memory). The body is
+ * sent as UNSIGNED-PAYLOAD over the signed request, which S3, R2 and MinIO accept; one PUT takes up to 5 GB.
+ */
+export async function s3PutFile(config: S3Config, key: string, filePath: string, contentType = 'application/octet-stream') {
+  const { url, host, path } = target(config, key);
+  const { size } = await stat(/*turbopackIgnore: true*/ filePath);
+  const headers = signV4({
+    method: 'PUT',
+    host,
+    path,
+    headers: { 'content-type': contentType, 'content-length': String(size) },
+    payloadHash: 'UNSIGNED-PAYLOAD',
+    region: config.region,
+    accessKeyId: config.accessKeyId,
+    secretAccessKey: config.secretAccessKey,
+  });
+  const send = url.startsWith('https:') ? httpsRequest : httpRequest;
+  await new Promise<void>((resolve, reject) => {
+    const req = send(url, { method: 'PUT', headers: { host, ...headers } }, (res) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (c: Buffer) => chunks.push(c));
+      res.on('end', () => {
+        const status = res.statusCode ?? 0;
+        if (status >= 200 && status < 300) resolve();
+        else reject(new Error(`Upload failed (${status}): ${Buffer.concat(chunks).toString('utf8').slice(0, 200)}`));
+      });
+    });
+    req.setTimeout(10 * 60_000, () => req.destroy(new Error('Upload timed out')));
+    req.on('error', reject);
+    createReadStream(/*turbopackIgnore: true*/ filePath).on('error', reject).pipe(req);
+  });
+  return { key, bytes: size };
 }
 
 export function s3ConfigFromEnv(env: Record<string, string | undefined> = process.env): S3Config {

@@ -1,7 +1,10 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { encodePath, s3ConfigFromEnv, s3Driver, signV4 } from '../src/server/storage-s3';
+import { encodePath, s3ConfigFromEnv, s3Driver, s3PutFile, signV4 } from '../src/server/storage-s3';
 
 describe('AWS Signature V4', () => {
   it('matches the AWS documentation example (GET object with a Range header)', () => {
@@ -37,7 +40,7 @@ describe('AWS Signature V4', () => {
 
 describe('S3 driver against a local stand-in', () => {
   const objects = new Map<string, { body: Buffer; type: string }>();
-  const seen: { method: string; url: string; auth: string }[] = [];
+  const seen: { method: string; url: string; auth: string; sha: string; length: string }[] = [];
   let server: Server;
   let endpoint = '';
 
@@ -46,7 +49,7 @@ describe('S3 driver against a local stand-in', () => {
       const chunks: Buffer[] = [];
       req.on('data', (c) => chunks.push(c));
       req.on('end', () => {
-        seen.push({ method: req.method!, url: req.url!, auth: String(req.headers.authorization ?? '') });
+        seen.push({ method: req.method!, url: req.url!, auth: String(req.headers.authorization ?? ''), sha: String(req.headers['x-amz-content-sha256']), length: String(req.headers['content-length']) });
         if (!String(req.headers.authorization).startsWith('AWS4-HMAC-SHA256 Credential=test-key/')) return res.writeHead(403).end();
         const key = req.url!;
         if (req.method === 'PUT') objects.set(key, { body: Buffer.concat(chunks), type: String(req.headers['content-type']) });
@@ -73,5 +76,19 @@ describe('S3 driver against a local stand-in', () => {
     expect(await driver.get('prv/p1/ids/abc.jpg')).toEqual(body);
     await driver.remove('prv/p1/ids/abc.jpg');
     expect(await driver.get('prv/p1/ids/abc.jpg')).toBeNull();
+  });
+
+  it('streams a file from disk (backups) with an unsigned payload', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 's3-put-'));
+    const file = path.join(dir, 'hotel_os-2026-11-26-0300.dump');
+    const body = Buffer.alloc(3 * 1024 * 1024 + 17, 7);
+    await writeFile(file, body);
+    const config = { endpoint, region: 'auto', bucket: 'hotel-backups', accessKeyId: 'test-key', secretAccessKey: 'secret', forcePathStyle: true };
+    expect(await s3PutFile(config, 'backups/hotel_os-2026-11-26-0300.dump', file)).toEqual({ key: 'backups/hotel_os-2026-11-26-0300.dump', bytes: body.length });
+    expect(seen.at(-1)).toMatchObject({ method: 'PUT', url: '/hotel-backups/backups/hotel_os-2026-11-26-0300.dump', sha: 'UNSIGNED-PAYLOAD', length: String(body.length) });
+    expect(seen.at(-1)!.auth).toContain('SignedHeaders=content-length;content-type;host;x-amz-content-sha256;x-amz-date');
+    expect(objects.get('/hotel-backups/backups/hotel_os-2026-11-26-0300.dump')?.body.equals(body)).toBe(true);
+    await expect(s3PutFile({ ...config, accessKeyId: 'wrong' }, 'backups/x.dump', file)).rejects.toThrow('Upload failed (403)');
+    await rm(dir, { recursive: true });
   });
 });

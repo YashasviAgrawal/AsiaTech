@@ -8,6 +8,7 @@ import { appUrl } from '../app-url';
 import { logActivity } from '../audit';
 import { saveSystemUpdate, setOrganization } from '../services/admin';
 import { createHotel, type NewHotelInput } from '../services/onboarding';
+import { queueBackup } from '../services/backup';
 
 const updateSchema = z.object({
   id: z.string().uuid().nullable().optional(),
@@ -66,4 +67,15 @@ export async function createHotelAction(input: NewHotelInput) {
     revalidatePath('/admin');
     return { ...result, signInUrl: appUrl('/login'), bookingUrl: appUrl(`/book/${result.slug}`) };
   }, 'Hotel created.');
+}
+
+/** "Back up now": queued for the worker, which has pg_dump and the backups folder. */
+export async function queueBackupAction() {
+  return runAction(async () => {
+    const ctx = await superAdminActionContext();
+    const result = await queueBackup(ctx.userId);
+    if (!result.alreadyQueued) await logActivity({ propertyId: ctx.propertyId, userId: ctx.userId, entityType: 'backup', entityId: result.id, action: 'create', summary: 'Asked for a backup now' });
+    revalidatePath('/admin');
+    return result;
+  }, 'Backup asked for. It starts within a minute.');
 }

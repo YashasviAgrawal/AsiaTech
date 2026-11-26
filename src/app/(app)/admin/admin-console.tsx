@@ -14,13 +14,16 @@ import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/fields
 import { Tabs } from '@/components/ui/tabs';
 import { useRun } from '@/components/ui/use-run';
 import { tx } from '@/i18n/tx';
+import { useT } from '@/i18n/client';
+import { BackupsPanel, type BackupOverview } from './backups-panel';
 
 type Hotel = { id: string; name: string; city: string | null; status: string; businessDate: string; rooms: number; staff: number; bookings30: number; lastLogin: string | null };
 type Org = { id: string; name: string; plan: 'trial' | 'starter' | 'pro' | 'enterprise'; isActive: boolean; createdAt: string; hotels: Hotel[] };
 type Update = { id: string; title: string; body: string; tag: string | null; isPublished: boolean; publishedAt: string };
 
-export function AdminConsole({ orgs, updates }: { orgs: Org[]; updates: Update[] }) {
-  const [tab, setTab] = useState<'orgs' | 'updates'>('orgs');
+export function AdminConsole({ orgs, updates, backups, initialTab }: { orgs: Org[]; updates: Update[]; backups: BackupOverview; initialTab?: 'orgs' | 'updates' | 'backups' }) {
+  const [tab, setTab] = useState<'orgs' | 'updates' | 'backups'>(initialTab ?? 'orgs');
+  const { tr } = useT();
   return (
     <div className="space-y-5">
       <Tabs
@@ -29,9 +32,18 @@ export function AdminConsole({ orgs, updates }: { orgs: Org[]; updates: Update[]
         items={[
           { value: 'orgs', label: 'Organisations', count: orgs.length },
           { value: 'updates', label: 'System updates', count: updates.length },
+          {
+            value: 'backups',
+            label: (
+              <span className="inline-flex items-center gap-1.5">
+                {tx('Backups')}
+                {backups.overdue && <span className="h-2 w-2 rounded-full bg-rose-500" title={tr('No recent backup')} />}
+              </span>
+            ),
+          },
         ]}
       />
-      {tab === 'orgs' ? <Organisations orgs={orgs} /> : <Updates updates={updates} />}
+      {tab === 'orgs' ? <Organisations orgs={orgs} /> : tab === 'updates' ? <Updates updates={updates} /> : <BackupsPanel data={backups} />}
     </div>
   );
 }

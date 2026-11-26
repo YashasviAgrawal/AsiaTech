@@ -33,6 +33,11 @@ x-app-env: &app-env
   S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-}
   # The app and the worker share sign-in and webhook limits through Postgres.
   RATE_LIMIT_STORE: postgres
+  # Nightly backup by the worker (README → Backups). The app reads the folder for downloads in the platform console.
+  BACKUP_DIR: /data/backups
+  BACKUP_HOUR: ${BACKUP_HOUR:-3}
+  BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+  BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
 
 x-tools: &tools
   image: asiatech-tools:latest
@@ -42,6 +47,7 @@ x-tools: &tools
   environment: *app-env
   volumes:
     - uploads:/data/uploads
+    - backups:/data/backups
   depends_on:
     db:
       condition: service_healthy
@@ -82,11 +88,12 @@ services:
       - '${APP_PORT:-3000}:3000'
     volumes:
       - uploads:/data/uploads
+      - backups:/data/backups:ro
     depends_on:
       migrate:
         condition: service_completed_successfully
 
-  # OTA push queue, hold expiry, monthly alerts, hourly clean-up of unused uploads.
+  # OTA push queue, hold expiry, monthly alerts, hourly clean-up of unused uploads, nightly backup.
   worker:
     <<: *tools
     command: ['npm', 'run', 'worker']
@@ -95,7 +102,7 @@ services:
       migrate:
         condition: service_completed_successfully
 
-  # For one-off commands only (not started by `up`): create-hotel, db:seed.
+  # For one-off commands only (not started by `up`): create-hotel, db:seed. A backup now: docker compose exec worker npm run backup
   tools:
     <<: *tools
     profiles: ['tools']
@@ -104,3 +111,4 @@ services:
 volumes:
   db:
   uploads:
+  backups:

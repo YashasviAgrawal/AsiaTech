@@ -329,7 +329,7 @@ and tests. All database tables are created in M0, so modules never need disrupti
 | **1 · Run the front desk** | M1 → M2 → M3 → M4 → M5 | Replace AsiaTech for daily front-desk work |
 | **2 · Run the whole hotel** | M6 → M7 → M8 | Housekeeping, restaurant and money on the same system |
 | **3 · Sell everywhere and analyse** | M9 → M10 | Live OTA sync, booking engine, reports |
-| **4 · Go live** | Deployment | Docker images and compose (`deploy/`), CI on every push, `create-hotel` for a fresh install, owner guided through setup from Home |
+| **4 · Go live** | Deployment | Docker images and compose (`deploy/`), CI on every push, `create-hotel` for a fresh install, owner guided through setup from Home, nightly backups with an off-site copy and a tested restore |
 
 > Before going live, spend 1–2 weeks in the client's live AsiaTech panel to capture the sub-menus the screenshots
 > don't show (Rate Management, Hotel Details, Reports, Night Audit, Petty Cash, Branding), then update this plan.

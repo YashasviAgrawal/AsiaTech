@@ -2,12 +2,14 @@
 #
 # AsiaTech Hotel OS. Two images from one file (see deploy/compose.yaml):
 #   app    the web app: Next.js standalone server, only the files it uses
-#   tools  database migrations, the demo seed, first-hotel setup and the background worker
+#   tools  database migrations, the demo seed, first-hotel setup, backups and the background worker
 #
 #   docker build --target app   -t asiatech-app .
 #   docker build --target tools -t asiatech-tools .
 
 ARG NODE_IMAGE=node:22-alpine
+# Same Postgres image as the database in deploy/compose.yaml: the backup's pg_dump comes from it, so versions match.
+ARG PG_IMAGE=postgres:16-alpine
 
 FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
@@ -28,7 +30,8 @@ RUN npm run build
 FROM ${NODE_IMAGE} AS app
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0 STORAGE_DIR=/data/uploads
-RUN mkdir -p /data/uploads && chown node:node /data/uploads
+# /data/backups is only read here (downloads from the platform console); the worker writes it.
+RUN mkdir -p /data/uploads /data/backups && chown node:node /data/uploads /data/backups
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 USER node
@@ -37,16 +40,28 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget -q -O /dev/null http://127.0.0.1:3000/api/health || exit 1
 CMD ["node", "server.js"]
 
+# pg_dump and pg_restore with the libraries they load, in /opt/pgclient, for the nightly backup. Copied from the
+# Postgres image (no package download, versions always match the database) and kept apart from the Node image's
+# own libraries: small wrappers point them at their folder.
+FROM ${PG_IMAGE} AS pgclient
+RUN mkdir -p /opt/pgclient/bin /opt/pgclient/lib \
+ && cp /usr/local/bin/pg_dump /usr/local/bin/pg_restore /opt/pgclient/bin/ \
+ && ldd /usr/local/bin/pg_dump /usr/local/bin/pg_restore | awk '$3 ~ /^\// && $3 !~ /ld-musl/ { print $3 }' | sort -u | xargs -I{} cp -L {} /opt/pgclient/lib/ \
+ && for tool in pg_dump pg_restore; do \
+      printf '#!/bin/sh\nLD_LIBRARY_PATH=/opt/pgclient/lib exec /opt/pgclient/bin/%s "$@"\n' "$tool" > /opt/pgclient/$tool && chmod 755 /opt/pgclient/$tool; \
+    done
+
 # Runtime packages only (tsx runs the TypeScript scripts directly), copied into a clean image below.
 FROM deps AS prod-deps
 RUN npm prune --omit=dev --no-audit --no-fund
 
 FROM ${NODE_IMAGE} AS tools
 WORKDIR /app
-ENV NODE_ENV=production STORAGE_DIR=/data/uploads
-RUN mkdir -p /data/uploads && chown node:node /data/uploads
+ENV NODE_ENV=production STORAGE_DIR=/data/uploads PATH=/opt/pgclient:$PATH
+RUN mkdir -p /data/uploads /data/backups && chown node:node /data/uploads /data/backups
+COPY --from=pgclient /opt/pgclient /opt/pgclient
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY . .
 USER node
-# Default: the background worker. Others: npm run db:migrate · npm run db:seed · npm run create-hotel -- --help
+# Default: the background worker. Others: npm run db:migrate · npm run db:seed · npm run create-hotel -- --help · npm run backup
 CMD ["npm", "run", "worker"]
