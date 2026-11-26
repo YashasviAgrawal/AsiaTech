@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose';
 const SESSION_COOKIE = 'hos_session';
 
 /** Routes anyone can open without signing in. */
-const PUBLIC_PREFIXES = ['/login', '/book', '/api/webhooks', '/api/public', '/pay'];
+const PUBLIC_PREFIXES = ['/login', '/forgot-password', '/reset-password', '/api/health', '/book', '/api/webhooks', '/api/public', '/pay', '/files/pub', '/i', '/api/print-agent/jobs'];
 
 function secretKey(): Uint8Array {
   const secret = process.env.AUTH_SECRET;

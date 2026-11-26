@@ -14,40 +14,50 @@
     "db:seed": "tsx --conditions=react-server src/db/seed.ts",
     "db:reset": "tsx src/db/reset.ts && npm run db:migrate && npm run db:seed",
     "db:studio": "drizzle-kit studio",
+    "backup": "tsx src/db/backup.ts",
+    "create-hotel": "tsx --conditions=react-server src/db/create-hotel.ts",
     "worker": "tsx --conditions=react-server src/server/jobs/worker.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:integration": "DATABASE_URL=${TEST_DATABASE_URL:-postgresql://hotel:hotel@localhost:5432/hotel_os_test} npm run db:reset && vitest run --config vitest.integration.mts"
   },
   "engines": {
     "node": ">=20.9"
   },
   "dependencies": {
+    "@fontsource-variable/noto-sans-devanagari": "^5.3.0",
+    "@react-pdf/renderer": "4.9.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "dotenv": "^18.0.10",
     "drizzle-orm": "^0.45.4",
     "exceljs": "^4.4.0",
+    "geist": "^1.9.2",
     "jose": "^6.2.18",
     "lucide-react": "^1.77.0",
     "next": "^16.4.6",
+    "nodemailer": "10.3.1",
     "pg": "^8.23.1",
+    "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.7.1",
+    "tsx": "^4.23.15",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^22.20.5",
+    "@types/nodemailer": "8.0.2",
     "@types/pg": "^8.23.1",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "dotenv": "^18.0.10",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.6",
     "tailwindcss": "^4.3.5",
-    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^5.1.1"
   }

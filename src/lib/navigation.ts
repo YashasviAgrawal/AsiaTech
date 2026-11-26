@@ -87,6 +87,7 @@ export const NAVIGATION: NavSection[] = [
     items: [
       { href: '/restaurant', labelKey: 'nav.pointOfSale', permission: 'pos.use', legacy: 'Point Of Sale' },
       { href: '/restaurant/menu', labelKey: 'nav.menuTables', permission: 'pos.manage' },
+      { href: '/restaurant/printers', labelKey: 'nav.printers', permission: 'pos.manage' },
     ],
   },
   {

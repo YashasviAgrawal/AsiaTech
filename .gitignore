@@ -14,6 +14,7 @@ next-env.d.ts
 
 # uploads (local disk storage in dev)
 public/uploads/
+.data/
 
 # misc
 .DS_Store

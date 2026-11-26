@@ -123,3 +123,50 @@ export const jobs = pgTable(
   },
   (t) => [index('jobs_status_run_idx').on(t.status, t.runAt)],
 );
+
+/**
+ * Every stored upload. Lets the worker delete files nobody uses (abandoned uploads, removed ID photos) on any
+ * storage driver without listing the bucket.
+ */
+export const uploads = pgTable(
+  'uploads',
+  {
+    id: pk(),
+    propertyId: propertyRef(),
+    url: text('url').notNull(),
+    folder: text('folder').notNull(),
+    bytes: integer('bytes').notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index('uploads_created_idx').on(t.createdAt), index('uploads_url_idx').on(t.url)],
+);
+
+/**
+ * Shared rate-limit log, used when RATE_LIMIT_STORE=postgres (several app servers). One row per counted
+ * request; rows older than an hour are deleted. The table is UNLOGGED (see the migration): fast, and losing
+ * it in a database crash only resets the limits.
+ */
+export const rateLimitHits = pgTable('rate_limit_hits', { key: text('key').notNull(), at: ts('at').notNull() }, (t) => [index('rate_limit_hits_key_idx').on(t.key, t.at)]);
+
+/**
+ * Database backups made by the worker (`BACKUP_DIR`) or `npm run backup`. Global: one backup covers every hotel.
+ * "Back up now" in the platform console adds a `queued` row; the worker picks it up within a minute.
+ */
+export const backupRuns = pgTable(
+  'backup_runs',
+  {
+    id: pk(),
+    status: text('status', { enum: ['queued', 'running', 'ok', 'failed'] }).notNull(),
+    trigger: text('trigger', { enum: ['schedule', 'manual', 'console'] }).notNull(),
+    requestedBy: uuid('requested_by').references(() => users.id, { onDelete: 'set null' }),
+    /** Files written to BACKUP_DIR: the database dump and, with local storage, an archive of the uploads. */
+    files: jsonb('files').$type<{ name: string; kind: 'database' | 'uploads'; bytes: number }[]>().notNull().default([]),
+    /** Off-site copy: null = not set up, otherwise where the files went or why the copy failed. */
+    offsite: jsonb('offsite').$type<{ ok: boolean; target: string; error?: string } | null>(),
+    error: text('error'),
+    startedAt: ts('started_at'),
+    finishedAt: ts('finished_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('backup_runs_created_idx').on(t.createdAt)],
+);

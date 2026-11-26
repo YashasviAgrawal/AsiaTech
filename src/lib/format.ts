@@ -179,3 +179,24 @@ export const MEAL_PLAN_LABELS: Record<string, string> = {
 export function titleCase(value: string): string {
   return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
+
+export const PAYMENT_MODE_LABELS: Record<string, string> = {
+  cash: 'Cash',
+  card: 'Card',
+  upi: 'UPI',
+  bank_transfer: 'Bank transfer',
+  link: 'Payment link',
+  ota: 'OTA collect',
+  cheque: 'Cheque',
+  room_transfer: 'Room transfer',
+  complimentary: 'Complimentary',
+};
+
+export const ID_TYPE_LABELS: Record<string, string> = {
+  aadhaar: 'Aadhaar',
+  passport: 'Passport',
+  driving_licence: 'Driving licence',
+  voter_id: 'Voter ID',
+  pan: 'PAN',
+  other: 'ID',
+};

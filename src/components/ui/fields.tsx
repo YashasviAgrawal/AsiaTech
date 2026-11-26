@@ -1,6 +1,8 @@
 'use client';
 
-import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { useTr } from '@/i18n/client';
+import { tx } from '@/i18n/tx';
+import { Children, cloneElement, forwardRef, isValidElement, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { AlertCircle, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +21,7 @@ export function Field({ label, hint, error, required, children, className, htmlF
     <div className={className}>
       {label && (
         <label className="label" htmlFor={htmlFor}>
-          {label}
+          {tx(label)}
           {required && <span className="ml-0.5 text-brand-600">*</span>}
         </label>
       )}
@@ -27,10 +29,10 @@ export function Field({ label, hint, error, required, children, className, htmlF
       {error ? (
         <p className="mt-1.5 flex items-center gap-1 text-xs text-rose-600">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          {error}
+          {tx(error)}
         </p>
       ) : hint ? (
-        <p className="mt-1.5 text-xs text-ink-500">{hint}</p>
+        <p className="mt-1.5 text-xs text-ink-500">{tx(hint)}</p>
       ) : null}
     </div>
   );
@@ -38,7 +40,8 @@ export function Field({ label, hint, error, required, children, className, htmlF
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean; leading?: ReactNode; trailing?: ReactNode };
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ className, invalid, leading, trailing, ...props }, ref) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ className, invalid, leading, trailing, placeholder, ...props }, ref) {
+  const tr = useTr();
   const input = (
     <input
       ref={ref}
@@ -50,6 +53,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ c
         className,
       )}
       aria-invalid={invalid || undefined}
+      placeholder={placeholder ? tr(placeholder) : placeholder}
       {...props}
     />
   );
@@ -64,16 +68,28 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ c
 });
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea(
-  { className, ...props },
+  { className, placeholder, ...props },
   ref,
 ) {
-  return <textarea ref={ref} className={cn('input min-h-[88px] resize-y', className)} {...props} />;
+  const tr = useTr();
+  return <textarea ref={ref} className={cn('input min-h-[88px] resize-y', className)} placeholder={placeholder ? tr(placeholder) : placeholder} {...props} />;
 });
+
+/** Plain-text <option>s (and <optgroup> labels) are translated, so every dropdown follows the language switch. */
+function translateOptions(children: ReactNode, tr: (text: string) => string): ReactNode {
+  return Children.map(children, (child) => {
+    if (!isValidElement<{ children?: ReactNode; label?: string }>(child)) return child;
+    if (child.type === 'option' && typeof child.props.children === 'string') return cloneElement(child, undefined, tr(child.props.children));
+    if (child.type === 'optgroup') return cloneElement(child, { label: child.props.label ? tr(child.props.label) : undefined }, translateOptions(child.props.children, tr));
+    return child;
+  });
+}
 
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean }>(function Select(
   { className, invalid, children, ...props },
   ref,
 ) {
+  const tr = useTr();
   return (
     <select
       ref={ref}
@@ -85,7 +101,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
       )}
       {...props}
     >
-      {children}
+      {translateOptions(children, tr)}
     </select>
   );
 });
@@ -104,8 +120,8 @@ export function Checkbox({
         {...props}
       />
       <span>
-        <span className="font-medium text-ink-800">{label}</span>
-        {description && <span className="mt-0.5 block text-xs text-ink-500">{description}</span>}
+        <span className="font-medium text-ink-800">{tx(label)}</span>
+        {description && <span className="mt-0.5 block text-xs text-ink-500">{tx(description)}</span>}
       </span>
     </label>
   );
@@ -126,12 +142,13 @@ export function Switch({
   name?: string;
   size?: 'sm' | 'md';
 }) {
+  const tr = useTr();
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      aria-label={label}
+      aria-label={label ? tr(label) : undefined}
       disabled={disabled}
       onClick={() => onChange?.(!checked)}
       className={cn(
@@ -168,17 +185,18 @@ export function Stepper({
   label?: string;
   size?: 'sm' | 'md';
 }) {
+  const tr = useTr();
   const btn = cn(
     'grid place-items-center rounded-md text-ink-600 transition hover:bg-ink-100 active:scale-95 disabled:opacity-30',
     size === 'sm' ? 'h-7 w-7' : 'h-8 w-8',
   );
   return (
-    <div className="inline-flex items-center gap-1 rounded-lg border border-ink-300 bg-white p-0.5" role="group" aria-label={label}>
-      <button type="button" className={btn} onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label="Decrease">
+    <div className="inline-flex items-center gap-1 rounded-lg border border-ink-300 bg-white p-0.5" role="group" aria-label={label ? tr(label) : undefined}>
+      <button type="button" className={btn} onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label={tr('Decrease')}>
         <Minus className="h-3.5 w-3.5" />
       </button>
       <span className={cn('num min-w-6 text-center font-semibold text-ink-900', size === 'sm' ? 'text-xs' : 'text-sm')}>{value}</span>
-      <button type="button" className={btn} onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label="Increase">
+      <button type="button" className={btn} onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label={tr('Increase')}>
         <Plus className="h-3.5 w-3.5" />
       </button>
     </div>
@@ -214,7 +232,7 @@ export function Segmented<T extends string>({
             value === option.value ? 'bg-white text-ink-900 shadow-card' : 'text-ink-500 hover:text-ink-800',
           )}
         >
-          {option.label}
+          {tx(option.label)}
         </button>
       ))}
     </div>

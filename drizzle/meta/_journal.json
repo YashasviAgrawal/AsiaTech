@@ -8,6 +8,69 @@
       "when": 1795199066005,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795200854987,
+      "tag": "0001_form_c",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795201608392,
+      "tag": "0002_room_ooo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795241719489,
+      "tag": "0003_outlet_bill_series",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795256839012,
+      "tag": "0004_uploads_registry",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795632809658,
+      "tag": "0005_printing",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795680316376,
+      "tag": "0006_rate_limit_store",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795680636735,
+      "tag": "0007_row_level_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795704297889,
+      "tag": "0008_backup_runs",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795706624466,
+      "tag": "0009_lookup_indexes",
+      "breakpoints": true
     }
   ]
 }

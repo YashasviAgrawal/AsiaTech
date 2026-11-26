@@ -29,8 +29,10 @@
   --color-ink-900: #0f172a;
   --color-ink-950: #020617;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Nirmala UI', 'Noto Sans Devanagari',
-    'Mangal', sans-serif;
+  /* Geist for Latin, Noto Sans Devanagari for Hindi (both self-hosted), then system fallbacks. */
+  --font-sans: var(--font-geist-sans), 'Noto Sans Devanagari Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, 'Nirmala UI', sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
   --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.04);
   --shadow-lift: 0 12px 32px -8px rgb(15 23 42 / 0.16), 0 4px 12px -4px rgb(15 23 42 / 0.08);
@@ -92,6 +94,14 @@
       opacity: 0;
     }
   }
+  @keyframes toast-countdown {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
+    }
+  }
   @keyframes pop {
     from {
       opacity: 0;
@@ -119,10 +129,21 @@
 
   body {
     background-color: var(--color-ink-50);
+    background-image: radial-gradient(1200px 420px at 85% -120px, rgb(225 29 72 / 0.06), transparent 70%);
+    background-attachment: fixed;
     color: var(--color-ink-900);
     font-family: var(--font-sans);
+    font-feature-settings: 'ss01', 'cv11';
+    letter-spacing: -0.006em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
   }
 
   /* A visible focus ring is an accessibility requirement, not a nicety. */
@@ -144,7 +165,7 @@
 
 @layer components {
   .card {
-    @apply rounded-xl border border-ink-200 bg-white shadow-card;
+    @apply rounded-2xl border border-ink-200/80 bg-white shadow-card;
   }
 
   .input {

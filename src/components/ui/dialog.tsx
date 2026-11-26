@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { tx } from '@/i18n/tx';
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,9 @@ function useBodyLock(open: boolean) {
   }, [open]);
 }
 
+/** Open dialogs, newest last: Escape closes only the top one when dialogs are stacked (e.g. camera over check-in). */
+const escapeStack: symbol[] = [];
+
 function useEscape(open: boolean, onClose: () => void) {
   const latest = useRef(onClose);
   useEffect(() => {
@@ -25,16 +29,29 @@ function useEscape(open: boolean, onClose: () => void) {
   }, [onClose]);
   useEffect(() => {
     if (!open) return;
+    const token = Symbol('dialog');
+    escapeStack.push(token);
     const handler = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') latest.current();
+      if (event.key === 'Escape' && escapeStack[escapeStack.length - 1] === token) latest.current();
     };
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+      escapeStack.splice(escapeStack.indexOf(token), 1);
+    };
   }, [open]);
 }
 
+const noop = () => () => {};
+
+/** Renders into <body> once hydrated (false on the server and during hydration, so both sides match). */
 function Portal({ children }: { children: ReactNode }) {
-  if (typeof document === 'undefined') return null;
+  const mounted = useSyncExternalStore(
+    noop,
+    () => true,
+    () => false,
+  );
+  if (!mounted) return null;
   return createPortal(children, document.body);
 }
 
@@ -76,9 +93,9 @@ export function Dialog({
             {icon && <span className="mt-0.5 shrink-0">{icon}</span>}
             <div className="min-w-0 flex-1">
               <h2 id={titleId} className="text-base font-bold text-ink-900">
-                {title}
+                {tx(title)}
               </h2>
-              {description && <p className="mt-0.5 text-sm text-ink-500">{description}</p>}
+              {description && <p className="mt-0.5 text-sm text-ink-500">{tx(description)}</p>}
             </div>
             <button onClick={onClose} className="-mr-1 rounded-md p-1 text-ink-400 transition hover:bg-ink-100 hover:text-ink-700" aria-label="Close">
               <X className="h-5 w-5" />
@@ -95,19 +112,13 @@ export function Dialog({
 /**
  * Safe actions (rule 8): explain what will happen, optionally show a preview, optionally require a reason.
  */
-export function ConfirmDialog({
-  open,
-  onClose,
-  onConfirm,
-  title,
-  description,
-  preview,
-  confirmLabel = 'Confirm',
-  variant = 'danger',
-  requireReason,
-  reasonLabel = 'Reason',
-  loading,
-}: {
+export function ConfirmDialog(props: ConfirmDialogProps) {
+  // Mounted only while open, so the typed reason starts empty every time.
+  if (!props.open) return null;
+  return <ConfirmDialogInner {...props} />;
+}
+
+interface ConfirmDialogProps {
   open: boolean;
   onClose: () => void;
   onConfirm: (reason: string) => void | Promise<void>;
@@ -119,11 +130,25 @@ export function ConfirmDialog({
   requireReason?: boolean;
   reasonLabel?: string;
   loading?: boolean;
-}) {
+  /** Whether an Undo toast follows. False shows "This cannot be undone." instead. */
+  undoable?: boolean;
+}
+
+function ConfirmDialogInner({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  description,
+  preview,
+  confirmLabel = 'Confirm',
+  variant = 'danger',
+  requireReason,
+  reasonLabel = 'Reason',
+  loading,
+  undoable = true,
+}: ConfirmDialogProps) {
   const [reason, setReason] = useState('');
-  useEffect(() => {
-    if (open) setReason('');
-  }, [open]);
   return (
     <Dialog
       open={open}
@@ -141,10 +166,10 @@ export function ConfirmDialog({
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={loading}>
-            Go back
+            {tx('Go back')}
           </Button>
           <Button variant={variant} loading={loading} disabled={requireReason && reason.trim().length < 3} onClick={() => onConfirm(reason.trim())}>
-            {confirmLabel}
+            {tx(confirmLabel)}
           </Button>
         </>
       }
@@ -155,7 +180,7 @@ export function ConfirmDialog({
           <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Type a short reason" autoFocus />
         </Field>
       )}
-      {!preview && !requireReason && <p className="text-sm text-ink-600">You can undo this from the notification that appears.</p>}
+      {!preview && !requireReason && <p className="text-sm text-ink-600">{tx(undoable ? 'You can undo this from the notification that appears.' : 'This cannot be undone.')}</p>}
     </Dialog>
   );
 }
@@ -188,8 +213,8 @@ export function Drawer({
         <aside className={cn('absolute inset-y-0 right-0 flex w-full animate-enter flex-col bg-white shadow-lift', widths[width])}>
           <div className="flex items-start gap-3 border-b border-ink-100 px-5 py-4">
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-bold text-ink-900">{title}</h2>
-              {description && <p className="mt-0.5 text-sm text-ink-500">{description}</p>}
+              <h2 className="text-base font-bold text-ink-900">{tx(title)}</h2>
+              {description && <p className="mt-0.5 text-sm text-ink-500">{tx(description)}</p>}
             </div>
             <button onClick={onClose} className="rounded-md p-1 text-ink-400 transition hover:bg-ink-100 hover:text-ink-700" aria-label="Close">
               <X className="h-5 w-5" />

@@ -15,6 +15,8 @@ export interface QuoteRoomInput {
   extraBeds: number;
   /** Front desk can override the nightly price (e.g. a negotiated corporate rate). */
   rateOverride?: number | null;
+  /** Per-night base price that wins over everything else (keeps the price already agreed when a booking changes). */
+  nightlyOverride?: Record<string, number> | null;
 }
 
 export interface QuotedRoom extends QuoteRoomInput {
@@ -40,6 +42,14 @@ export interface Quote {
   totalAmount: number;
   /** Tax broken down by rate: { 5: 1234.5, 18: 0 } */
   taxByRate: Record<string, number>;
+  /** Rate restrictions this stay breaks (min stay, stop-sell, closed to arrival). */
+  restrictions: Restriction[];
+}
+
+export interface Restriction {
+  ratePlanId: string;
+  kind: 'min_stay' | 'stop_sell' | 'closed_to_arrival';
+  message: string;
 }
 
 export interface Discount {
@@ -87,6 +97,21 @@ export async function quoteStay(
   const rateMap = new Map(dateRows.map((r) => [`${r.ratePlanId}|${r.date}`, r]));
 
   // 1) Gross nightly prices.
+  // Restrictions are checked per rate plan: min stay and closed-to-arrival on the arrival date, stop-sell on any night.
+  const restrictions: Restriction[] = [];
+  for (const planId of planIds) {
+    const plan = planMap.get(planId);
+    if (!plan) continue;
+    const label = `${plan.roomTypeName} · ${plan.name}`;
+    const arrival = rateMap.get(`${planId}|${dates[0]}`);
+    if (arrival && arrival.minStay > dates.length) {
+      restrictions.push({ ratePlanId: planId, kind: 'min_stay', message: `${label} needs at least ${arrival.minStay} nights from this date.` });
+    }
+    if (arrival?.closedToArrival) restrictions.push({ ratePlanId: planId, kind: 'closed_to_arrival', message: `${label} is closed to arrival on this date.` });
+    const stopped = dates.find((d) => rateMap.get(`${planId}|${d}`)?.stopSell);
+    if (stopped) restrictions.push({ ratePlanId: planId, kind: 'stop_sell', message: `${label} is on stop-sell on ${stopped}.` });
+  }
+
   const gross = input.rooms.map((room) => {
     const plan = planMap.get(room.ratePlanId);
     if (!plan || plan.roomTypeId !== room.roomTypeId) throw new UserError('Please choose a valid rate plan for this room type.');
@@ -96,7 +121,7 @@ export async function quoteStay(
       const p2 = day?.price2 ?? plan.price2;
       const p3 = day?.price3 ?? plan.price3;
       const extraBedRate = day?.extraBed ?? plan.extraBed;
-      const base = room.rateOverride ?? (room.adults <= 1 ? p1 : room.adults === 2 ? p2 : p3);
+      const base = room.nightlyOverride?.[date] ?? room.rateOverride ?? (room.adults <= 1 ? p1 : room.adults === 2 ? p2 : p3);
       const amount = round2(base + room.extraBeds * extraBedRate + room.children * plan.childPrice);
       return { date, rate: base, extraBeds: room.extraBeds, amount };
     });
@@ -153,6 +178,7 @@ export async function quoteStay(
     taxAmount,
     totalAmount: round2(netAmount + taxAmount),
     taxByRate,
+    restrictions,
   };
 }
 

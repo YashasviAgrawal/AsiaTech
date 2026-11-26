@@ -1,0 +1,16 @@
+# Keep the build context small and secrets out of images.
+.git
+.github
+node_modules
+.next
+.data
+coverage
+*.tsbuildinfo
+npm-debug.log*
+.DS_Store
+.env
+.env.*
+!.env.example
+deploy/.env
+tests
+docs

@@ -1,6 +1,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
+import { secureCookies } from '../app-url';
 
 export const SESSION_COOKIE = 'hos_session';
 const SESSION_DAYS = 7;
@@ -53,7 +54,7 @@ export async function writeSession(payload: SessionPayload): Promise<void> {
   store.set(SESSION_COOKIE, await signSession(payload), {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: secureCookies(),
     path: '/',
     maxAge: SESSION_DAYS * 24 * 60 * 60,
   });

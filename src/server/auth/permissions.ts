@@ -81,3 +81,24 @@ export const SYSTEM_ROLES: { key: string; name: string; description: string; per
 export function hasPermission(granted: readonly string[], permission: Permission): boolean {
   return granted.includes('*') || granted.includes(permission);
 }
+
+/** The permission list grouped by area, in the order the role editor shows it. */
+export const PERMISSION_GROUPS: { title: string; permissions: Permission[] }[] = [
+  { title: 'Front desk', permissions: ['dashboard.view', 'bookings.view', 'bookings.create', 'bookings.edit', 'bookings.cancel', 'frontdesk.checkin'] },
+  { title: 'Rooms & Rates', permissions: ['inventory.view', 'inventory.edit', 'rates.edit', 'rooms.manage'] },
+  { title: 'Channels', permissions: ['channels.manage'] },
+  { title: 'Restaurant', permissions: ['pos.use', 'pos.manage', 'pos.void'] },
+  { title: 'Housekeeping', permissions: ['housekeeping.use', 'housekeeping.manage'] },
+  { title: 'Money', permissions: ['money.view', 'money.manage', 'nightaudit.run'] },
+  { title: 'Reports and settings', permissions: ['reports.view', 'activity.view', 'settings.manage', 'users.manage'] },
+];
+
+/**
+ * Whether someone holding `granted` may hand out a role with `rolePermissions` (create, edit or assign it).
+ * Nobody can give away more than they have, so a custom role is never a way to raise your own access.
+ */
+export function canGrant(granted: readonly string[], rolePermissions: readonly string[]): boolean {
+  if (granted.includes('*')) return true;
+  if (rolePermissions.includes('*')) return false;
+  return rolePermissions.every((p) => granted.includes(p));
+}

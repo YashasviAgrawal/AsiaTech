@@ -20,6 +20,9 @@ import {
   Tag,
   TriangleAlert,
   XCircle,
+  ShieldCheck,
+  Smartphone,
+  UserRound,
 } from 'lucide-react';
 import { cn, initials } from '@/lib/utils';
 import { timeAgo } from '@/lib/format';
@@ -30,6 +33,7 @@ import { markNotificationsReadAction, setLanguageAction, signOutAction, switchPr
 import { Popover, MenuItem } from '@/components/ui/popover';
 import { useToast } from '@/components/ui/toast';
 import type { ShellData } from './types';
+import { tx } from '@/i18n/tx';
 
 function IconLink({ href, label, children, external, badge }: { href: string; label: string; children: React.ReactNode; external?: boolean; badge?: React.ReactNode }) {
   return (
@@ -87,12 +91,12 @@ function Notifications({ data }: { data: ShellData }) {
                 disabled={pending}
                 onClick={() => startTransition(async () => void (await markNotificationsReadAction()))}
               >
-                Mark all read
+                {tx('Mark all read')}
               </button>
             )}
           </div>
           <div className="scrollbar-thin max-h-96 overflow-y-auto p-1.5">
-            {data.notifications.length === 0 && <p className="px-3 py-8 text-center text-sm text-ink-500">You&apos;re all caught up.</p>}
+            {data.notifications.length === 0 && <p className="px-3 py-8 text-center text-sm text-ink-500">{tx('You’re all caught up.')}</p>}
             {data.notifications.map((n) => (
               <button
                 key={n.id}
@@ -106,7 +110,7 @@ function Notifications({ data }: { data: ShellData }) {
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13px] font-semibold text-ink-900">{n.title}</span>
                   {n.body && <span className="mt-0.5 block truncate text-xs text-ink-500">{n.body}</span>}
-                  <span className="mt-1 block text-[11px] text-ink-400">{timeAgo(n.createdAt)}</span>
+                  <span className="mt-1 block text-[11px] text-ink-400">{tx(timeAgo(n.createdAt))}</span>
                 </span>
                 {!n.read && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-brand-500" />}
               </button>
@@ -175,7 +179,8 @@ function LanguageToggle() {
 }
 
 function AccountMenu({ data }: { data: ShellData }) {
-  const { t } = useT();
+  const router = useRouter();
+  const { t, tr } = useT();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
   return (
@@ -194,7 +199,7 @@ function AccountMenu({ data }: { data: ShellData }) {
           <span className="hidden text-left leading-tight md:block">
             <span className="block max-w-36 truncate text-[13px] font-semibold text-ink-900">{data.property.name}</span>
             <span className="block max-w-36 truncate text-[11px] text-ink-500">
-              {data.user.name} · {data.user.roleName}
+              {data.user.name} · {tr(data.user.roleName)}
             </span>
           </span>
           <ChevronsUpDown className="hidden h-4 w-4 text-ink-400 md:block" />
@@ -221,7 +226,7 @@ function AccountMenu({ data }: { data: ShellData }) {
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{m.name}</span>
                 <span className="block text-[11px] text-ink-400">
-                  {m.city ?? '—'} · {m.roleName}
+                  {m.city ?? '—'} · {tr(m.roleName)}
                 </span>
               </span>
               {m.id === data.property.id && <Check className="h-4 w-4 text-brand-600" />}
@@ -232,6 +237,19 @@ function AccountMenu({ data }: { data: ShellData }) {
             <p className="text-[13px] font-semibold text-ink-900">{data.user.name}</p>
             {data.user.email && <p className="truncate text-xs text-ink-500">{data.user.email}</p>}
           </div>
+          <MenuItem icon={<UserRound className="h-4 w-4" />} onClick={() => (close(), router.push('/account'))}>
+            My account
+          </MenuItem>
+          {data.permissions.some((p) => p === '*' || p === 'money.view') && (
+            <MenuItem icon={<Smartphone className="h-4 w-4" />} onClick={() => (close(), router.push('/owner'))}>
+              Owner view (phone)
+            </MenuItem>
+          )}
+          {data.user.isSuperAdmin && (
+            <MenuItem icon={<ShieldCheck className="h-4 w-4" />} onClick={() => (close(), router.push('/admin'))}>
+              Platform admin
+            </MenuItem>
+          )}
           <form action={signOutAction}>
             <button type="submit" className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-rose-600 transition hover:bg-rose-50">
               <LogOut className="h-4 w-4" />
@@ -248,7 +266,7 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
   const { t } = useT();
   const can = (p: Parameters<typeof hasPermission>[1]) => hasPermission(data.permissions, p);
   return (
-    <header className="sticky top-0 z-30 border-b border-ink-200/80 bg-white/85 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-ink-200/70 bg-white/75 shadow-[0_1px_0_0_rgb(255_255_255/0.6)_inset] backdrop-blur-xl backdrop-saturate-150">
       <div className="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
         <button onClick={onOpenMenu} className="grid h-9 w-9 place-items-center rounded-lg text-ink-600 hover:bg-ink-100 lg:hidden" aria-label="Open menu">
           <Menu className="h-5 w-5" />
@@ -270,7 +288,7 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
         </button>
 
         <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
-          <div className="mr-1 hidden sm:block">
+          <div className="mr-0.5 sm:mr-1">
             <LanguageToggle />
           </div>
           <div className="hidden items-center gap-0.5 xl:flex">
@@ -286,14 +304,16 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
               <Headset className="h-[18px] w-[18px]" />
             </IconLink>
           </div>
+          <span className="hidden sm:contents">
           <IconLink
             href="/messages"
             label={t('top.whatsapp')}
-            badge={<span className="absolute -top-1 -right-1.5 rounded-full bg-brand-600 px-1 py-px text-[8px] font-bold tracking-wide text-white uppercase ring-2 ring-white">New</span>}
+            badge={<span className="absolute -top-1 -right-1.5 rounded-full bg-brand-600 px-1 py-px text-[8px] font-bold tracking-wide text-white uppercase ring-2 ring-white">{tx('New')}</span>}
           >
             <MessageCircle className="h-[18px] w-[18px] text-emerald-600" />
           </IconLink>
           <AppsGrid data={data} />
+          </span>
           <Notifications data={data} />
           <div className="mx-1 hidden h-6 w-px bg-ink-200 sm:block" />
           <AccountMenu data={data} />

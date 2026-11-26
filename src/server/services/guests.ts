@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, or, sql } from 'drizzle-orm';
 import { db, type DbOrTx } from '@/db';
 import { bookings, guests, payments } from '@/db/schema';
 import { editDistance, maskIdNumber, nameKey, normaliseMobile } from '@/lib/utils';
@@ -108,8 +108,8 @@ export async function lookupGuests(propertyId: string, query: string): Promise<G
       company: guests.company,
       companyGstin: guests.companyGstin,
       isVip: guests.isVip,
-      stays: sql<number>`(SELECT count(*)::int FROM bookings b WHERE b.guest_id = ${guests.id} AND b.status IN ('checked_out','checked_in','confirmed'))`,
-      lastStay: sql<string | null>`(SELECT max(b.check_in)::text FROM bookings b WHERE b.guest_id = ${guests.id})`,
+      stays: sql<number>`(SELECT count(*)::int FROM bookings b WHERE b.guest_id = "guests"."id" AND b.status IN ('checked_out','checked_in','confirmed'))`,
+      lastStay: sql<string | null>`(SELECT max(b.check_in)::text FROM bookings b WHERE b.guest_id = "guests"."id")`,
     })
     .from(guests)
     .where(
@@ -162,6 +162,62 @@ export async function findDuplicateGuests(propertyId: string, name: string, mobi
       return [];
     })
     .slice(0, 5);
+}
+
+type PairGuest = { id: string; name: string; nameKey: string; mobile: string | null };
+
+/**
+ * Possible duplicates for the Guests screen. New duplicates appear when a new guest is created, so only guests added
+ * in the last 90 days (newest 300) are checked, each against the guests whose name starts with the same four
+ * letters (index on the name key) or who share the mobile. Rules: the same name and mobile, or names 1–2 letters
+ * apart ("Vivek Agrawal" / "Vivek Agewal"). This stays fast with tens of thousands of guests.
+ */
+export async function recentDuplicatePairs(propertyId: string, now: Date = new Date()) {
+  const recent = await db
+    .select({ id: guests.id, name: guests.name, nameKey: guests.nameKey, mobile: guests.mobile })
+    .from(guests)
+    .where(and(eq(guests.propertyId, propertyId), isNull(guests.mergedIntoId), gte(guests.createdAt, new Date(now.getTime() - 90 * 86_400_000))))
+    .orderBy(desc(guests.createdAt))
+    .limit(300);
+  const prefixes = [...new Set(recent.map((g) => g.nameKey.slice(0, 4)).filter((p) => p.length === 4))];
+  const mobiles = [...new Set(recent.map((g) => g.mobile).filter((m): m is string => Boolean(m)))];
+  if (prefixes.length === 0 && mobiles.length === 0) return [];
+  const candidates = await db
+    .select({ id: guests.id, name: guests.name, nameKey: guests.nameKey, mobile: guests.mobile })
+    .from(guests)
+    .where(
+      and(
+        eq(guests.propertyId, propertyId),
+        isNull(guests.mergedIntoId),
+        or(
+          mobiles.length ? inArray(guests.mobile, mobiles) : undefined,
+          ...prefixes.map((p) => sql`${guests.nameKey} LIKE ${`${p.replace(/[\\%_]/g, '\\$&')}%`}`),
+        ),
+      ),
+    );
+  const byPrefix = new Map<string, PairGuest[]>();
+  for (const c of candidates) {
+    const key = c.nameKey.slice(0, 4);
+    const list = byPrefix.get(key);
+    if (list) list.push(c);
+    else byPrefix.set(key, [c]);
+  }
+  const seen = new Set<string>();
+  const pairs: { a: PairGuest; b: PairGuest; reason: string }[] = [];
+  for (const g of recent) {
+    for (const c of byPrefix.get(g.nameKey.slice(0, 4)) ?? []) {
+      if (c.id === g.id || Math.abs(c.nameKey.length - g.nameKey.length) > 2) continue;
+      const key = g.id < c.id ? `${g.id}:${c.id}` : `${c.id}:${g.id}`;
+      if (seen.has(key)) continue;
+      const d = editDistance(g.nameKey, c.nameKey);
+      const reason = d > 0 && d <= 2 && g.nameKey.length >= 8 ? 'Very similar names' : d === 0 && g.mobile && g.mobile === c.mobile ? 'Same name and mobile' : null;
+      if (!reason) continue;
+      seen.add(key);
+      // The older profile first: it is usually the one to keep.
+      pairs.push({ a: c, b: g, reason });
+    }
+  }
+  return pairs;
 }
 
 /** Merge `mergeId` into `keepId`: move bookings and payments, then mark the duplicate as merged. */

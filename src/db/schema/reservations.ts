@@ -54,6 +54,9 @@ export const guests = pgTable(
   (t) => [
     index('guests_mobile_idx').on(t.propertyId, t.mobile),
     index('guests_name_key_idx').on(t.propertyId, t.nameKey),
+    // LIKE 'vive%' lookups for possible duplicates (the plain index cannot serve LIKE outside the C collation).
+    index('guests_name_key_prefix_idx').on(t.propertyId, t.nameKey.op('text_pattern_ops')),
+    index('guests_created_idx').on(t.propertyId, t.createdAt),
   ],
 );
 
@@ -99,6 +102,9 @@ export const bookings = pgTable(
     internalNotes: text('internal_notes'),
     createdBy: uuid('created_by').references(() => users.id),
     confirmedAt: ts('confirmed_at'),
+    /** FRRO Form-C for foreign guests must be filed within 24 hours of arrival. */
+    formCSubmittedAt: ts('form_c_submitted_at'),
+    formCRef: text('form_c_ref'),
     cancelledAt: ts('cancelled_at'),
     cancelReason: text('cancel_reason'),
     createdAt: createdAt(),
@@ -153,10 +159,12 @@ export const bookingRooms = pgTable(
   (t) => [
     index('booking_rooms_booking_idx').on(t.bookingId),
     index('booking_rooms_room_dates_idx').on(t.propertyId, t.roomId, t.checkIn, t.checkOut),
+    // Stays covering a date or range (revenue for the dashboard and reports): check_out > from finds the few recent ones.
+    index('booking_rooms_stay_idx').on(t.propertyId, t.checkOut, t.checkIn),
   ],
 );
 
-export const FOLIO_TYPES = ['room', 'pos', 'extra', 'discount', 'payment', 'refund', 'adjustment'] as const;
+export const FOLIO_TYPES = ['room', 'pos', 'extra', 'discount', 'payment', 'refund', 'adjustment', 'cancellation'] as const;
 export type FolioType = (typeof FOLIO_TYPES)[number];
 
 /** Every charge and credit on a guest's bill. Charges are positive, payments/discounts negative. */

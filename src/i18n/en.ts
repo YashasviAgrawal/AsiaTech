@@ -31,6 +31,7 @@ export const en = {
   'nav.bookingEngine': 'Booking Engine',
   'nav.pointOfSale': 'Point Of Sale',
   'nav.menuTables': 'Menu & Tables',
+  'nav.printers': 'Printers',
   'nav.roomStatus': 'Room Status',
   'nav.checklist': 'Checklist',
   'nav.repairs': 'Repair Tickets',
@@ -133,6 +134,10 @@ export const en = {
   'hk.amenities': 'Amenities',
   'hk.maintenance': 'Maintenance',
   'hk.submit': 'Submit inspection',
+  'hk.guestArriving': 'Guest arriving',
+  'hk.rooms': 'rooms',
+  'hk.tapIssues': 'Tap Problem or Missing where needed',
+  'hk.back': 'Back',
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -9,7 +9,7 @@ export interface ShellNotification {
 }
 
 export interface ShellData {
-  user: { name: string; email: string | null; roleName: string };
+  user: { name: string; email: string | null; roleName: string; isSuperAdmin: boolean };
   property: { id: string; name: string; city: string | null; businessDate: string; status: string; slug: string };
   memberships: { id: string; name: string; city: string | null; roleName: string }[];
   permissions: string[];

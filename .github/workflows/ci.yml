@@ -1,0 +1,77 @@
+# Every pull request and every push to main: lint, types, unit tests, database tests against a real Postgres,
+# the production build and both Docker images. Nothing is deployed or pushed.
+name: CI
+
+on:
+  # Pull requests run once (not again for the push to their branch); main runs after each merge.
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      # The tests connect as `hotel`, which is not a superuser, so row-level security applies as in production.
+      TEST_DATABASE_URL: postgresql://hotel:hotel@localhost:5432/hotel_os_test
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Lint
+        run: npm run lint
+      - name: Types
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Test database (app role without superuser or BYPASSRLS)
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE hotel LOGIN PASSWORD 'hotel' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS" \
+            -c "CREATE DATABASE hotel_os_test OWNER hotel"
+      - name: pg_dump for the backup tests
+        run: command -v pg_dump || (sudo apt-get update && sudo apt-get install -y postgresql-client) && pg_dump --version
+      - name: Database tests (migrate, seed, inventory races, roles, row-level security, backups)
+        run: npm run test:integration
+      - name: Production build
+        run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: App image
+        run: docker build --target app -t asiatech-app:ci .
+      - name: Tools image (migrations, seed, worker, backups)
+        run: |
+          docker build --target tools -t asiatech-tools:ci .
+          docker run --rm --entrypoint pg_dump asiatech-tools:ci --version
+      - name: Compose file is valid
+        working-directory: deploy
+        run: |
+          cp .env.example .env
+          sed -i 's/^POSTGRES_PASSWORD=$/POSTGRES_PASSWORD=ci/; s/^APP_DB_PASSWORD=$/APP_DB_PASSWORD=ci/; s/^AUTH_SECRET=$/AUTH_SECRET=ci-secret-ci-secret-ci-secret-ci-secret/; s/^CREDENTIALS_KEY=$/CREDENTIALS_KEY=0000000000000000000000000000000000000000000000000000000000000000/' .env
+          docker compose config --quiet
