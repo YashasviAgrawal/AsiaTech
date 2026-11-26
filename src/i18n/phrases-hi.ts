@@ -819,6 +819,8 @@ Object.assign(hiPhrases, MONTHS, {
   "Who changed which rate, discount or booking, and when. Changes with a snapshot can be undone from where they were made.": "किसने कौन-सा रेट, छूट या बुकिंग कब बदली। जिन बदलावों का रिकॉर्ड है, उन्हें वहीं से वापस लिया जा सकता है।",
   "Who stays where. Drag a stay to move it, drag its right edge to extend, or click an empty cell to book.": "कौन कहाँ ठहरा है। खिसकाने के लिए बुकिंग को खींचें, बढ़ाने के लिए दायाँ किनारा खींचें, या नई बुकिंग के लिए ख़ाली खाने पर क्लिक करें।",
   "Who still owes money, grouped by guest, company, travel agent and OTA, and aged by days since check-out.": "किस पर पैसा बाकी है: मेहमान, कंपनी, ट्रैवल एजेंट और OTA के हिसाब से, चेक-आउट के बाद के दिनों के साथ।",
+  "Who still owes money, grouped by guest, company, travel agent and OTA, and aged by days since check-out (or since the cancellation, for a cancellation charge).":
+    "किस पर पैसा बाकी है: मेहमान, कंपनी, ट्रैवल एजेंट और OTA के हिसाब से, चेक-आउट के बाद के दिनों के साथ (रद्द करने के शुल्क में रद्द होने के दिन से)।",
   "Wide photo of the building or lobby, at least 1600 px": "बिल्डिंग या लॉबी की चौड़ी फ़ोटो, कम से कम 1600 px",
   "Your own commission-free booking page. Bookings arrive as WEB… with the same live availability as every OTA.": "आपका अपना बिना कमीशन वाला बुकिंग पेज। बुकिंग WEB… नंबर से आती हैं, हर OTA जैसी लाइव उपलब्धता के साथ।",
   "Your room types, the physical rooms in each, and what you sell them as: room only (EP), with breakfast (CP), breakfast + 1 meal (MAP) or all meals (AP).": "आपके कमरों के प्रकार, हर प्रकार में असली कमरे, और आप उन्हें कैसे बेचते हैं: सिर्फ़ कमरा (EP), नाश्ते के साथ (CP), नाश्ता + 1 खाना (MAP) या सारे खाने (AP)।",
@@ -1575,6 +1577,41 @@ Object.assign(hiPhrases, {
   'Open backups': 'बैकअप खोलें',
 });
 
+// ── Cancelled and no-show bookings: the advance is refunded, kept as a charge (GST invoice) or decided later ──
+Object.assign(hiPhrases, {
+  'What happens to the advance?': 'एडवांस का क्या करें?',
+  'Amount kept (incl. GST)': 'रखी गई रकम (GST सहित)',
+  'Decide later': 'बाद में तय करें',
+  'It stays on Home as a task until you refund or keep it.': 'जब तक आप इसे रिफ़ंड न करें या रख न लें, यह होम पर काम के रूप में दिखेगा।',
+  'You can restore the booking if the guest turns up.': 'मेहमान आ जाएँ तो बुकिंग वापस ला सकते हैं।',
+  'The rooms are released for sale on every OTA immediately.': 'कमरे तुरंत हर OTA पर फिर से बिक्री के लिए खुल जाते हैं।',
+  'The guest did not arrive. Refund the money or keep it as a no-show charge.': 'मेहमान नहीं आए। पैसा रिफ़ंड करें या नो-शो शुल्क के रूप में रखें।',
+  'The booking is cancelled. Refund the money or keep it as a cancellation charge.': 'बुकिंग रद्द हो गई है। पैसा रिफ़ंड करें या रद्द करने के शुल्क के रूप में रखें।',
+  'Advance held': 'रखा हुआ एडवांस',
+  'Refund or keep': 'रिफ़ंड करें या रखें',
+  'Nothing due': 'कुछ बाकी नहीं',
+  'not charged: guest did not arrive': 'शुल्क नहीं: मेहमान नहीं आए',
+  'not charged: booking cancelled': 'शुल्क नहीं: बुकिंग रद्द',
+  'The guest did not arrive and nothing was charged.': 'मेहमान नहीं आए और कोई शुल्क नहीं लगा।',
+  'The booking was cancelled and nothing was charged.': 'बुकिंग रद्द हुई और कोई शुल्क नहीं लगा।',
+  'Release rooms': 'कमरे छोड़ें',
+  'Keep it as a no-show charge': 'नो-शो शुल्क के रूप में रखें',
+  'Keep it as a cancellation charge': 'रद्द करने के शुल्क के रूप में रखें',
+  'Guest did not arrive: refund it or keep it as a no-show charge': 'मेहमान नहीं आए: रिफ़ंड करें या नो-शो शुल्क के रूप में रखें',
+  'Booking cancelled: refund it or keep it as a cancellation charge': 'बुकिंग रद्द: रिफ़ंड करें या रद्द करने के शुल्क के रूप में रखें',
+  'Guest did not arrive': 'मेहमान नहीं आए',
+  'Only staff who handle money can refund or keep an advance.': 'एडवांस रिफ़ंड करना या रखना सिर्फ़ पैसे का काम देखने वाला स्टाफ़ कर सकता है।',
+  'Only a cancelled or no-show booking can keep or refund its advance.': 'सिर्फ़ रद्द या नो-शो बुकिंग का एडवांस रिफ़ंड किया या रखा जा सकता है।',
+  'Enter an amount to refund or keep.': 'रिफ़ंड करने या रखने की रकम डालें।',
+  'This booking already has a cancellation charge.': 'इस बुकिंग पर पहले से रद्द करने का शुल्क लगा है।',
+  'Nothing is left to refund.': 'रिफ़ंड करने को कुछ नहीं बचा।',
+  'Booking restored.': 'बुकिंग वापस आ गई।',
+  'Extras, discounts & cancellation charges': 'बाकी ख़र्च, छूट और रद्द करने के शुल्क',
+  'Restaurant to room': 'रेस्टोरेंट से कमरे में',
+  'An advance paid on a no-show stays on Home until someone refunds it or keeps it as a no-show charge (with a GST invoice).':
+    'नो-शो बुकिंग का एडवांस होम पर तब तक दिखेगा जब तक कोई उसे रिफ़ंड न करे या नो-शो शुल्क के रूप में (GST इनवॉइस के साथ) न रख ले।',
+});
+
 export const hiPatterns: [RegExp, string | ((...groups: string[]) => string)][] = [
   [/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (\d+)(?:st|nd|rd|th) (\w+)$/, (d, n, m) => `${WEEKDAYS[d] ?? d}, ${n} ${MONTHS[m] ?? m}`],
   [/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), (\d+) (\w{3})$/, (d, n, m) => `${WEEKDAYS[d] ?? d}, ${n} ${MONTHS[m] ?? m}`],
@@ -1582,6 +1619,8 @@ export const hiPatterns: [RegExp, string | ((...groups: string[]) => string)][] 
   [/^Check out (.+) \(ID: (.+)\)$/, '$1 (ID: $2) का चेक-आउट करें'],
   [/^Create CHECKIN for: (.+) \(ID: (.+)\)$/, '$1 (ID: $2) का चेक-इन करें'],
   [/^Assign a room to (.+) \((.+)\)$/, '$1 ($2) को कमरा दें'],
+  [/^Assign (\d+) rooms to (.+) \((.+)\)$/, '$2 ($3) को $1 कमरे दें'],
+  [/^(.+) · arriving (today|tomorrow)$/, (types, when) => `${types} · ${when === 'today' ? 'आज' : 'कल'} आएँगे`],
   [/^Submit Form-C \(FRRO\) for (.+) \(ID: (.+)\)$/, '$1 (ID: $2) का Form-C (FRRO) जमा करें'],
   [/^Property not bookable on (.+)\. Reason: (.+)$/, (ota, reason) => `${ota} पर बुकिंग बंद है। कारण: ${hiPhrases[reason] ?? reason}`],
   [/^(\d+) (.+?) updates? failed in the last 24 hours$/, 'पिछले 24 घंटों में $2 के $1 अपडेट नहीं गए'],
@@ -1750,4 +1789,39 @@ export const hiPatterns: [RegExp, string | ((...groups: string[]) => string)][] 
   [/^Every night at (\d{2}:\d{2})$/, 'हर रात $1 बजे'],
   [/^Kept (\d+) days$/, '$1 दिन रखे जाते हैं'],
   [/^Downloaded backup (\S+)$/, 'बैकअप $1 डाउनलोड किया'],
+  // Cancelled and no-show bookings: refund or keep the advance
+  [/^Refund (₹[\d,.]+) to the guest$/, 'मेहमान को $1 रिफ़ंड करें'],
+  [/^GST invoice: (₹[\d,.]+) \+ (₹[\d,.]+) GST \((\d+(?:\.\d+)?)%\)$/, 'GST इनवॉइस: $1 + $2 GST ($3%)'],
+  [/^The other (₹[\d,.]+) is refunded\.$/, 'बाकी $1 रिफ़ंड होंगे।'],
+  [/^(₹[\d,.]+) more is still due and goes on the credit report\.$/, '$1 और बाकी हैं, यह उधारी रिपोर्ट में दिखेगा।'],
+  [/^Refund (₹[\d,.]+) by$/, '$1 किस तरह रिफ़ंड करें'],
+  [/^(₹[\d,.]+) advance was paid\. What happens to it\?$/, '$1 एडवांस मिला था। इसका क्या करें?'],
+  [/^The (₹[\d,.]+) advance stays on Home for the manager to refund or keep\.$/, '$1 का एडवांस होम पर रहेगा, मैनेजर इसे रिफ़ंड करेंगे या रखेंगे।'],
+  [/^(₹[\d,.]+) advance held$/, '$1 एडवांस रखा है'],
+  [/^(₹[\d,.]+) advance held for (.+) \(ID: (.+)\)$/, '$2 (ID: $3) का $1 एडवांस रखा है'],
+  [/^Refund (₹[\d,.]+)$/, '$1 रिफ़ंड करें'],
+  [/^Keep (₹[\d,.]+), refund (₹[\d,.]+)$/, '$1 रखें, $2 रिफ़ंड करें'],
+  [/^Keep (₹[\d,.]+) and make invoice$/, '$1 रखें और इनवॉइस बनाएँ'],
+  [/^Mark (.+) as no-show\?$/, '$1 को नो-शो मार्क करें?'],
+  [/^Cancel ((?:FDR|OTA|WEB)\d+)\?$/, '$1 रद्द करें?'],
+  [/^Release hold ((?:FDR|OTA|WEB)\d+)\?$/, '$1 का होल्ड छोड़ें?'],
+  [/^(.+) · (\w{3}, \d+ \w{3}) → (\w{3}, \d+ \w{3})\. The rooms go back on sale on every OTA immediately\.$/, (name, a, b) => `${name} · ${day(a)} → ${day(b)}। कमरे तुरंत हर OTA पर फिर से बिक्री के लिए खुल जाते हैं।`],
+  [/^((?:FDR|OTA|WEB)\d+) (cancelled|marked no-show|settled)((?: · .+)?)$/, (b, done, rest) => {
+    const verb: Record<string, string> = { cancelled: 'रद्द हुई', 'marked no-show': 'नो-शो मार्क हुई', settled: 'का हिसाब हुआ' };
+    const parts = rest
+      ? rest
+          .slice(3)
+          .split(' · ')
+          .map((p) => p.replace(/^(₹[\d,.]+) refunded$/, '$1 रिफ़ंड').replace(/^(₹[\d,.]+) kept$/, '$1 रखे').replace(/^invoice (\S+)$/, 'इनवॉइस $1'))
+      : [];
+    return [`${b} ${verb[done] ?? done}`, ...parts].join(' · ');
+  }],
+  [/^(Received|Refunded) (₹[\d,.]+) by (.+) on (\S+)$/, (kind, a, mode, b) => `${b} पर ${phrase(mode)} से ${a} ${kind === 'Received' ? 'मिले' : 'रिफ़ंड किए'}`],
+  [/^Kept (₹[\d,.]+) as (no-show|cancellation) charge on (\S+) · invoice (\S+)$/, (a, kind, b, inv) => `${b} पर ${a} ${kind === 'no-show' ? 'नो-शो शुल्क' : 'रद्द करने के शुल्क'} के रूप में रखे · इनवॉइस ${inv}`],
+  [/^Cancelled ((?:FDR|OTA|WEB)\d+)(?: · (.+))?$/, (b, reason) => `${b} रद्द की${reason ? ` · ${phrase(reason).replace(/^Cancelled on (.+)$/, '$1 पर रद्द')}` : ''}`],
+  [/^Marked no-show ((?:FDR|OTA|WEB)\d+)(?: · (.+))?$/, (b, reason) => `${b} नो-शो मार्क की${reason ? ` · ${phrase(reason)}` : ''}`],
+  [/^Restored ((?:FDR|OTA|WEB)\d+)$/, '$1 वापस लाई'],
+  [/^(No-show|Cancellation) charge · stay (\w{3}, \d+ \w{3}) – (\w{3}, \d+ \w{3})$/, (kind, a, b) => `${kind === 'No-show' ? 'नो-शो शुल्क' : 'रद्द करने का शुल्क'} · ठहरना ${day(a)} – ${day(b)}`],
+  [/^Only (₹[\d,.]+) can be refunded\.$/, 'सिर्फ़ $1 रिफ़ंड हो सकते हैं।'],
+  [/^A (no-show|cancellation) charge was invoiced on this booking \((\S+)\)\. Make a new booking instead\.$/, (kind, inv) => `इस बुकिंग पर ${kind === 'no-show' ? 'नो-शो शुल्क' : 'रद्द करने के शुल्क'} का इनवॉइस (${inv}) बन चुका है। इसकी जगह नई बुकिंग बनाएँ।`],
 ];

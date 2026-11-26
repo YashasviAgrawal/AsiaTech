@@ -5,13 +5,14 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { BOOKING_SOURCES, bookingRooms, bookings, guests, ID_TYPES, PAYMENT_MODES, roomTypes } from '@/db/schema';
-import { formatDateTime, nightsBetween } from '@/lib/format';
+import { formatDateTime, formatINR, nightsBetween } from '@/lib/format';
 import { nameKey, normaliseMobile } from '@/lib/utils';
 import { actionContext } from '../context';
 import { runAction } from '../action';
 import { UserError } from '../errors';
 import { actorFromContext } from '../services/actor';
-import { cancelBooking, confirmHold, createBooking, extendHold, restoreBooking } from '../services/bookings';
+import { confirmHold, createBooking, extendHold, restoreBooking } from '../services/bookings';
+import { cancelWithAdvance, settleUnstayedAdvance } from '../services/cancellation';
 import { findDuplicateGuests, lookupGuests, mergeGuests } from '../services/guests';
 import { getStayAvailability } from '../services/inventory';
 import { quote } from '../services/pricing';
@@ -168,25 +169,52 @@ export async function createReservationAction(input: ReservationInput) {
 
 /* ───────────────────────── booking lifecycle ───────────────────────── */
 
-export async function cancelBookingAction(bookingId: string, reason: string) {
+/** What to do with money already paid on a booking that is being cancelled (or is cancelled). */
+const advanceDecision = z.object({
+  keep: z.number().min(0).max(10_000_000),
+  refund: z.number().min(0).max(10_000_000),
+  mode: z.enum(PAYMENT_MODES),
+  reference: z.string().trim().max(80).nullable().optional(),
+});
+
+function advanceMessage(bookingNo: string, done: string, money: { refunded: number; kept: number; invoiceNo: string | null } | null) {
+  const parts = [`${bookingNo} ${done}`];
+  if (money?.refunded) parts.push(`${formatINR(money.refunded)} refunded`);
+  if (money?.kept) parts.push(`${formatINR(money.kept)} kept · invoice ${money.invoiceNo}`);
+  return parts.join(' · ');
+}
+
+export async function cancelBookingAction(bookingId: string, reason: string, decision?: z.input<typeof advanceDecision> | null) {
   return runAction(async () => {
     const ctx = await actionContext('bookings.cancel');
-    const result = await cancelBooking(actorFromContext(ctx), bookingId, reason);
+    if (decision && !ctx.can('money.manage')) throw new UserError('Only staff who handle money can refund or keep an advance.');
+    const result = await cancelWithAdvance(actorFromContext(ctx), bookingId, reason, {}, decision ? advanceDecision.parse(decision) : null);
     revalidatePath('/', 'layout');
-    return result;
+    return { ...result, message: advanceMessage(result.bookingNo, 'cancelled', result.money) };
   });
 }
 
-export async function noShowAction(bookingId: string) {
+export async function noShowAction(bookingId: string, decision?: z.input<typeof advanceDecision> | null) {
   return runAction(async () => {
     const ctx = await actionContext('bookings.cancel');
+    if (decision && !ctx.can('money.manage')) throw new UserError('Only staff who handle money can refund or keep an advance.');
     const [b] = await db.select({ checkIn: bookings.checkIn }).from(bookings).where(and(eq(bookings.id, bookingId), eq(bookings.propertyId, ctx.propertyId)));
     if (!b) throw new UserError('Booking not found.');
     if (b.checkIn > ctx.property.businessDate) throw new UserError('A guest can only be a no-show on or after the arrival date.');
-    const result = await cancelBooking(actorFromContext(ctx), bookingId, 'Guest did not arrive', { status: 'no_show' });
+    const result = await cancelWithAdvance(actorFromContext(ctx), bookingId, 'Guest did not arrive', { status: 'no_show' }, decision ? advanceDecision.parse(decision) : null);
     revalidatePath('/', 'layout');
-    return result;
-  }, 'Marked as no-show. Rooms released.');
+    return { ...result, message: advanceMessage(result.bookingNo, 'marked no-show', result.money) };
+  });
+}
+
+/** Refund or keep the advance of a booking that was cancelled earlier (or by an OTA, or at Night Audit). */
+export async function settleAdvanceAction(bookingId: string, decision: z.input<typeof advanceDecision>) {
+  return runAction(async () => {
+    const ctx = await actionContext('money.manage');
+    const result = await settleUnstayedAdvance(actorFromContext(ctx), bookingId, advanceDecision.parse(decision));
+    revalidatePath('/', 'layout');
+    return { ...result, message: advanceMessage(result.bookingNo, 'settled', result) };
+  });
 }
 
 export async function restoreBookingAction(bookingId: string) {

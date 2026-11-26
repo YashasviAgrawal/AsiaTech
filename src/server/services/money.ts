@@ -2,7 +2,8 @@ import 'server-only';
 import { and, asc, desc, eq, gte, inArray, lte, ne, or, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { bookings, folioLines, guests, payments, pettyCash, users, type PaymentMode } from '@/db/schema';
-import { formatINR, nightsBetween } from '@/lib/format';
+import { bookingBalance, isUnstayed, UNSTAYED_STATUSES } from '@/lib/booking-money';
+import { formatINR, nightsBetween, todayIST } from '@/lib/format';
 import { round2 } from '@/lib/utils';
 import { UserError } from '../errors';
 import { logActivity, notify } from '../audit';
@@ -194,7 +195,10 @@ export async function reviewPettyCash(actor: Actor, id: string, approve: boolean
 
 export const AGE_BUCKETS = ['0–30', '31–60', '61–90', '90+'] as const;
 
-/** Money still owed after check-out (and by in-house guests), grouped by who pays and aged by days. */
+/**
+ * Money still owed after check-out (and by in-house guests billed to someone else), grouped by who pays and aged
+ * by days. Cancelled and no-show bookings appear only for a cancellation charge not yet paid.
+ */
 export async function creditReport(propertyId: string, bizDate: string) {
   // Extras (restaurant, laundry, …) per booking, summed once; only bookings that still owe money come back, so the
   // report stays quick however many finished stays the hotel has.
@@ -213,6 +217,7 @@ export async function creditReport(propertyId: string, bizDate: string) {
       billToName: bookings.billToName,
       checkIn: bookings.checkIn,
       checkOut: bookings.checkOut,
+      cancelledAt: bookings.cancelledAt,
       totalAmount: bookings.totalAmount,
       paidAmount: bookings.paidAmount,
       guestName: guests.name,
@@ -227,21 +232,23 @@ export async function creditReport(propertyId: string, bizDate: string) {
     .where(
       and(
         eq(bookings.propertyId, propertyId),
-        inArray(bookings.status, ['checked_out', 'checked_in']),
-        or(eq(bookings.status, 'checked_out'), ne(bookings.billTo, 'guest')),
-        sql`${bookings.totalAmount} + COALESCE(${extras.amount}, 0) - ${bookings.paidAmount} > 0.5`,
+        inArray(bookings.status, ['checked_out', 'checked_in', ...UNSTAYED_STATUSES]),
+        or(ne(bookings.status, 'checked_in'), ne(bookings.billTo, 'guest')),
+        sql`CASE WHEN ${inArray(bookings.status, [...UNSTAYED_STATUSES])} THEN 0 ELSE ${bookings.totalAmount} END + COALESCE(${extras.amount}, 0) - ${bookings.paidAmount} > 0.5`,
       ),
     );
 
   const owed = rows
     .map((r) => {
-      const balance = round2(r.totalAmount + r.extras - r.paidAmount);
-      const days = r.status === 'checked_out' ? Math.max(0, nightsBetween(r.checkOut, bizDate)) : 0;
+      const balance = bookingBalance(r);
+      // Aged from check-out; a cancellation charge from the day the booking was cancelled.
+      const since = r.status === 'checked_out' ? r.checkOut : r.cancelledAt && isUnstayed(r.status) ? todayIST(r.cancelledAt) : null;
+      const days = since ? Math.max(0, nightsBetween(since, bizDate)) : 0;
       const bucket: (typeof AGE_BUCKETS)[number] = days <= 30 ? '0–30' : days <= 60 ? '31–60' : days <= 90 ? '61–90' : '90+';
       const debtor = r.billTo === 'guest' ? r.guestName : r.billToName ?? r.company ?? r.guestName;
       return { ...r, balance, days, bucket, debtor };
     })
-    .filter((r) => r.balance > 0.5 && (r.status === 'checked_out' || r.billTo !== 'guest'));
+    .filter((r) => r.balance > 0.5 && (r.status !== 'checked_in' || r.billTo !== 'guest'));
 
   const groups = (['guest', 'company', 'agent', 'ota'] as const).map((billTo) => {
     const list = owed.filter((o) => o.billTo === billTo).sort((a, b) => b.days - a.days);

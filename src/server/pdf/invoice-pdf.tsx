@@ -115,6 +115,9 @@ function InvoicePdf({ doc, logo, qr }: { doc: InvoiceDocument; logo: { data: Buf
                 <Text style={[s.muted, { marginTop: 2 }]}>
                   {formatDay(booking.checkIn)} → {formatDay(booking.checkOut)} · {booking.nights} night{booking.nights === 1 ? '' : 's'}
                 </Text>
+                {booking.status === 'cancelled' || booking.status === 'no_show' ? (
+                  <Text style={{ marginTop: 2, fontWeight: 600, color: INK[900] }}>{booking.status === 'no_show' ? 'Guest did not arrive (no-show)' : 'Booking cancelled'}</Text>
+                ) : null}
                 {guest && invoice.buyerName !== guest.name ? <Text style={[s.muted, { marginTop: 2 }]}>Guest: {guest.name}</Text> : null}
               </>
             ) : null}

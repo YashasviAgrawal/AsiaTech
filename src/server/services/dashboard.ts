@@ -16,6 +16,7 @@ import {
 } from '@/db/schema';
 import { addDay, formatINR, monthStart, OTA_LABELS, timeAgo, todayIST } from '@/lib/format';
 import { backupHealth } from './backup';
+import { heldAdvances } from './cancellation';
 import { onIstDays } from '@/db/ist';
 import { round2 } from '@/lib/utils';
 import type { AppContext } from '../context';
@@ -116,7 +117,7 @@ export async function getTodaysTasks(ctx: AppContext): Promise<TaskItem[]> {
   const bizDate = ctx.property.businessDate;
   const items: TaskItem[] = [];
 
-  const [pendingArrivals, pendingDepartures, unassigned, listingProblems, failedSyncs, holds, persisted] = await Promise.all([
+  const [pendingArrivals, pendingDepartures, unassigned, listingProblems, failedSyncs, holds, persisted, held] = await Promise.all([
     db
       .select({ id: bookings.id, bookingNo: bookings.bookingNo, name: guests.name, checkIn: bookings.checkIn })
       .from(bookings)
@@ -172,6 +173,7 @@ export async function getTodaysTasks(ctx: AppContext): Promise<TaskItem[]> {
       .from(tasks)
       .where(and(eq(tasks.propertyId, pid), eq(tasks.status, 'open')))
       .orderBy(desc(tasks.createdAt)),
+    heldAdvances(pid),
   ]);
 
   const foreignInHouse = await db
@@ -244,6 +246,17 @@ export async function getTodaysTasks(ctx: AppContext): Promise<TaskItem[]> {
       action: { label: 'Check out', href: `/front-desk/bookings/${b.id}?do=checkout` },
     });
   }
+  // Money paid on a stay that will not happen: refund it, or keep it as a charge with a GST invoice.
+  for (const h of held) {
+    items.push({
+      id: `held-${h.id}`,
+      kind: 'balance',
+      severity: 'warning',
+      title: `${formatINR(h.held)} advance held for ${h.name.toUpperCase()} (ID: ${h.bookingNo})`,
+      detail: h.status === 'no_show' ? 'Guest did not arrive: refund it or keep it as a no-show charge' : 'Booking cancelled: refund it or keep it as a cancellation charge',
+      action: { label: 'Refund or keep', href: `/front-desk/bookings/${h.id}?do=settle` },
+    });
+  }
   for (const b of pendingArrivals) {
     items.push({
       id: `in-${b.id}`,
@@ -254,13 +267,21 @@ export async function getTodaysTasks(ctx: AppContext): Promise<TaskItem[]> {
       action: { label: 'Check in now', href: `/front-desk/bookings/${b.id}?do=checkin` },
     });
   }
+  // One task per booking and arrival date, however many of its rooms still need a number.
+  const toAssign = new Map<string, { u: (typeof unassigned)[number]; types: string[] }>();
   for (const u of unassigned) {
+    const key = `${u.bookingId}-${u.checkIn}`;
+    const entry = toAssign.get(key) ?? { u, types: [] };
+    entry.types.push(u.typeName);
+    toAssign.set(key, entry);
+  }
+  for (const [key, { u, types }] of toAssign) {
     items.push({
-      id: `assign-${u.bookingId}-${u.checkIn}`,
+      id: `assign-${key}`,
       kind: 'assign',
       severity: 'info',
-      title: `Assign a room to ${u.name} (${u.bookingNo})`,
-      detail: `${u.typeName} · arriving ${u.checkIn === bizDate ? 'today' : 'tomorrow'}`,
+      title: types.length > 1 ? `Assign ${types.length} rooms to ${u.name} (${u.bookingNo})` : `Assign a room to ${u.name} (${u.bookingNo})`,
+      detail: `${[...new Set(types)].join(', ')} · arriving ${u.checkIn === bizDate ? 'today' : 'tomorrow'}`,
       action: { label: 'Assign', href: `/front-desk/bookings/${u.bookingId}?do=assign` },
     });
   }

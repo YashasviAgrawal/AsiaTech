@@ -27,7 +27,7 @@ export default async function CreditPage() {
       <PageHeader
         eyebrow="Money"
         title="Credit Report"
-        description="Who still owes money, grouped by guest, company, travel agent and OTA, and aged by days since check-out."
+        description="Who still owes money, grouped by guest, company, travel agent and OTA, and aged by days since check-out (or since the cancellation, for a cancellation charge)."
         actions={<ExportButton href="/api/exports/money/credit" />}
       />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">

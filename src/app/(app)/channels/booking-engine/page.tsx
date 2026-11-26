@@ -31,7 +31,7 @@ export default async function BookingEnginePage() {
           </a>
         }
       />
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-3">
         <Card className="p-5">
           <p className="text-xs font-semibold tracking-wide text-ink-400 uppercase">{tx('This month')}</p>
           <p className="num mt-1 text-3xl font-extrabold text-ink-900">{stats.n}</p>

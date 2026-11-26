@@ -102,6 +102,9 @@ export function NightAuditWizard({
                   ))}
                 </ul>
               )}
+              {state.pendingArrivals.some((a) => a.paid > 0) && (
+                <p className="mt-3 text-xs text-ink-500">{tx('An advance paid on a no-show stays on Home until someone refunds it or keeps it as a no-show charge (with a GST invoice).')}</p>
+              )}
               {state.dueOuts.length > 0 && (
                 <Alert tone="warning" icon={<AlertTriangle className="h-4 w-4" />} className="mt-4" title={`${state.dueOuts.length} guest(s) were due to leave today and are still in house`}>
                   {tx('Check them out or extend their stay before locking the day:')}{' '}

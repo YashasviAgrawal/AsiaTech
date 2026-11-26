@@ -164,7 +164,7 @@ export const bookingRooms = pgTable(
   ],
 );
 
-export const FOLIO_TYPES = ['room', 'pos', 'extra', 'discount', 'payment', 'refund', 'adjustment'] as const;
+export const FOLIO_TYPES = ['room', 'pos', 'extra', 'discount', 'payment', 'refund', 'adjustment', 'cancellation'] as const;
 export type FolioType = (typeof FOLIO_TYPES)[number];
 
 /** Every charge and credit on a guest's bill. Charges are positive, payments/discounts negative. */

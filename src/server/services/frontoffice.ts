@@ -19,9 +19,10 @@ import {
   type NightlyRate,
   type PaymentMode,
 } from '@/db/schema';
-import { addDay, financialYear, formatDayShort, formatINR, nightsBetween, stayDates } from '@/lib/format';
+import { addDay, financialYear, formatDayShort, formatINR, nightsBetween, PAYMENT_MODE_LABELS, stayDates } from '@/lib/format';
 import { SAC_ACCOMMODATION, SAC_RESTAURANT, splitTax } from '@/lib/gst';
 import { maskIdNumber, round2 } from '@/lib/utils';
+import { bookingBalance, isUnstayed } from '@/lib/booking-money';
 import { UserError } from '../errors';
 import { logActivity, nextCounter } from '../audit';
 import { isOwnFile } from '../storage';
@@ -84,15 +85,18 @@ export type BookingDetail = NonNullable<Awaited<ReturnType<typeof getBookingDeta
 /**
  * The bill: room charges (the booking value, incl. GST) + extras posted to the folio (restaurant, laundry,
  * discounts) − payments. Posted room lines are a per-night record of the same room charges, so they are not
- * added twice.
+ * added twice. A cancelled or no-show booking owes no room charges, only what was posted (a cancellation charge);
+ * money paid beyond that is `held` until it is refunded or kept.
  */
 export function computeTotals(booking: typeof bookings.$inferSelect, folio: (typeof folioLines.$inferSelect)[]) {
   const live = folio.filter((l) => !l.isVoid);
   const extras = round2(live.filter((l) => l.type !== 'room').reduce((t, l) => t + l.total, 0));
   const roomPosted = round2(live.filter((l) => l.type === 'room').reduce((t, l) => t + l.total, 0));
-  const grandTotal = round2(booking.totalAmount + extras);
-  const balance = round2(grandTotal - booking.paidAmount);
-  return { room: booking.totalAmount, roomPosted, extras, grandTotal, paid: booking.paidAmount, balance };
+  const room = isUnstayed(booking.status) ? 0 : booking.totalAmount;
+  const grandTotal = round2(room + extras);
+  const balance = bookingBalance({ ...booking, extras });
+  const held = isUnstayed(booking.status) ? Math.max(0, -balance) : 0;
+  return { room, roomPosted, extras, grandTotal, paid: booking.paidAmount, balance, held };
 }
 
 /** Rooms that can be given to a booking room: same type first, free for the whole stay, clean ones on top. */
@@ -405,7 +409,7 @@ export async function recordPayment(actor: Actor, input: { bookingId: string; am
       amount: input.amount,
       mode: input.mode,
       reference: input.reference,
-      kind: input.refund ? 'refund' : booking.status === 'checked_in' || booking.status === 'checked_out' ? 'settlement' : 'advance',
+      kind: input.refund ? 'refund' : ['confirmed', 'hold'].includes(booking.status) ? 'advance' : 'settlement',
     });
     await logActivity(
       {
@@ -414,7 +418,7 @@ export async function recordPayment(actor: Actor, input: { bookingId: string; am
         entityType: 'booking',
         entityId: booking.id,
         action: input.refund ? 'refund' : 'payment',
-        summary: `${input.refund ? 'Refunded' : 'Received'} ${formatINR(input.amount)} by ${input.mode.replace('_', ' ')} on ${booking.bookingNo}`,
+        summary: `${input.refund ? 'Refunded' : 'Received'} ${formatINR(input.amount)} by ${PAYMENT_MODE_LABELS[input.mode] ?? input.mode} on ${booking.bookingNo}`,
       },
       tx,
     );
@@ -652,7 +656,7 @@ export async function getTodayBoard(propertyId: string, bizDate: string) {
       ),
     )
     .orderBy(asc(guests.name));
-  const withBalance = rows.map((r) => ({ ...r, balance: round2(r.totalAmount + r.extras - r.paidAmount) }));
+  const withBalance = rows.map((r) => ({ ...r, balance: bookingBalance(r) }));
   return {
     arrivals: withBalance.filter((r) => r.brStatus === 'reserved' || (r.brStatus === 'in_house' && r.checkIn === bizDate)),
     inHouse: withBalance.filter((r) => r.brStatus === 'in_house'),

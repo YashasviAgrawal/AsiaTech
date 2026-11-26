@@ -30,6 +30,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
         edit: ctx.can('bookings.edit'),
         create: ctx.can('bookings.create'),
         requestMoney: ctx.can('money.manage'),
+        money: ctx.can('money.manage'),
       }}
     />
   );

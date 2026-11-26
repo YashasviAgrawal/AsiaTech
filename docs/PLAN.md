@@ -186,7 +186,7 @@ and tests. All database tables are created in M0, so modules never need disrupti
 - [x] FDR booking number, WhatsApp confirmation in the same step
 - [x] **Hold Booking**: same form with "hold until"; Confirm / Extend / Release; auto-release on expiry
 - [x] Booking detail page: rooms, guest, folio, payments, timeline (activity log)
-- [x] **Cancel** with confirm + reason + undo, No-show · change dates/rooms/room type/plan from the "Change booking" dialog (and Room Chart drag for single-room stays)
+- [x] **Cancel** with confirm + reason + undo, No-show; the advance is refunded, kept as a cancellation / no-show charge (GST invoice) or left as a Home task · change dates/rooms/room type/plan from the "Change booking" dialog (and Room Chart drag for single-room stays)
 - [x] **Booking Report**: filters (dates, source, status, room type), search, totals, export Excel, **Print / PDF**
 - [x] Guest directory: profiles, stay history, **duplicate warning and merge** ("Vivek Agrawal" vs "Vivek Agewal")
 

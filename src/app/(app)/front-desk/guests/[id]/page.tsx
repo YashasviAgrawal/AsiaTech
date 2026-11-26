@@ -34,7 +34,7 @@ export default async function GuestPage({ params }: { params: Promise<{ id: stri
           {tx('This profile was merged.')} <Link href={`/front-desk/guests/${guest.mergedIntoId}`} className="font-semibold underline">{tx('Open the kept profile')}</Link>
         </p>
       )}
-      <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <GuestEditor
           guest={{ id: guest.id, name: guest.name, mobile: guest.mobile, email: guest.email, city: guest.city, company: guest.company, companyGstin: guest.companyGstin, isVip: guest.isVip, notes: guest.notes }}
           stats={{ stays: stays.filter((s) => ['checked_out', 'checked_in'].includes(s.status)).length, spend }}

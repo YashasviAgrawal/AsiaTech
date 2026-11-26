@@ -50,12 +50,12 @@ export function TodayBoard({ data, initialTab, businessDate, canCheckIn }: { dat
           <button
             key={s.key}
             onClick={() => setTab(s.key)}
-            className={cn('card flex items-center gap-3 p-4 text-left transition hover:shadow-lift', tab === s.key && 'ring-2 ring-brand-500')}
+            className={cn('card flex min-w-0 items-center gap-3 p-3 text-left transition hover:shadow-lift sm:p-4', tab === s.key && 'ring-2 ring-brand-500')}
           >
-            <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-xl', s.tone)}>
+            <span className={cn('hidden h-10 w-10 shrink-0 place-items-center rounded-xl sm:grid', s.tone)}>
               <s.icon className="h-5 w-5" />
             </span>
-            <span>
+            <span className="min-w-0">
               <span className="num block text-2xl leading-none font-extrabold text-ink-900">{s.value}</span>
               <span className="mt-1 block text-xs text-ink-500">
                 {tr(s.label)} · {tr(s.sub)}

@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, ilike, inArray, lte, or, sql, type SQL } from 
 import { istDayStart, onIstDays } from '@/db/ist';
 import { db } from '@/db';
 import { bookings, guests, roomTypes, type BookingSource, type BookingStatus } from '@/db/schema';
+import { bookingBalance } from '@/lib/booking-money';
 import { monthStart, todayIST } from '@/lib/format';
 import { normaliseMobile, round2 } from '@/lib/utils';
 
@@ -91,7 +92,7 @@ export async function searchBookings(propertyId: string, f: BookingFilters, limi
     .orderBy(order, asc(bookings.bookingNo))
     .limit(limit);
 
-  const withBalance = rows.map((r) => ({ ...r, balance: round2(r.totalAmount + r.extras - r.paidAmount) }));
+  const withBalance = rows.map((r) => ({ ...r, balance: bookingBalance(r) }));
   const counted = withBalance.filter((r) => !['cancelled', 'no_show'].includes(r.status));
   const summary = {
     count: withBalance.length,

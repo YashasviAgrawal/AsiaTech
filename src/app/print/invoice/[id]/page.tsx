@@ -60,6 +60,8 @@ export default async function InvoicePrint({ params }: { params: Promise<{ id: s
                 <p className="text-ink-600">
                   {formatDay(booking.checkIn)} → {formatDay(booking.checkOut)} · {booking.nights} night{booking.nights === 1 ? '' : 's'}
                 </p>
+                {booking.status === 'cancelled' && <p className="font-semibold text-ink-900">Booking cancelled</p>}
+                {booking.status === 'no_show' && <p className="font-semibold text-ink-900">Guest did not arrive (no-show)</p>}
                 {guest && invoice.buyerName !== guest.name && <p className="text-ink-600">Guest: {guest.name}</p>}
               </>
             )}

@@ -141,7 +141,7 @@ export default async function DashboardPage() {
         <StatTile href="/restaurant/orders?date=month" label={t('dash.monthPosEarning', { month })} value={<AnimatedNumber value={tiles.monthPosEarning} format="inr" />} trend={trends.monthPosEarning} icon={<IndianRupee className="h-4 w-4" />} tone="emerald" />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-3">
         {/* Today's Task */}
         <Card className="xl:col-span-2">
           <CardHeader

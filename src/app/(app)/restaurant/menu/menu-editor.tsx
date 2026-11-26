@@ -29,7 +29,7 @@ export function MenuEditor({ outletId, categories, items, tables }: { outletId: 
   const { run, pending } = useRun();
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
       <Card>
         <CardHeader
           title="Menu"

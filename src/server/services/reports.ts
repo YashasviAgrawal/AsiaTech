@@ -209,7 +209,7 @@ export const REPORTS: ReportDef[] = [
           { key: 'date', label: 'Business date', type: 'date' },
           { key: 'room', label: 'Room', type: 'money' },
           { key: 'pos', label: 'Restaurant to room', type: 'money' },
-          { key: 'extra', label: 'Extras & discounts', type: 'money' },
+          { key: 'extra', label: 'Extras, discounts & cancellation charges', type: 'money' },
           { key: 'tax', label: 'GST', type: 'money' },
           { key: 'total', label: 'Total', type: 'money' },
         ],

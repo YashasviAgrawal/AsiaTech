@@ -12,6 +12,7 @@ import {
   Clock,
   CreditCard,
   FileText,
+  HandCoins,
   Globe2,
   History,
   IdCard,
@@ -35,12 +36,14 @@ import { cn } from '@/lib/utils';
 import { useTr } from '@/i18n/client';
 import { formatDateTime, formatDay, formatDayShort, formatINR, ID_TYPE_LABELS, MEAL_PLAN_LABELS, PAYMENT_MODE_LABELS, sourceLabel, timeAgo } from '@/lib/format';
 import type { BookingDetail } from '@/server/services/frontoffice';
-import { cancelBookingAction, confirmHoldAction, extendHoldAction, noShowAction, restoreBookingAction } from '@/server/actions/reservations';
+import { cancelBookingAction, confirmHoldAction, extendHoldAction, noShowAction, restoreBookingAction, settleAdvanceAction } from '@/server/actions/reservations';
+import { cancellationTaxRate, isUnstayed } from '@/lib/booking-money';
 import { restoreFolioLineAction, updateGuestIdPhotosAction, voidFolioLineAction } from '@/server/actions/frontoffice';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Badge, StatusBadge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/dialog';
+import { CancelDialog, SettleAdvanceDialog } from './advance-dialogs';
 import { MenuItem, Popover } from '@/components/ui/popover';
 import { useRun } from '@/components/ui/use-run';
 import { useToast } from '@/components/ui/toast';
@@ -51,7 +54,7 @@ import { SendInvoiceDialog } from './send-invoice-dialog';
 import { PhotoGrid } from '@/components/ui/photo-upload';
 import { tx } from '@/i18n/tx';
 
-type Dialogs = 'checkin' | 'checkout' | 'payment' | 'charge' | 'cancel' | 'noshow' | 'formc' | 'modify' | { assign: string } | { sendInvoice: string; afterCheckout?: boolean } | null;
+type Dialogs = 'checkin' | 'checkout' | 'payment' | 'charge' | 'cancel' | 'noshow' | 'settle' | 'formc' | 'modify' | { assign: string } | { sendInvoice: string; afterCheckout?: boolean } | null;
 
 export function BookingView({
   data,
@@ -66,7 +69,7 @@ export function BookingView({
   roomTypes: RoomTypeOption[];
   businessDate: string;
   hotel: { name: string; upiId: string };
-  can: { checkin: boolean; cancel: boolean; edit: boolean; create: boolean; requestMoney: boolean };
+  can: { checkin: boolean; cancel: boolean; edit: boolean; create: boolean; requestMoney: boolean; money: boolean };
 }) {
   const { booking: b, guest: g, totals } = data;
   const router = useRouter();
@@ -79,6 +82,7 @@ export function BookingView({
     if (intent === 'checkin' && b.status === 'confirmed') return 'checkin';
     if (intent === 'checkout' && b.status === 'checked_in') return 'checkout';
     if (intent === 'modify' && ['hold', 'confirmed', 'checked_in'].includes(b.status)) return 'modify';
+    if (intent === 'settle' && totals.held > 0.5 && can.money) return 'settle';
     if (intent === 'assign') {
       const first = activeRooms.find((r) => !r.roomId) ?? activeRooms[0];
       if (first) return { assign: first.id };
@@ -97,6 +101,11 @@ export function BookingView({
   const formCHoursLeft = checkedInAt ? Math.round(24 - (now - new Date(checkedInAt).getTime()) / 3600_000) : 24;
   const invoice = data.invoices[0];
   const canModify = can.edit && ['hold', 'confirmed', 'checked_in'].includes(b.status) && roomTypes.length > 0;
+  // A stay that will not happen: no room charges, and any advance is refunded or kept as a charge.
+  const unstayed = isUnstayed(b.status);
+  const chargeRate = cancellationTaxRate(data.rooms, b);
+  // Money still owed on a cancelled booking (a charge kept beyond the advance) is collected like any balance.
+  const collectable = ['confirmed', 'checked_in', 'hold'].includes(b.status) || (unstayed && totals.balance > 0.5);
 
   const primary =
     b.status === 'hold' && can.create ? (
@@ -111,7 +120,7 @@ export function BookingView({
       <Button onClick={() => setDialog('checkout')}>
         <LogOut className="h-4 w-4" /> Check out
       </Button>
-    ) : b.status === 'checked_out' && invoice ? (
+    ) : (b.status === 'checked_out' || unstayed) && invoice ? (
       <>
         <ButtonLink variant="outline" href={`/print/invoice/${invoice.id}`} target="_blank">
           <Printer className="h-4 w-4" /> Print invoice
@@ -150,7 +159,7 @@ export function BookingView({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {['confirmed', 'checked_in', 'hold'].includes(b.status) && can.checkin && (
+            {collectable && can.checkin && (
               <Button variant="outline" onClick={() => setDialog('payment')}>
                 <CreditCard className="h-4 w-4" /> Payment
               </Button>
@@ -225,7 +234,7 @@ export function BookingView({
                       </MenuItem>
                     </>
                   )}
-                  {['cancelled', 'no_show'].includes(b.status) && can.cancel && (
+                  {unstayed && !invoice && can.cancel && (
                     <MenuItem icon={<RotateCcw className="h-4 w-4" />} onClick={() => (closeMenu(), run(() => restoreBookingAction(b.id)))}>
                       Restore booking
                     </MenuItem>
@@ -253,8 +262,8 @@ export function BookingView({
         </div>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-6">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="min-w-0 space-y-6">
           {/* Stay */}
           <Card>
             <CardHeader
@@ -321,7 +330,7 @@ export function BookingView({
                 )}
                 {b.cancelReason && (
                   <p className="text-rose-700">
-                    <span className="font-semibold">{tx('Reason:')}</span> {b.cancelReason}
+                    <span className="font-semibold">{tx('Reason:')}</span> {tr(b.cancelReason)}
                   </p>
                 )}
               </div>
@@ -343,9 +352,15 @@ export function BookingView({
                     <td className="px-5 py-2.5 text-ink-500">{formatDayShort(b.checkIn)}</td>
                     <td className="px-2 py-2.5 font-medium text-ink-800">
                       {tr('Room charges')} · {tr(`${b.nights} night${b.nights === 1 ? '' : 's'}`)}
-                      <span className="ml-2 text-xs font-normal text-ink-500">({formatINR(totals.roomPosted)} {tr('posted so far')})</span>
+                      {unstayed ? (
+                        <span className="ml-2 text-xs font-normal text-ink-500">({tr(b.status === 'no_show' ? 'not charged: guest did not arrive' : 'not charged: booking cancelled')})</span>
+                      ) : (
+                        <span className="ml-2 text-xs font-normal text-ink-500">({formatINR(totals.roomPosted)} {tr('posted so far')})</span>
+                      )}
                     </td>
-                    <td className="num px-5 py-2.5 text-right font-semibold text-ink-900">{formatINR(totals.room)}</td>
+                    <td className="num px-5 py-2.5 text-right font-semibold text-ink-900">
+                      {unstayed ? <span className="font-normal text-ink-400 line-through">{formatINR(b.totalAmount)}</span> : formatINR(totals.room)}
+                    </td>
                     <td className="w-10" />
                   </tr>
                   {data.folio
@@ -354,7 +369,7 @@ export function BookingView({
                       <tr key={line.id} className={cn(line.isVoid && 'text-ink-400 line-through')}>
                         <td className="px-5 py-2.5 text-ink-500">{formatDayShort(line.businessDate)}</td>
                         <td className="px-2 py-2.5 text-ink-800">
-                          {line.description}
+                          {tr(line.description)}
                           {line.taxRate > 0 && <span className="ml-1.5 text-xs text-ink-400">GST {line.taxRate}%</span>}
                           {line.isVoid && line.voidReason && <span className="ml-2 text-xs no-underline">{tr('void:')} {line.voidReason}</span>}
                         </td>
@@ -399,10 +414,16 @@ export function BookingView({
               <span className="text-ink-500">
                 {tr('Paid')} <strong className="num ml-1 text-emerald-700">{formatINR(totals.paid)}</strong>
               </span>
-              <span className="text-ink-500">
-                {tr('Balance')}{' '}
-                <strong className={cn('num ml-1 text-base', totals.balance > 0.5 ? 'text-amber-700' : 'text-emerald-700')}>{totals.balance > 0.5 ? formatINR(totals.balance) : tr('Nil')}</strong>
-              </span>
+              {totals.held > 0.5 ? (
+                <span className="text-ink-500">
+                  {tr('Advance held')} <strong className="num ml-1 text-base text-amber-700">{formatINR(totals.held)}</strong>
+                </span>
+              ) : (
+                <span className="text-ink-500">
+                  {tr('Balance')}{' '}
+                  <strong className={cn('num ml-1 text-base', totals.balance > 0.5 ? 'text-amber-700' : 'text-emerald-700')}>{totals.balance > 0.5 ? formatINR(totals.balance) : tr('Nil')}</strong>
+                </span>
+              )}
             </div>
           </Card>
 
@@ -492,18 +513,38 @@ export function BookingView({
             </dl>
           </Card>
 
+          {unstayed && totals.held > 0.5 ? (
+            <Card className="border-amber-200 p-5">
+              <p className="text-xs font-semibold tracking-wide text-amber-700 uppercase">{tr('Advance held')}</p>
+              <p className="num mt-1 text-3xl font-extrabold tracking-tight text-ink-900">{formatINR(totals.held)}</p>
+              <p className="mt-2 text-xs text-ink-600">
+                {tr(b.status === 'no_show' ? 'The guest did not arrive. Refund the money or keep it as a no-show charge.' : 'The booking is cancelled. Refund the money or keep it as a cancellation charge.')}
+              </p>
+              {can.money && (
+                <Button size="sm" className="mt-4 w-full" onClick={() => setDialog('settle')}>
+                  <HandCoins className="h-4 w-4" /> Refund or keep
+                </Button>
+              )}
+            </Card>
+          ) : (
           <Card className="p-5">
             <p className="text-xs font-semibold tracking-wide text-ink-400 uppercase">{tr('Balance due')}</p>
             <p className={cn('num mt-1 text-3xl font-extrabold tracking-tight', totals.balance > 0.5 ? 'text-ink-900' : 'text-emerald-600')}>
-              {totals.balance > 0.5 ? formatINR(totals.balance) : tr('Fully paid')}
+              {totals.balance > 0.5 ? formatINR(totals.balance) : tr(unstayed && totals.grandTotal <= 0 ? 'Nothing due' : 'Fully paid')}
             </p>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-ink-100">
-              <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.min(100, totals.grandTotal > 0 ? (totals.paid / totals.grandTotal) * 100 : 0)}%` }} />
-            </div>
-            <p className="mt-2 text-xs text-ink-500">
-              {tr(`${formatINR(totals.paid)} of ${formatINR(totals.grandTotal)} paid`)}
-            </p>
-            {totals.balance > 0.5 && ['confirmed', 'checked_in', 'hold'].includes(b.status) && (
+            {unstayed && totals.grandTotal <= 0 ? (
+              <p className="mt-2 text-xs text-ink-500">{tr(b.status === 'no_show' ? 'The guest did not arrive and nothing was charged.' : 'The booking was cancelled and nothing was charged.')}</p>
+            ) : (
+              <>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-ink-100">
+                  <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.min(100, totals.grandTotal > 0 ? (totals.paid / totals.grandTotal) * 100 : 0)}%` }} />
+                </div>
+                <p className="mt-2 text-xs text-ink-500">
+                  {tr(`${formatINR(totals.paid)} of ${formatINR(totals.grandTotal)} paid`)}
+                </p>
+              </>
+            )}
+            {totals.balance > 0.5 && collectable && (
               <div className="mt-4 grid grid-cols-2 gap-2">
                 {can.checkin && (
                   <Button size="sm" variant="secondary" onClick={() => setDialog('payment')}>
@@ -518,6 +559,7 @@ export function BookingView({
               </div>
             )}
           </Card>
+          )}
         </div>
       </div>
 
@@ -529,35 +571,45 @@ export function BookingView({
       {dialog === 'modify' && <ModifyDialog data={data} roomTypes={roomTypes} businessDate={businessDate} onClose={close} />}
       {dialog === 'formc' && <FormCDialog bookingId={b.id} onClose={close} />}
       {typeof dialog === 'object' && dialog && 'assign' in dialog && <AssignDialog room={data.rooms.find((r) => r.id === dialog.assign)!} onClose={close} />}
-      <ConfirmDialog
-        open={dialog === 'cancel'}
-        onClose={close}
-        title={b.status === 'hold' ? `Release hold ${b.bookingNo}?` : `Cancel ${b.bookingNo}?`}
-        description={`${g.name} · ${formatDayShort(b.checkIn)} → ${formatDayShort(b.checkOut)}. The rooms go back on sale on every OTA immediately.`}
-        confirmLabel={b.status === 'hold' ? 'Release rooms' : 'Cancel booking'}
-        requireReason
-        loading={pending}
-        onConfirm={(reason) =>
-          run(() => cancelBookingAction(b.id, reason), { refresh: true, onSuccess: close, success: (d) => `${d.bookingNo} cancelled` }).then((result) => {
-            if (result.ok)
-              toast.show({
-                tone: 'info',
-                title: 'Changed your mind?',
-                description: 'Restore puts the booking back if the rooms are still free.',
-                action: { label: 'Undo', onClick: async () => void (await restoreBookingAction(b.id), router.refresh()) },
-              });
-          })
-        }
-      />
-      <ConfirmDialog
-        open={dialog === 'noshow'}
-        onClose={close}
-        title={`Mark ${g.name} as no-show?`}
-        description="The rooms are released for sale. You can restore the booking if the guest turns up."
-        confirmLabel="Mark no-show"
-        loading={pending}
-        onConfirm={async () => void (await run(() => noShowAction(b.id), { onSuccess: close }))}
-      />
+      {(dialog === 'cancel' || dialog === 'noshow') && (
+        <CancelDialog
+          kind={dialog}
+          title={dialog === 'noshow' ? `Mark ${g.name} as no-show?` : b.status === 'hold' ? `Release hold ${b.bookingNo}?` : `Cancel ${b.bookingNo}?`}
+          description={
+            dialog === 'noshow'
+              ? 'The rooms are released for sale on every OTA immediately.'
+              : `${g.name} · ${formatDayShort(b.checkIn)} → ${formatDayShort(b.checkOut)}. The rooms go back on sale on every OTA immediately.`
+          }
+          confirmLabel={dialog === 'noshow' ? 'Mark no-show' : b.status === 'hold' ? 'Release rooms' : 'Cancel booking'}
+          held={totals.paid - totals.extras}
+          rate={chargeRate}
+          canMoney={can.money}
+          loading={pending}
+          onClose={close}
+          onConfirm={(reason, decision) =>
+            run(() => (dialog === 'noshow' ? noShowAction(b.id, decision) : cancelBookingAction(b.id, reason, decision)), { onSuccess: close, success: (d) => d.message }).then((result) => {
+              // Undo puts the rooms back; once money was refunded or kept it is a new booking instead.
+              if (result.ok && !result.data.money)
+                toast.show({
+                  tone: 'info',
+                  title: 'Changed your mind?',
+                  description: 'Restore puts the booking back if the rooms are still free.',
+                  action: { label: 'Undo', onClick: async () => void (await restoreBookingAction(b.id), router.refresh()) },
+                });
+            })
+          }
+        />
+      )}
+      {dialog === 'settle' && (
+        <SettleAdvanceDialog
+          held={totals.held}
+          rate={chargeRate}
+          noShow={b.status === 'no_show'}
+          loading={pending}
+          onClose={close}
+          onConfirm={(decision) => run(() => settleAdvanceAction(b.id, decision), { onSuccess: close, success: (d) => d.message })}
+        />
+      )}
     </div>
   );
 }

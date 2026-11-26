@@ -3,7 +3,7 @@ import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { bookingRooms, bookings, guests, rooms, roomTypes } from '@/db/schema';
 import { addDay } from '@/lib/format';
-import { round2 } from '@/lib/utils';
+import { bookingBalance } from '@/lib/booking-money';
 
 export interface ChartStay {
   id: string;
@@ -86,7 +86,7 @@ export async function getRoomChart(propertyId: string, start: string, days: numb
     source: s.source,
     channel: s.channel,
     adults: s.adults,
-    balance: round2(s.totalAmount + s.extras - s.paidAmount),
+    balance: bookingBalance({ ...s, status: s.bookingStatus }),
   }));
 
   return {

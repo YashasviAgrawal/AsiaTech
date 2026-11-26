@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_ROOM_SLABS, isValidGstin, roomTaxRate, splitTax, taxableFromInclusive } from '@/lib/gst';
 import { amountInWords } from '@/lib/words';
+import { bookingBalance, cancellationTaxRate, isUnstayed, splitInclusiveCharge } from '@/lib/booking-money';
 import { financialYear, formatINR, nightsBetween, stayDates, addDay } from '@/lib/format';
 import { editDistance, maskIdNumber, nameKey, normaliseMobile, round2 } from '@/lib/utils';
 
@@ -77,5 +78,24 @@ describe('Guests', () => {
   it('normalises mobile numbers and masks ID numbers', () => {
     expect(normaliseMobile('+91 98290-12345')).toBe('9829012345');
     expect(maskIdNumber('1234 5678 9012')).toBe('XXXX-XXXX-9012');
+  });
+});
+
+describe('cancelled and no-show bookings', () => {
+  it('owe only what was posted to the bill; a negative balance is an advance still held', () => {
+    const b = { totalAmount: 3150, paidAmount: 2000, extras: 0 };
+    expect(bookingBalance({ ...b, status: 'confirmed' })).toBe(1150);
+    expect(bookingBalance({ ...b, status: 'cancelled' })).toBe(-2000);
+    expect(bookingBalance({ ...b, status: 'no_show', extras: 2500 })).toBe(500);
+    expect(isUnstayed('no_show') && isUnstayed('cancelled') && !isUnstayed('checked_out')).toBe(true);
+  });
+
+  it('tax a kept advance at the slab of the room it was for, GST included in the amount kept', () => {
+    const night = (taxRate: number) => ({ date: '2026-11-30', rate: 1, extraBeds: 0, amount: 1, taxRate });
+    expect(cancellationTaxRate([{ nightly: [night(5), night(18)] }], { totalAmount: 0, taxAmount: 0 })).toBe(18);
+    // Without nightly prices, the booking's own tax share: ₹2,520 incl. ₹120 GST is 5%.
+    expect(cancellationTaxRate([{ nightly: [] }], { totalAmount: 2520, taxAmount: 120 })).toBe(5);
+    expect(splitInclusiveCharge(500, 5)).toEqual({ taxable: 476.19, tax: 23.81 });
+    expect(splitInclusiveCharge(10000, 18)).toEqual({ taxable: 8474.58, tax: 1525.42 });
   });
 });

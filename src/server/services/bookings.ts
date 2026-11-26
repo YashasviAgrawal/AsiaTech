@@ -1,7 +1,7 @@
 import 'server-only';
 import { and, asc, eq, inArray, lte, sql } from 'drizzle-orm';
 import { db, type Tx } from '@/db';
-import { bookingRooms, bookings, guests, payments, type BookingSource, type PaymentMode } from '@/db/schema';
+import { bookingRooms, bookings, guests, invoices, payments, type BookingSource, type PaymentMode } from '@/db/schema';
 import { formatINR, nightsBetween, sourceLabel } from '@/lib/format';
 import { round2 } from '@/lib/utils';
 import { UserError } from '../errors';
@@ -241,43 +241,51 @@ function activeReserveLines(rooms: (typeof bookingRooms.$inferSelect)[]): Reserv
 
 /** Cancel (or release a hold). Rooms go back to inventory immediately; the log keeps a snapshot for Undo. */
 export async function cancelBooking(actor: Actor, bookingId: string, reason: string, opts: { status?: 'cancelled' | 'no_show' } = {}) {
-  return db.transaction(async (tx) => {
-    const { booking, rooms } = await loadBookingForUpdate(tx, actor, bookingId);
-    if (!['confirmed', 'hold'].includes(booking.status)) {
-      throw new UserError(`A ${booking.status.replace('_', ' ')} booking cannot be ${opts.status === 'no_show' ? 'marked no-show' : 'cancelled'}.`);
-    }
-    const status = opts.status ?? 'cancelled';
-    await releaseInventory(tx, actor.propertyId, activeReserveLines(rooms));
-    await tx
-      .update(bookings)
-      .set({ status, cancelledAt: new Date(), cancelReason: reason || null, holdUntil: null })
-      .where(eq(bookings.id, bookingId));
-    await tx
-      .update(bookingRooms)
-      .set({ status: status === 'no_show' ? 'no_show' : 'cancelled', roomId: null })
-      .where(eq(bookingRooms.bookingId, bookingId));
-    const logId = await logActivity(
-      {
-        propertyId: actor.propertyId,
-        userId: actor.userId,
-        entityType: 'booking',
-        entityId: bookingId,
-        action: status === 'no_show' ? 'no_show' : booking.status === 'hold' ? 'release' : 'cancel',
-        summary: `${status === 'no_show' ? 'Marked no-show' : booking.status === 'hold' ? 'Released hold' : 'Cancelled'} ${booking.bookingNo}${reason ? ` · ${reason}` : ''}`,
-        before: { status: booking.status, holdUntil: booking.holdUntil, rooms: rooms.map((r) => ({ id: r.id, roomId: r.roomId, status: r.status })) },
-      },
-      tx,
-    );
-    return { logId, bookingNo: booking.bookingNo };
-  });
+  return db.transaction((tx) => cancelBookingInTx(tx, actor, bookingId, reason, opts));
 }
 
-/** Undo a cancellation: re-reserve the same rooms if they are still free. */
+/** The cancellation itself, inside a caller's transaction (so a refund or cancellation charge can join it). */
+export async function cancelBookingInTx(tx: Tx, actor: Actor, bookingId: string, reason: string, opts: { status?: 'cancelled' | 'no_show' } = {}) {
+  const { booking, rooms } = await loadBookingForUpdate(tx, actor, bookingId);
+  if (!['confirmed', 'hold'].includes(booking.status)) {
+    throw new UserError(`A ${booking.status.replace('_', ' ')} booking cannot be ${opts.status === 'no_show' ? 'marked no-show' : 'cancelled'}.`);
+  }
+  const status = opts.status ?? 'cancelled';
+  await releaseInventory(tx, actor.propertyId, activeReserveLines(rooms));
+  await tx
+    .update(bookings)
+    .set({ status, cancelledAt: new Date(), cancelReason: reason || null, holdUntil: null })
+    .where(eq(bookings.id, bookingId));
+  await tx
+    .update(bookingRooms)
+    .set({ status: status === 'no_show' ? 'no_show' : 'cancelled', roomId: null })
+    .where(eq(bookingRooms.bookingId, bookingId));
+  const logId = await logActivity(
+    {
+      propertyId: actor.propertyId,
+      userId: actor.userId,
+      entityType: 'booking',
+      entityId: bookingId,
+      action: status === 'no_show' ? 'no_show' : booking.status === 'hold' ? 'release' : 'cancel',
+      summary: `${status === 'no_show' ? 'Marked no-show' : booking.status === 'hold' ? 'Released hold' : 'Cancelled'} ${booking.bookingNo}${reason ? ` · ${reason}` : ''}`,
+      before: { status: booking.status, holdUntil: booking.holdUntil, rooms: rooms.map((r) => ({ id: r.id, roomId: r.roomId, status: r.status })) },
+    },
+    tx,
+  );
+  return { logId, bookingNo: booking.bookingNo };
+}
+
+/**
+ * Undo a cancellation: re-reserve the same rooms if they are still free. Refunds already paid stay on the bill (the
+ * guest owes them again); a cancellation charge with its GST invoice cannot be taken back, so a new booking is needed.
+ */
 export async function restoreBooking(actor: Actor, bookingId: string) {
   return db.transaction(async (tx) => {
     const { booking, rooms } = await loadBookingForUpdate(tx, actor, bookingId);
     if (!['cancelled', 'no_show'].includes(booking.status)) throw new UserError('This booking is not cancelled.');
     if (booking.checkOut <= actor.businessDate) throw new UserError('This stay is already in the past.');
+    const [invoice] = await tx.select({ invoiceNo: invoices.invoiceNo }).from(invoices).where(and(eq(invoices.bookingId, booking.id), eq(invoices.status, 'issued')));
+    if (invoice) throw new UserError(`A ${booking.status === 'no_show' ? 'no-show' : 'cancellation'} charge was invoiced on this booking (${invoice.invoiceNo}). Make a new booking instead.`);
     await reserveInventory(
       tx,
       actor.propertyId,
