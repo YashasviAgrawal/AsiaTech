@@ -54,6 +54,9 @@ export const guests = pgTable(
   (t) => [
     index('guests_mobile_idx').on(t.propertyId, t.mobile),
     index('guests_name_key_idx').on(t.propertyId, t.nameKey),
+    // LIKE 'vive%' lookups for possible duplicates (the plain index cannot serve LIKE outside the C collation).
+    index('guests_name_key_prefix_idx').on(t.propertyId, t.nameKey.op('text_pattern_ops')),
+    index('guests_created_idx').on(t.propertyId, t.createdAt),
   ],
 );
 
@@ -156,6 +159,8 @@ export const bookingRooms = pgTable(
   (t) => [
     index('booking_rooms_booking_idx').on(t.bookingId),
     index('booking_rooms_room_dates_idx').on(t.propertyId, t.roomId, t.checkIn, t.checkOut),
+    // Stays covering a date or range (revenue for the dashboard and reports): check_out > from finds the few recent ones.
+    index('booking_rooms_stay_idx').on(t.propertyId, t.checkOut, t.checkIn),
   ],
 );
 

@@ -1,5 +1,6 @@
 import 'server-only';
 import { and, asc, desc, eq, gte, ilike, inArray, lte, or, sql, type SQL } from 'drizzle-orm';
+import { istDayStart, onIstDays } from '@/db/ist';
 import { db } from '@/db';
 import { bookings, guests, roomTypes, type BookingSource, type BookingStatus } from '@/db/schema';
 import { monthStart, todayIST } from '@/lib/format';
@@ -26,8 +27,8 @@ export async function searchBookings(propertyId: string, f: BookingFilters, limi
   if (f.source) where.push(eq(bookings.source, f.source));
   if (f.channel) where.push(eq(bookings.channel, f.channel));
   if (f.roomTypeId) where.push(sql`EXISTS (SELECT 1 FROM booking_rooms br WHERE br.booking_id = "bookings"."id" AND br.room_type_id = ${f.roomTypeId})`);
-  if (f.created === 'today') where.push(sql`(${bookings.createdAt} AT TIME ZONE 'Asia/Kolkata')::date = ${todayIST()}::date`);
-  if (f.created === 'month') where.push(sql`(${bookings.createdAt} AT TIME ZONE 'Asia/Kolkata')::date >= ${monthStart(todayIST())}::date`);
+  if (f.created === 'today') where.push(onIstDays(bookings.createdAt, todayIST()));
+  if (f.created === 'month') where.push(sql`${bookings.createdAt} >= ${istDayStart(monthStart(todayIST()))}`);
   if (f.from || f.to) {
     const from = f.from ?? '1900-01-01';
     const to = f.to ?? '2999-12-31';
@@ -39,7 +40,7 @@ export async function searchBookings(propertyId: string, f: BookingFilters, limi
         where.push(gte(bookings.checkOut, from), lte(bookings.checkOut, to));
         break;
       case 'created':
-        where.push(sql`(${bookings.createdAt} AT TIME ZONE 'Asia/Kolkata')::date BETWEEN ${from}::date AND ${to}::date`);
+        where.push(onIstDays(bookings.createdAt, from, to));
         break;
       case 'stay':
         where.push(sql`${bookings.checkIn} <= ${to}::date AND ${bookings.checkOut} > ${from}::date`);

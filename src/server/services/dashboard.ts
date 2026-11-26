@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, asc, count, desc, eq, gte, inArray, isNull, lte, ne, notInArray, sql, sum } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, gte, inArray, isNull, lte, ne, notInArray, sql, sum } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   bookingRooms,
@@ -16,13 +16,13 @@ import {
 } from '@/db/schema';
 import { addDay, formatINR, monthStart, OTA_LABELS, timeAgo, todayIST } from '@/lib/format';
 import { backupHealth } from './backup';
+import { onIstDays } from '@/db/ist';
 import { round2 } from '@/lib/utils';
 import type { AppContext } from '../context';
 
-/** Created-at falls on an IST calendar date. */
-const createdOn = (column: typeof bookings.createdAt, date: string) => sql`(${column} AT TIME ZONE 'Asia/Kolkata')::date = ${date}::date`;
-const createdBetween = (column: typeof bookings.createdAt, from: string, to: string) =>
-  sql`(${column} AT TIME ZONE 'Asia/Kolkata')::date BETWEEN ${from}::date AND ${to}::date`;
+/** Created-at falls on an IST calendar date (an index-friendly range, see db/ist). */
+const createdOn = (column: typeof bookings.createdAt, date: string) => onIstDays(column, date);
+const createdBetween = (column: typeof bookings.createdAt, from: string, to: string) => onIstDays(column, from, to);
 
 export interface DashboardTiles {
   todaysBookings: number;
@@ -367,7 +367,16 @@ export async function getTonight(ctx: AppContext) {
     })
     .from(bookingRooms)
     .innerJoin(sql`jsonb_array_elements(${bookingRooms.nightly}) AS n`, sql`true`)
-    .where(and(eq(bookingRooms.propertyId, pid), inArray(bookingRooms.status, ['reserved', 'in_house', 'departed']), sql`n->>'date' = ${bizDate}`));
+    .where(
+      and(
+        eq(bookingRooms.propertyId, pid),
+        inArray(bookingRooms.status, ['reserved', 'in_house', 'departed']),
+        // Only stays covering the date are unpacked (nightly dates always lie within check-in … check-out).
+        lte(bookingRooms.checkIn, bizDate),
+        gt(bookingRooms.checkOut, bizDate),
+        sql`n->>'date' = ${bizDate}`,
+      ),
+    );
 
   const total = typeRows.reduce((t, r) => t + (r.total ?? 0), 0);
   const blocked = typeRows.reduce((t, r) => t + (r.blocked ?? 0), 0);
@@ -421,7 +430,7 @@ export async function getTileTrends(ctx: AppContext): Promise<Record<string, Til
     db.execute<{ d: string; n: number; total: number }>(sql`
       SELECT (created_at AT TIME ZONE 'Asia/Kolkata')::date::text AS d, count(*)::int AS n, COALESCE(sum(total_amount), 0)::float AS total
       FROM bookings WHERE property_id = ${pid} AND status <> 'cancelled'
-        AND (created_at AT TIME ZONE 'Asia/Kolkata')::date BETWEEN ${from}::date AND ${today}::date GROUP BY 1`),
+        AND ${onIstDays(sql`created_at`, from, today)} GROUP BY 1`),
     db.execute<{ d: string; n: number }>(sql`
       SELECT check_in::text AS d, count(*)::int AS n FROM booking_rooms
       WHERE property_id = ${pid} AND status IN ('reserved','in_house','departed') AND check_in BETWEEN ${bizFrom}::date AND ${biz}::date GROUP BY 1`),
@@ -436,12 +445,11 @@ export async function getTileTrends(ctx: AppContext): Promise<Record<string, Til
     db.execute<{ n: number; total: number }>(sql`
       SELECT count(*)::int AS n, COALESCE(sum(total_amount), 0)::float AS total FROM bookings
       WHERE property_id = ${pid} AND status <> 'cancelled'
-        AND (created_at AT TIME ZONE 'Asia/Kolkata')::date BETWEEN date_trunc('month', ${today}::date)::date AND ${today}::date`),
+        AND ${onIstDays(sql`created_at`, sql`date_trunc('month', ${today}::date)`, today)}`),
     db.execute<{ n: number; total: number }>(sql`
       SELECT count(*)::int AS n, COALESCE(sum(total_amount), 0)::float AS total FROM bookings
       WHERE property_id = ${pid} AND status <> 'cancelled'
-        AND (created_at AT TIME ZONE 'Asia/Kolkata')::date BETWEEN (date_trunc('month', ${today}::date) - interval '1 month')::date
-            AND (${today}::date - interval '1 month')::date`),
+        AND ${onIstDays(sql`created_at`, sql`date_trunc('month', ${today}::date) - interval '1 month'`, sql`${today}::date - interval '1 month'`)}`),
     db.execute<{ n: number; total: number }>(sql`
       SELECT count(*)::int AS n, COALESCE(sum(total), 0)::float AS total FROM pos_orders
       WHERE property_id = ${pid} AND status <> 'void' AND business_date BETWEEN date_trunc('month', ${biz}::date)::date AND ${biz}::date`),

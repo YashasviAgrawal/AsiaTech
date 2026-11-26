@@ -43,6 +43,7 @@ export const REPORTS: ReportDef[] = [
         SELECT n->>'date' AS date, COALESCE(sum((n->>'amount')::numeric), 0)::float AS amount, count(*)::int AS nights
         FROM booking_rooms br CROSS JOIN jsonb_array_elements(br.nightly) n
         WHERE br.property_id = ${propertyId} AND br.status IN ('reserved','in_house','departed')
+          AND br.check_in <= ${to}::date AND br.check_out > ${from}::date
           AND (n->>'date')::date BETWEEN ${from}::date AND ${to}::date
         GROUP BY 1`);
       const revMap = new Map(rev.rows.map((r) => [r.date, r]));

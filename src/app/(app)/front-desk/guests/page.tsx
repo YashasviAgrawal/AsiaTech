@@ -5,7 +5,8 @@ import { Crown, Globe2, Users } from 'lucide-react';
 import { db } from '@/db';
 import { guests } from '@/db/schema';
 import { requireContext } from '@/server/context';
-import { editDistance, normaliseMobile } from '@/lib/utils';
+import { normaliseMobile } from '@/lib/utils';
+import { recentDuplicatePairs } from '@/server/services/guests';
 import { formatDay, formatINR } from '@/lib/format';
 import { Card, EmptyState, PageHeader } from '@/components/ui/card';
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/table';
@@ -44,28 +45,7 @@ export default async function GuestsPage({ searchParams }: { searchParams: Promi
     .orderBy(desc(sql`(SELECT max(b.check_in) FROM bookings b WHERE b.guest_id = "guests"."id")`))
     .limit(150);
 
-  // Possible duplicates: very similar names (e.g. "Vivek Agrawal" / "Vivek Agewal").
-  const all = await db
-    .select({ id: guests.id, name: guests.name, nameKey: guests.nameKey, mobile: guests.mobile })
-    .from(guests)
-    .where(and(eq(guests.propertyId, ctx.propertyId), isNull(guests.mergedIntoId)));
-  const byFirst = new Map<string, typeof all>();
-  for (const g of all) {
-    const key = g.nameKey.slice(0, 3);
-    byFirst.set(key, [...(byFirst.get(key) ?? []), g]);
-  }
-  const pairs: { a: (typeof all)[number]; b: (typeof all)[number]; reason: string }[] = [];
-  for (const group of byFirst.values()) {
-    for (let i = 0; i < group.length; i++) {
-      for (let j = i + 1; j < group.length; j++) {
-        const a = group[i];
-        const b = group[j];
-        const d = editDistance(a.nameKey, b.nameKey);
-        if (d > 0 && d <= 2 && a.nameKey.length >= 8) pairs.push({ a, b, reason: 'Very similar names' });
-        else if (d === 0 && a.mobile && b.mobile && a.mobile === b.mobile) pairs.push({ a, b, reason: 'Same name and mobile' });
-      }
-    }
-  }
+  const pairs = ctx.can('bookings.edit') ? await recentDuplicatePairs(ctx.propertyId) : [];
 
   return (
     <div>

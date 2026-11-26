@@ -1,7 +1,7 @@
 import 'server-only';
-import { and, asc, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte, ne, or, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { bookings, guests, payments, pettyCash, users, type PaymentMode } from '@/db/schema';
+import { bookings, folioLines, guests, payments, pettyCash, users, type PaymentMode } from '@/db/schema';
 import { formatINR, nightsBetween } from '@/lib/format';
 import { round2 } from '@/lib/utils';
 import { UserError } from '../errors';
@@ -196,6 +196,14 @@ export const AGE_BUCKETS = ['0–30', '31–60', '61–90', '90+'] as const;
 
 /** Money still owed after check-out (and by in-house guests), grouped by who pays and aged by days. */
 export async function creditReport(propertyId: string, bizDate: string) {
+  // Extras (restaurant, laundry, …) per booking, summed once; only bookings that still owe money come back, so the
+  // report stays quick however many finished stays the hotel has.
+  const extras = db
+    .select({ bookingId: folioLines.bookingId, amount: sql<number>`sum(${folioLines.total})`.as('amount') })
+    .from(folioLines)
+    .where(and(eq(folioLines.propertyId, propertyId), ne(folioLines.type, 'room'), eq(folioLines.isVoid, false)))
+    .groupBy(folioLines.bookingId)
+    .as('extras');
   const rows = await db
     .select({
       id: bookings.id,
@@ -211,11 +219,19 @@ export async function creditReport(propertyId: string, bizDate: string) {
       mobile: guests.mobile,
       company: guests.company,
       channel: bookings.channel,
-      extras: sql<number>`(SELECT COALESCE(sum(f.total), 0)::float FROM folio_lines f WHERE f.booking_id = "bookings"."id" AND f.type <> 'room' AND NOT f.is_void)`,
+      extras: sql<number>`COALESCE(${extras.amount}, 0)::float`,
     })
     .from(bookings)
     .innerJoin(guests, eq(guests.id, bookings.guestId))
-    .where(and(eq(bookings.propertyId, propertyId), inArray(bookings.status, ['checked_out', 'checked_in'])));
+    .leftJoin(extras, eq(extras.bookingId, bookings.id))
+    .where(
+      and(
+        eq(bookings.propertyId, propertyId),
+        inArray(bookings.status, ['checked_out', 'checked_in']),
+        or(eq(bookings.status, 'checked_out'), ne(bookings.billTo, 'guest')),
+        sql`${bookings.totalAmount} + COALESCE(${extras.amount}, 0) - ${bookings.paidAmount} > 0.5`,
+      ),
+    );
 
   const owed = rows
     .map((r) => {
