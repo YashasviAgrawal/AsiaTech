@@ -69,7 +69,7 @@ housekeeping phone screen ✅ · activity log ✅
 | `npm run typecheck` | clean |
 | `npm run lint` | clean (React Compiler rules on) |
 | `npm test` | 46 unit tests pass (money maths, Hindi phrases and patterns, secrets sealing, rate limiter, S3 signing, signed guest links, SMTP email with attachment, invoice PDF content incl. IGST / UPI QR / cancelled, ESC/POS text and KOT / bill / test tickets) |
-| `npm run test:integration` | 7 DB-backed tests pass (inventory: 3; shared rate limits: 20 simultaneous requests at a limit of 5 → exactly 5, sliding window, failed-sign-in counting, unlogged table) on a freshly seeded `hotel_os_test` |
+| `npm run test:integration` | 10 DB-backed tests pass (inventory: 3; shared rate limits: 4, including 20 simultaneous requests at a limit of 5 → exactly 5; row-level security: 3, including 24 interleaved requests for two hotels each seeing only its own rows) on a freshly seeded `hotel_os_test` |
 | `npm run build` | production build passes, all routes compile |
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
@@ -84,6 +84,7 @@ housekeeping phone screen ✅ · activity log ✅
 | Exports and undo | Payments, Credit, Petty Cash, Activity Log export with the screen's filters (valid .xlsx, 403 without permission); Booking Report prints / saves as A4 landscape PDF; folio line void → Undo → void → Restore keeps the linked restaurant bill in step; POS order void → restore puts the room-bill line back; restore refused on another business day |
 | Uploads | fake image refused; ID uploaded + webcam scan (fake camera) saved on the guest at check-in; private file 200 for staff, login redirect for anonymous; room photos + cover order on the booking page; logo/cover on the booking page for anonymous visitors; CSS-injection link refused |
 | Invoice PDF and sending | checked out a guest in the browser → "Send invoice" opened by itself with the guest's mobile and email filled in → sent on WhatsApp (signed link) and email (PDF attached, 47 KB) → logged on the booking's history; PDF text checked (GSTIN, CGST/SGST split, amount in words, "Fully paid"); balance-due bill shows the UPI QR for the right amount; guest link opens the PDF signed out, tampered or swapped tokens → 404, 30 requests/min then 429; staff route 401 signed out; Hindi dialog checked |
+| Row-level security | in psql, a connection stamped as the Residency sees none of Portico's bookings, updates 0 Portico rows and is refused when inserting a Portico guest. In the app: all 37 staff screens load with their data and no errors; Postgres log shows each request stamped with its hotel; reservation → cancel works (bookings, rooms, inventory, counters, OTA queue); platform console still counts the Residency's 6 rooms while the owner works in Portico; switched to the Residency, a Portico booking link shows "not found". Test booking removed, inventory consistent over 400 days |
 | Shared rate limits | two production servers (ports 3001 and 3002) with `RATE_LIMIT_STORE=postgres`, one client alternating between them: 15 + 15 answered, then 429 with Retry-After from both; another client unaffected |
 | Thermal printing | Restaurant → Printers: bad address refused; kitchen (80 mm) and counter (58 mm) printers added; agent key created and the real agent script run against two stand-in network printers. Test page, then POS table T2 → Send KOT → printed in the kitchen with **no browser print window**; Print bill → printed at the counter with GST split and UPI QR (bytes decoded and checked). Kitchen printer switched off → 3 tries, then "Failed: 127.0.0.1:9100 refused the connection"; switched on → Print again → printed. A 20-minute-old queued KOT was failed, not printed. Revoking the key stopped the agent. Test printers, order and bill number removed afterwards |
 | Change booking | +1 night, upgrade Standard → Deluxe Family and add a room: blocked while a type is sold out, then saved; `booked` still matches booking rooms on every date (SQL check), OTAs pushed, activity log written. In-house guest extended: room kept, agreed nights kept at ₹2,300 |
@@ -96,7 +97,7 @@ Production readiness:
 - [x] S3 / R2 / MinIO storage driver (`STORAGE_DRIVER=s3`, SigV4 without an SDK)
 - [x] Hourly worker job removes uploads no record uses (abandoned uploads, removed ID copies) after 24 h, on any storage driver
 - [x] Rate limiting on sign-in (failed attempts per network and per account), booking engine, payment and OTA webhooks, invoice links, print agent; shared between app servers with `RATE_LIMIT_STORE=postgres`
-- [ ] Postgres Row-Level Security on `property_id`
+- [x] Postgres Row-Level Security on `property_id` (38 business tables, FORCEd for the table owner; staff requests stamped per connection)
 - [x] Super-admin console `/admin`: organisations and hotels (plan, suspend / re-activate), System Update editor
 - [x] Server-side PDF for invoices: download, email attachment over SMTP, signed WhatsApp link for the guest; "Send invoice" opens right after check-out
 - [x] Thermal printing: KOTs and bills straight to the kitchen and counter printers (ESC/POS, 58/80 mm) through a one-file print agent on a hotel PC
@@ -113,6 +114,10 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-26
+- **Row-level security (`0007_row_level_security`):** Postgres policies on `property_id` for 38 business tables,
+  FORCEd so they apply to the app's own role. Staff requests stamp their hotel on each pooled connection, so a query
+  that forgets its property filter still cannot read or write another hotel's rows. Background work, webhooks, the
+  public booking engine and the platform console run unstamped, as before.
 - **Shared rate limits:** `RATE_LIMIT_STORE=postgres` keeps the counts in an unlogged table (`0006_rate_limit_store`)
   so several app servers enforce one limit; a per-key advisory lock makes simultaneous requests count exactly.
   Memory stays the default for a single server.

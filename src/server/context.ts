@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
+import { currentScope, openTenantScope } from '@/db/tenant';
 import { organizations, properties, propertyMembers, roles, users, type PropertySettings, type PropertyBranding } from '@/db/schema';
 import { readSession } from './auth/session';
 import { hasPermission, type Permission } from './auth/permissions';
@@ -44,10 +45,19 @@ export interface AppContext {
 }
 
 /**
- * Resolve the signed-in user and their active property. Cached for the duration of one request, so layouts,
- * pages and server actions can all call it freely.
+ * Resolve the signed-in user and their active property, and limit the database to that property for the rest
+ * of the request (row-level security, see src/db/tenant.ts). The lookup is cached for the request, so layouts,
+ * pages, server actions and API routes can all call it freely.
  */
-export const getContext = cache(async (): Promise<AppContext | null> => {
+export async function getContext(): Promise<AppContext | null> {
+  // Opened before the first await, so the caller's code after `await getContext()` runs inside this scope.
+  const scope = openTenantScope();
+  const ctx = await loadContext();
+  scope.propertyId = ctx?.propertyId ?? null;
+  return ctx;
+}
+
+const loadContext = cache(async (): Promise<AppContext | null> => {
   const session = await readSession();
   if (!session) return null;
 
@@ -138,11 +148,19 @@ export async function actionContext(permission?: Permission): Promise<AppContext
 export async function requireSuperAdmin(): Promise<AppContext> {
   const ctx = await requireContext();
   if (!ctx.user.isSuperAdmin) notFound();
+  platformScope();
   return ctx;
 }
 
 export async function superAdminActionContext(): Promise<AppContext> {
   const ctx = await actionContext();
   if (!ctx.user.isSuperAdmin) throw new ActionError('Only the platform team can do this.');
+  platformScope();
   return ctx;
+}
+
+/** The platform console looks across hotels on purpose: lift the per-hotel database limit for this request. */
+function platformScope() {
+  const scope = currentScope();
+  if (scope) scope.platform = true;
 }

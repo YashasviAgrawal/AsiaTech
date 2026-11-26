@@ -97,7 +97,7 @@ users ──< property_members >── properties     (role per property)
 - **Every** business table carries `property_id`, as the guide's database rule says. `users`, `organizations` and `system_updates` are global.
 - **One login, many hotels:** `property_members` links a user to several properties, each with its own role. The **property switcher** in the top bar changes the active property, which is stored in the session.
 - **No query trusts the browser:** every service function takes a `ctx` built on the server by `requireContext()`, and filters by `ctx.propertyId`.
-- **Later hardening:** Postgres Row-Level Security policies on `property_id`, per-organisation billing, a super-admin console, and custom roles per organisation (the `roles.organization_id` column already exists).
+- **Hardening:** Postgres Row-Level Security on `property_id` (done: staff requests are limited to their hotel in the database too) and a super-admin console (done). **Later:** per-organisation billing and custom roles per organisation (the `roles.organization_id` column already exists).
 
 ---
 
@@ -161,7 +161,7 @@ and tests. All database tables are created in M0, so modules never need disrupti
 - [x] Hotel Details: name, legal name, GSTIN (validated), state code, address, phone/email, check-in/out time, invoice prefix and footer, tax slabs
 - [x] User Management: invite or add staff, role per property, activate/deactivate, reset password, **login history**
 - [x] Roles: permission matrix view (system roles; custom roles later)
-- [x] Branding: logo, brand colour, booking-page hero, live preview · 🟡 image upload (URLs today)
+- [x] Branding: logo, brand colour, booking-page hero, live preview, image upload
 - [x] Notifications settings: **zero-bookings monthly email** (no bookings for 3 months), daily summary toggle
 - [x] Property switcher (one login, many hotels) in the top bar
 - [x] **Guided setup wizard**: hotel details → rooms → rates → OTA connection → go live
