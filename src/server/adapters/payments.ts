@@ -1,5 +1,6 @@
 import 'server-only';
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { appUrl } from '../app-url';
 
 /**
  * Payment links behind one interface. "mock" (default) creates a local /pay/<id> page that simulates a UPI
@@ -17,8 +18,6 @@ export interface PaymentLink {
   id: string;
   url: string;
 }
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
 export async function createPaymentLink(input: PaymentLinkInput): Promise<PaymentLink> {
   const provider = process.env.PAYMENTS_PROVIDER ?? 'mock';
@@ -38,7 +37,7 @@ export async function createPaymentLink(input: PaymentLinkInput): Promise<Paymen
         customer: { name: input.customer.name, contact: input.customer.contact ?? undefined, email: input.customer.email ?? undefined },
         notify: { sms: false, email: false },
         reminder_enable: true,
-        callback_url: `${APP_URL}/pay/thanks`,
+        callback_url: appUrl('/pay/thanks'),
         callback_method: 'get',
       }),
     });
@@ -47,7 +46,7 @@ export async function createPaymentLink(input: PaymentLinkInput): Promise<Paymen
     return { id: data.id, url: data.short_url };
   }
   const id = `plink_${randomBytes(8).toString('hex')}`;
-  return { id, url: `${APP_URL}/pay/${id}` };
+  return { id, url: appUrl(`/pay/${id}`) };
 }
 
 /** Verify a Razorpay webhook (X-Razorpay-Signature = HMAC-SHA256 of the raw body). */

@@ -3,6 +3,8 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import { isSealed, sealSecrets } from '../server/secrets';
+import { db, pool as appPool } from './index';
+import { syncSystemRoles } from './system-roles';
 
 async function main() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -14,7 +16,10 @@ async function main() {
     await pool.query('UPDATE channels SET credentials = $1 WHERE id = $2', [JSON.stringify(sealSecrets(row.credentials)), row.id]);
   }
   await pool.end();
-  console.log(`✔ Migrations applied${rows.length ? ` · sealed ${rows.length} OTA credential set(s)` : ''}`);
+  // Built-in roles follow the code (a fresh install gets them here; upgrades get new permissions).
+  const roles = await syncSystemRoles(db);
+  await appPool.end();
+  console.log(`✔ Migrations applied · ${roles.size} built-in roles${rows.length ? ` · sealed ${rows.length} OTA credential set(s)` : ''}`);
 }
 
 main().catch((error) => {

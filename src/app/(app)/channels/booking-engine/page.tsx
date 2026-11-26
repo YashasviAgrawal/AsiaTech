@@ -4,6 +4,7 @@ import { ExternalLink, Globe, Code2 } from 'lucide-react';
 import { db } from '@/db';
 import { bookings } from '@/db/schema';
 import { requireContext } from '@/server/context';
+import { appUrl } from '@/server/app-url';
 import { formatINR, monthStart } from '@/lib/format';
 import { Card, CardHeader, PageHeader } from '@/components/ui/card';
 import { buttonClasses } from '@/components/ui/button-styles';
@@ -17,7 +18,7 @@ export default async function BookingEnginePage() {
     .select({ n: sql<number>`count(*)::int`, total: sql<number>`COALESCE(sum(${bookings.totalAmount}), 0)::float` })
     .from(bookings)
     .where(and(eq(bookings.propertyId, ctx.propertyId), eq(bookings.source, 'web'), sql`${bookings.createdAt} >= ${monthStart(ctx.property.businessDate)}::date`, sql`${bookings.status} <> 'cancelled'`));
-  const url = `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/book/${ctx.property.slug}`;
+  const url = appUrl(`/book/${ctx.property.slug}`);
   return (
     <div>
       <PageHeader

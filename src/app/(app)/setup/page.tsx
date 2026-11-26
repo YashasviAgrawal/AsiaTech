@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { and, eq, sql } from 'drizzle-orm';
 import { ArrowRight, BedDouble, Building2, CheckCircle2, Globe, IndianRupee, Rocket } from 'lucide-react';
-import { db } from '@/db';
-import { channels, ratePlans, rooms, roomTypes } from '@/db/schema';
 import { requireContext } from '@/server/context';
+import { getSetupProgress } from '@/server/services/setup';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/card';
 import { GoLiveButton } from './go-live';
@@ -14,29 +12,17 @@ export const metadata: Metadata = { title: 'Setup Wizard' };
 
 export default async function SetupPage() {
   const ctx = await requireContext('settings.manage');
-  const pid = ctx.propertyId;
-  const [[types], [roomCount], [plans], [connected]] = await Promise.all([
-    db.select({ n: sql<number>`count(*)::int` }).from(roomTypes).where(eq(roomTypes.propertyId, pid)),
-    db.select({ n: sql<number>`count(*)::int` }).from(rooms).where(and(eq(rooms.propertyId, pid), eq(rooms.isActive, true))),
-    db.select({ n: sql<number>`count(*)::int` }).from(ratePlans).where(and(eq(ratePlans.propertyId, pid), eq(ratePlans.isActive, true))),
-    db.select({ n: sql<number>`count(*)::int` }).from(channels).where(and(eq(channels.propertyId, pid), eq(channels.status, 'connected'))),
-  ]);
   const p = ctx.property;
-  const steps = [
-    { title: 'Hotel details', done: Boolean(p.gstin && p.city && p.stateCode), detail: p.gstin ? `GSTIN ${p.gstin} · ${p.city}` : 'Name, GSTIN, address, check-in time', href: '/settings/hotel', icon: Building2 },
-    { title: 'Rooms', done: types.n > 0 && roomCount.n > 0, detail: types.n ? `${types.n} room types · ${roomCount.n} rooms` : 'Room types and room numbers', href: '/rooms/setup', icon: BedDouble },
-    { title: 'Rates', done: plans.n > 0, detail: plans.n ? `${plans.n} rate plans (EP / CP / MAP / AP)` : 'Prices and meal plans', href: '/rooms/setup', icon: IndianRupee },
-    { title: 'OTA connection', done: connected.n > 0, detail: connected.n ? `${connected.n} channel(s) connected` : 'MakeMyTrip, Goibibo, Booking.com…', href: '/channels', icon: Globe },
-  ];
-  const ready = steps.every((s) => s.done);
-  const doneCount = steps.filter((s) => s.done).length + (p.status === 'live' ? 1 : 0);
+  const { steps: base, ready, doneCount } = await getSetupProgress(ctx);
+  const icons = { hotel: Building2, rooms: BedDouble, rates: IndianRupee, ota: Globe };
+  const steps = base.map((step) => ({ ...step, icon: icons[step.key] }));
 
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader eyebrow="Guided setup" title={p.status === 'live' ? `${p.name} is live` : `Let's get ${p.name} live`} description="Five short steps. You can come back any time." />
       <div className="mb-6">
         <div className="flex justify-between text-xs font-medium text-ink-500">
-          <span>{doneCount} of 5 done</span>
+          <span>{tx(`${doneCount} of 5 done`)}</span>
           <span>{Math.round((doneCount / 5) * 100)}%</span>
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-ink-100">
@@ -66,7 +52,7 @@ export default async function SetupPage() {
           <span className="min-w-0 flex-1">
             <span className="block text-xs font-semibold text-ink-400">{tx('Step 5')}</span>
             <span className="block font-bold text-ink-900">{tx('Go live')}</span>
-            <span className="block text-sm text-ink-500">{p.status === 'live' ? 'Taking bookings on every channel.' : ready ? 'Everything is ready. Start selling.' : 'Finish the steps above first.'}</span>
+            <span className="block text-sm text-ink-500">{tx(p.status === 'live' ? 'Taking bookings on every channel.' : ready ? 'Everything is ready. Start selling.' : 'Finish the steps above first.')}</span>
           </span>
           {p.status !== 'live' && <GoLiveButton disabled={!ready} />}
         </li>

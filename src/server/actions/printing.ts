@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { actionContext } from '../context';
 import { runAction } from '../action';
 import { actorFromContext } from '../services/actor';
+import { appBaseUrl } from '../app-url';
 import { createAgentKey, deletePrinter, queueBill, queueKot, queueTest, retryJob, revokeAgent, savePrinter } from '../services/printing';
 
 const refresh = () => revalidatePath('/restaurant/printers');
@@ -54,7 +55,7 @@ export async function createAgentKeyAction(name: string) {
     const ctx = await actionContext('pos.manage');
     const result = await createAgentKey(actorFromContext(ctx), z.string().max(60).parse(name));
     refresh();
-    return { ...result, server: (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '') };
+    return { ...result, server: appBaseUrl() };
   });
 }
 

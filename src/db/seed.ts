@@ -36,7 +36,6 @@ import {
   propertyMembers,
   ratePlans,
   reviews,
-  roles,
   roomTypes,
   rooms,
   syncLogs,
@@ -45,7 +44,7 @@ import {
   users,
   type PropertySettings,
 } from './schema';
-import { SYSTEM_ROLES } from '../server/auth/permissions';
+import { syncSystemRoles } from './system-roles';
 import { DEFAULT_ROOM_SLABS, splitTax } from '../lib/gst';
 import { addDay, financialYear, stayDates, todayIST } from '../lib/format';
 import { nameKey, round2 } from '../lib/utils';
@@ -99,11 +98,8 @@ async function main() {
   console.log(`Seeding for business date ${today}…`);
 
   /* ── roles, organisation, properties ─────────────────────────────── */
-  const roleRows = await db
-    .insert(roles)
-    .values(SYSTEM_ROLES.map((r) => ({ key: r.key, name: r.name, description: r.description, permissions: r.permissions as string[], isSystem: true })))
-    .returning();
-  const role = (key: string) => roleRows.find((r) => r.key === key)!.id;
+  const roleIds = await syncSystemRoles(db);
+  const role = (key: string) => roleIds.get(key)!;
 
   const [org] = await db.insert(organizations).values({ name: 'Shri Ram Hospitality', plan: 'pro' }).returning();
 

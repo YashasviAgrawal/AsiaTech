@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
+  ArrowRight,
   ArrowRightLeft,
   BedDouble,
   CalendarCheck2,
@@ -14,6 +15,7 @@ import {
   LogOut,
   Megaphone,
   Receipt,
+  Rocket,
   ShoppingBag,
   UtensilsCrossed,
   Wallet,
@@ -21,6 +23,7 @@ import {
 import { requireContext } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { getSystemUpdates, getTileTrends, getTiles, getTodaysBookings, getTodaysTasks, getTonight } from '@/server/services/dashboard';
+import { getSetupProgress } from '@/server/services/setup';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { releaseExpiredHolds } from '@/server/services/bookings';
 import { actorFromContext } from '@/server/services/actor';
@@ -40,13 +43,14 @@ export default async function DashboardPage() {
   await releaseExpiredHolds(actorFromContext(ctx));
   const { t, tr } = await getT();
 
-  const [tiles, trends, tasks, updates, todays, tonight] = await Promise.all([
+  const [tiles, trends, tasks, updates, todays, tonight, setup] = await Promise.all([
     getTiles(ctx),
     getTileTrends(ctx),
     getTodaysTasks(ctx),
     getSystemUpdates(),
     getTodaysBookings(ctx),
     getTonight(ctx),
+    ctx.property.status !== 'live' && ctx.can('settings.manage') ? getSetupProgress(ctx) : null,
   ]);
 
   const hour = toIST(new Date()).getHours();
@@ -75,6 +79,33 @@ export default async function DashboardPage() {
           </>
         }
       />
+
+      {/* Guided setup (rule 9): until the hotel is live, the next step is one click from Home. */}
+      {setup && (
+        <section aria-label="Finish setup" className="card flex flex-col gap-4 border-brand-200 bg-gradient-to-r from-brand-50/80 via-white to-white p-5 sm:flex-row sm:items-center">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-600 text-white shadow-sm">
+            <Rocket className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-ink-900">{tx(`Finish setting up ${ctx.property.name}`)}</p>
+            <p className="mt-0.5 text-sm text-ink-600">{tx(setup.next ? `Next step: ${setup.next.title}` : 'Everything is ready: go live from the Setup Wizard.')}</p>
+            <div className="mt-3 flex items-center gap-3">
+              <div className="h-1.5 max-w-xs flex-1 overflow-hidden rounded-full bg-ink-100">
+                <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-600" style={{ width: `${(setup.doneCount / setup.total) * 100}%` }} />
+              </div>
+              <span className="text-xs font-medium text-ink-500">{tx(`${setup.doneCount} of ${setup.total} done`)}</span>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <ButtonLink href={setup.next?.href ?? '/setup'}>
+              {tx(setup.next ? 'Continue setup' : 'Go live')} <ArrowRight className="h-4 w-4" />
+            </ButtonLink>
+            <ButtonLink href="/setup" variant="outline">
+              {tx('See all steps')}
+            </ButtonLink>
+          </div>
+        </section>
+      )}
 
       {/* Front desk tiles (AsiaTech row 1) */}
       <section aria-label="Front desk numbers" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">

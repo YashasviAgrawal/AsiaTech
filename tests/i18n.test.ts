@@ -32,6 +32,13 @@ describe('phrase translation', () => {
     expect(hi('Checked out OTA100079 · invoice SRP/26-27/0002 · ₹2,415 · ₹1,915 on credit')).toBe('OTA100079 का चेक-आउट · इनवॉइस SRP/26-27/0002 · ₹2,415 · ₹1,915 उधार');
   });
 
+  it('translates the guided setup card and wizard', () => {
+    expect(hi('Finish setting up Hotel Sunrise Palace')).toBe('Hotel Sunrise Palace का सेटअप पूरा करें');
+    expect(hi('Next step: Hotel details')).toBe('अगला कदम: होटल की जानकारी');
+    expect(hi('3 of 5 done')).toBe('5 में से 3 पूरे');
+    expect(hi("Let's get Hotel Sunrise Palace live")).toBe('Hotel Sunrise Palace को लाइव करें');
+  });
+
   it('leaves unknown text and data alone', () => {
     expect(hi('Deluxe Double Bed Room')).toBe('Deluxe Double Bed Room');
     expect(hi('')).toBe('');

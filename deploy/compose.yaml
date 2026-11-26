@@ -1,0 +1,106 @@
+# AsiaTech Hotel OS on one server: Postgres, the web app and the background worker.
+#
+#   cd deploy && cp .env.example .env     # fill in the four secrets
+#   docker compose up -d --build          # migrations run first, then the app and the worker start
+#   docker compose run --rm tools npm run create-hotel -- --hotel "Hotel Sunrise" --owner "Asha Mehta" --email asha@sunrise.in
+#
+# Full steps: deploy/README.md
+name: asiatech
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql://hotel:${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in deploy/.env}@db:5432/hotel_os
+  AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in deploy/.env}
+  CREDENTIALS_KEY: ${CREDENTIALS_KEY:?Set CREDENTIALS_KEY in deploy/.env}
+  APP_URL: ${APP_URL:-http://localhost:3000}
+  WHATSAPP_PROVIDER: ${WHATSAPP_PROVIDER:-console}
+  PAYMENTS_PROVIDER: ${PAYMENTS_PROVIDER:-mock}
+  RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+  RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+  RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+  CHANNEL_PROVIDER: ${CHANNEL_PROVIDER:-mock}
+  CHANNEX_API_KEY: ${CHANNEX_API_KEY:-}
+  OTA_WEBHOOK_SECRET: ${OTA_WEBHOOK_SECRET:-}
+  EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+  SMTP_URL: ${SMTP_URL:-}
+  EMAIL_FROM: ${EMAIL_FROM:-}
+  STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+  STORAGE_DIR: /data/uploads
+  S3_ENDPOINT: ${S3_ENDPOINT:-}
+  S3_REGION: ${S3_REGION:-}
+  S3_BUCKET: ${S3_BUCKET:-}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+  S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-}
+  # The app and the worker share sign-in and webhook limits through Postgres.
+  RATE_LIMIT_STORE: postgres
+
+x-tools: &tools
+  image: asiatech-tools:latest
+  build:
+    context: ..
+    target: tools
+  environment: *app-env
+  volumes:
+    - uploads:/data/uploads
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in deploy/.env}
+      TZ: Asia/Kolkata
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./postgres-init.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d hotel_os']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # One-shot: applies new migrations and syncs the built-in roles, then exits. The app waits for it.
+  migrate:
+    <<: *tools
+    command: ['npm', 'run', 'db:migrate']
+    restart: 'no'
+
+  app:
+    image: asiatech-app:latest
+    build:
+      context: ..
+      target: app
+      args:
+        NEXT_PUBLIC_APP_NAME: ${APP_NAME:-AsiaTech}
+    restart: unless-stopped
+    environment: *app-env
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # OTA push queue, hold expiry, monthly alerts, hourly clean-up of unused uploads.
+  worker:
+    <<: *tools
+    command: ['npm', 'run', 'worker']
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # For one-off commands only (not started by `up`): create-hotel, db:seed.
+  tools:
+    <<: *tools
+    profiles: ['tools']
+    command: ['npm', 'run', 'create-hotel', '--', '--help']
+
+volumes:
+  db:
+  uploads:

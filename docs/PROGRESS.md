@@ -14,8 +14,8 @@ Update it in the same commit as the code it describes.
 | M1 · Property Setup & Settings | ✅ | Hotel Details (GST slabs, invoice, UPI), User Management (roles matrix, login history, sign out everywhere), Branding (live preview), Notifications, Setup wizard, property switcher |
 | M2 · Rooms, Rates & Inventory | ✅ | Availability Calendar, cell edit, Bulk Update (preview + Undo), Download Inventory, Rate Management (+ bulk), Room and Rate Plan |
 | M3 · Reservations & Guests | ✅ | All screens done, including the "Change booking" dialog (dates, add/remove rooms, upgrade, plan, occupancy) |
-| M4 · Front Office Operations | 🟡 | Today board, check-in (ID, Form-III, 24 h banner), folio, check-out, GST invoice + UPI QR, registration card, Room Chart. Follow-up: ID photo upload |
-| M5 · Home Dashboard & Command Centre | 🟡 | Tiles, Today's Task (incl. Form-C, listing, sync, holds), Tonight, System Update, bookings table, notifications. Follow-ups: super-admin System Update editor, owner summary screen |
+| M4 · Front Office Operations | ✅ | Today board, check-in (ID scan with webcam or phone, Form-III, 24 h banner), folio, check-out, GST invoice + UPI QR + PDF, registration card, Room Chart |
+| M5 · Home Dashboard & Command Centre | ✅ | Tiles, Today's Task (incl. Form-C, listing, sync, holds), Tonight, System Update (edited in `/admin`), bookings table, notifications, owner phone screen, "Finish setting up" card until the hotel is live |
 | M6 · Housekeeping | ✅ | Status board, out-of-order blocks inventory, checklist master + legacy clean-up, inspections → repair tickets, Hindi phone screen |
 | M7 · Restaurant POS | ✅ | Terminal, KOT, GST bill series, cash/card/UPI/room transfer/complimentary, discount, voids, day close, menu & tables |
 | M8 · Money & Night Audit | ✅ | Payments, Request Money (link + webhook, auto-posted), Petty Cash (approval, bill photo), Credit Report (ageing), Night Audit wizard |
@@ -69,7 +69,7 @@ housekeeping phone screen ✅ · activity log ✅
 | `npm run typecheck` | clean |
 | `npm run lint` | clean (React Compiler rules on) |
 | `npm test` | 48 unit tests pass (money maths, Hindi phrases and patterns, incl. dates and times inside sentences and activity log lines, secrets sealing, rate limiter, S3 signing, signed guest links, SMTP email with attachment, invoice PDF content incl. IGST / UPI QR / cancelled, ESC/POS text and KOT / bill / test tickets) |
-| `npm run test:integration` | 16 DB-backed tests pass (inventory: 3; shared rate limits: 4, including 20 simultaneous requests at a limit of 5 → exactly 5; row-level security: 3, including 24 interleaved requests for two hotels each seeing only its own rows; custom roles: 6, including no escalation, system roles locked, no removal while in use) on a freshly seeded `hotel_os_test` |
+| `npm run test:integration` | 22 DB-backed tests pass (inventory: 3; shared rate limits: 4, including 20 simultaneous requests at a limit of 5 → exactly 5; row-level security: 3, including 24 interleaved requests for two hotels each seeing only its own rows; custom roles: 6, including no escalation, system roles locked, no removal while in use; creating a hotel: 6, including an existing owner keeping their password, clashing logins refused, built-in roles never duplicated) on a freshly seeded `hotel_os_test`, also on a brand-new Postgres 16 with the app role made as in CI |
 | `npm run build` | production build passes, all routes compile |
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
@@ -88,6 +88,8 @@ housekeeping phone screen ✅ · activity log ✅
 | Shared rate limits | two production servers (ports 3001 and 3002) with `RATE_LIMIT_STORE=postgres`, one client alternating between them: 15 + 15 answered, then 429 with Retry-After from both; another client unaffected |
 | Thermal printing | Restaurant → Printers: bad address refused; kitchen (80 mm) and counter (58 mm) printers added; agent key created and the real agent script run against two stand-in network printers. Test page, then POS table T2 → Send KOT → printed in the kitchen with **no browser print window**; Print bill → printed at the counter with GST split and UPI QR (bytes decoded and checked). Kitchen printer switched off → 3 tries, then "Failed: 127.0.0.1:9100 refused the connection"; switched on → Print again → printed. A 20-minute-old queued KOT was failed, not printed. Revoking the key stopped the agent. Test printers, order and bill number removed afterwards |
 | Custom roles | Settings → User Management as the owner: "Night auditor" made from Accountant minus "Record payments…" (6 of 23 permissions); "manager" as a name refused; given to a new staff member; removing it while in use refused ("1 staff member still has this role"). Signed in as that person: Night Audit, Payments, Reports and Activity Log open, Rate Management, User Management and Request Money send them to Home. Owner untick "See and export reports" → their next visit to Reports goes to Home. Editor checked in Hindi. Test staff and role removed afterwards |
+| Docker deployment | `docker compose up` in `deploy/` on empty volumes: Postgres creates the `hotel` role (not superuser, no BYPASSRLS; 38 tables with forced RLS), migrations run and exit 0, then app (healthy on `/api/health`) and worker start; a second `up` re-runs migrations cleanly (still 6 built-in roles). In the app image: booking engine link uses `APP_URL` (port 3100) though the image was built without it; print agent download 200; uploads volume writable by `node`; Excel export 200. Demo seed run in the tools container; main screens, `/admin` and exports open with no page errors. Plain `npm run build && npm start` still works without Docker. CI's database steps and compose check rehearsed locally on a fresh Postgres |
+| New hotel on a fresh install | `create-hotel` in the tools container: missing owner, bad mobile and no login refused with plain messages; "Hotel Sunrise Palace" made (HSP, password shown once); a second hotel for the same email keeps the password. Signed in as the new owner: Home shows "Finish setting up · Next step: Hotel details · 0 of 5"; after hotel details → Rooms (1 of 5); after a room type, 4 rooms and a rate plan → OTA connection (3 of 5); same card in Hindi. Walk-in booking FDR100001 → check-in (room 101, Aadhaar) → check-out → invoice HSP/26-27/0001 downloaded as PDF from the slim image (Geist fonts embedded, ₹, CGST/SGST, "Fully paid") |
 | Change booking | +1 night, upgrade Standard → Deluxe Family and add a room: blocked while a type is sold out, then saved; `booked` still matches booking rooms on every date (SQL check), OTAs pushed, activity log written. In-house guest extended: room kept, agreed nights kept at ₹2,300 |
 
 ## Pending (next up)
@@ -102,6 +104,9 @@ Production readiness:
 - [x] Super-admin console `/admin`: organisations and hotels (plan, suspend / re-activate), System Update editor
 - [x] Server-side PDF for invoices: download, email attachment over SMTP, signed WhatsApp link for the guest; "Send invoice" opens right after check-out
 - [x] Thermal printing: KOTs and bills straight to the kitchen and counter printers (ESC/POS, 58/80 mm) through a one-file print agent on a hotel PC
+- [x] Docker: `app` image (standalone server, health check) and `tools` image (migrations, seed, worker, `create-hotel`); `deploy/compose.yaml` with Postgres and a non-superuser app role; HTTPS, update and backup steps in `deploy/README.md`
+- [x] CI on every push: lint, types, unit and database tests on Postgres 16, production build, both Docker images
+- [x] Fresh install without demo data: `npm run create-hotel` (organisation, hotel, owner, starter checklist); built-in roles synced on every migrate; Home guides the owner through setup
 
 Product follow-ups:
 - [x] "Change booking" dialog (dates, add/remove rooms, room type upgrade, plan, occupancy) with a live availability re-check
@@ -116,6 +121,19 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-26
+- **Deployment:** a `Dockerfile` with two targets (`app`: Next.js standalone server, ~390 MB, runs as `node`, health
+  check; `tools`: migrations, seed, worker and `create-hotel` with runtime packages only) and `deploy/compose.yaml`
+  (Postgres 16 with a `hotel` role that is not a superuser, a one-shot `migrate` step the app waits for, app, worker,
+  shared volumes for the database and uploads). Links the app sends out (WhatsApp invoice links, payment links,
+  booking engine URL, print agent address) now read `APP_URL` at run time instead of the build-time
+  `NEXT_PUBLIC_APP_URL`, so one image serves any domain; sign-in cookies are Secure when `APP_URL` is https, so an
+  office-network install on http still signs in. New public `/api/health`. GitHub Actions CI runs every check plus
+  both images.
+- **New hotel on a fresh install:** `npm run create-hotel` makes the organisation, the hotel (in setup), the owner
+  login (password made up and shown once, or an existing login reused) and a starter housekeeping checklist in Hindi
+  and English. `db:migrate` now also adds and updates the six built-in roles, so a fresh database works without the
+  demo seed. Until the hotel is live, Home shows "Finish setting up" with the next step and progress; the Setup
+  Wizard reads the same steps, and its remaining English lines are translated.
 - **Custom roles:** Settings → User Management has a Roles card. Owners (anyone with "Add staff and change their
   roles") make roles for their organisation, e.g. a night auditor: name, description, permissions in 7 groups,
   optionally starting from an existing role. Custom roles show up in the staff role picker and in the "What each role

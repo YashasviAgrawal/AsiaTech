@@ -1336,6 +1336,16 @@ Object.assign(hiPhrases, {
   'This cannot be undone.': 'इसे वापस नहीं लिया जा सकता।',
 });
 
+/* Guided setup: the Setup Wizard and the Home card for a hotel that is not live yet. */
+Object.assign(hiPhrases, {
+  'Taking bookings on every channel.': 'हर चैनल पर बुकिंग ले रहे हैं।',
+  'Everything is ready. Start selling.': 'सब तैयार है। बिक्री शुरू करें।',
+  'Finish the steps above first.': 'पहले ऊपर के कदम पूरे करें।',
+  'Continue setup': 'सेटअप जारी रखें',
+  'See all steps': 'सभी कदम देखें',
+  'Everything is ready: go live from the Setup Wizard.': 'सब तैयार है: सेटअप विज़ार्ड से लाइव करें।',
+});
+
 /** Inner parts of a sentence pattern: an on-screen phrase, a short date ("Sat, 21 Nov") or a time-ago ("5 d ago"). */
 const phrase = (text: string) => hiPhrases[text] ?? text;
 function day(text: string) {
@@ -1499,4 +1509,11 @@ export const hiPatterns: [RegExp, string | ((...groups: string[]) => string)][] 
   [/^Created role (.+) with (\d+) permissions?$/, '$1 रोल बनाया, $2 अनुमतियों के साथ'],
   [/^Updated role (.+?)(?: \(permissions (.+)\))?$/, (r, c) => `${r} रोल बदला${c ? ` (अनुमतियाँ ${c})` : ''}`],
   [/^Removed role (.+)$/, '$1 रोल हटाया'],
+  [/^(.+) is live$/, '$1 लाइव है'],
+  [/^Let's get (.+) live$/, '$1 को लाइव करें'],
+  [/^(\d+) of (\d+) done$/, '$2 में से $1 पूरे'],
+  [/^(\d+) rate plans \(EP \/ CP \/ MAP \/ AP\)$/, '$1 रेट प्लान (EP / CP / MAP / AP)'],
+  [/^(\d+) channel\(s\) connected$/, '$1 चैनल जुड़े'],
+  [/^Finish setting up (.+)$/, '$1 का सेटअप पूरा करें'],
+  [/^Next step: (.+)$/, (step) => `अगला कदम: ${phrase(step)}`],
 ];

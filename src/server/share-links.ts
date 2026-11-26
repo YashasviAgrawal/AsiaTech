@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { appUrl } from './app-url';
 
 /**
  * Links a guest can open without signing in (their GST invoice). The token is the record id plus an HMAC,
@@ -38,11 +39,6 @@ export function readShareToken(kind: 'invoice', token: string): string | null {
   const given = Buffer.from(match[2], 'base64url');
   const expected = signature(kind, id);
   return given.length === expected.length && timingSafeEqual(given, expected) ? id : null;
-}
-
-export function appUrl(path: string) {
-  const base = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
-  return `${base}${path}`;
 }
 
 export function invoiceShareUrl(invoiceId: string) {

@@ -26,13 +26,23 @@ Requirements: Node 20.9+ and PostgreSQL 14+.
 ```bash
 cp .env.example .env            # then set DATABASE_URL and a long AUTH_SECRET
 npm install
-npm run db:migrate              # create the tables
+npm run db:migrate              # create the tables and built-in roles
 npm run db:seed                 # demo hotel: Shri Ram Portico
 npm run dev                     # http://localhost:3000
 npm run worker                  # optional: OTA sync queue, hold expiry, monthly alerts
 ```
 
 To start over at any time, run `npm run db:reset` (drop + migrate + seed).
+
+### On a server (Docker)
+
+```bash
+cd deploy && cp .env.example .env   # fill in the four secrets and APP_URL
+docker compose up -d --build        # Postgres + migrations + app + worker
+docker compose run --rm tools npm run create-hotel -- --hotel "Hotel Sunrise" --owner "Asha Mehta" --email asha@sunrise.in
+```
+
+The owner signs in and Home walks them through setup (hotel details → rooms → rates → OTA → go live). HTTPS, updates and backups: [`deploy/README.md`](deploy/README.md).
 
 ### Demo logins
 
@@ -77,6 +87,7 @@ The public booking engine is at `/book/shri-ram-portico`, and needs no login.
 - **Rate limits** (`src/server/rate-limit.ts`): sliding windows on sign-in (failed attempts per network and per account), booking engine, webhooks, invoice links and the print agent. `RATE_LIMIT_STORE=memory` for one server; `postgres` shares counts between servers through an unlogged table with a per-key advisory lock.
 - **Row-level security** (`src/db/tenant.ts`, `drizzle/0007_row_level_security.sql`): every business table has a Postgres policy on `property_id`. A staff request's hotel is stamped on each pooled connection (`app.property_id`), so even a query that forgets its property filter only sees and writes that hotel's rows. Work without a hotel (worker, webhooks, public booking engine, seed, platform console) runs unstamped and sees all rows. Connect as a role that is not a superuser and has no BYPASSRLS (the table owner is fine: the policies are FORCEd).
 - **Secrets at rest**: OTA tokens and API keys are sealed with AES-256-GCM (`src/server/secrets.ts`, key `CREDENTIALS_KEY`). `db:migrate` seals any older plain rows.
+- **Deployment** (`Dockerfile`, `deploy/`): two images from one Dockerfile. `app` is the Next.js standalone server (only the files it uses, runs as `node`, health check on `/api/health`); `tools` runs migrations, the seed, `create-hotel` and the worker. `deploy/compose.yaml` adds Postgres with a non-superuser app role, so row-level security always applies. Links the app sends out use `APP_URL`, read at run time, so one image serves any domain. CI (`.github/workflows/ci.yml`) runs lint, types, unit and database tests, the build and both images on every push.
 - **Audit and undo**: `activity_log` keeps before/after snapshots. Bulk inventory and rate changes and cancellations can be undone.
 
 ```
@@ -96,7 +107,8 @@ src/
 |--------|------|
 | `npm run dev` / `build` / `start` | Next.js |
 | `npm run typecheck` · `npm run lint` · `npm test` | TypeScript, ESLint, Vitest unit tests |
-| `npm run test:integration` | Resets and seeds `hotel_os_test` (or `TEST_DATABASE_URL`, must end in `_test`), then runs the DB-backed tests: concurrent last-room sales, change booking, cancel, sold-out change refused |
+| `npm run test:integration` | Resets and seeds `hotel_os_test` (or `TEST_DATABASE_URL`, must end in `_test`), then runs the DB-backed tests: concurrent last-room sales, change booking, cancel, sold-out change refused, custom roles, row-level security, creating a hotel |
 | `npm run db:generate` | New migration from schema changes |
 | `npm run db:migrate` · `db:seed` · `db:reset` | Database |
 | `npm run worker` | Background jobs (OTA push queue, holds, alerts, hourly removal of unused uploads) |
+| `npm run create-hotel -- --hotel … --owner … --email …` | A new hotel with its owner login on a fresh install (`--help` for options); the owner then finishes the setup wizard |
