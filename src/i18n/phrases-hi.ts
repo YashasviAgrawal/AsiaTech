@@ -1468,6 +1468,48 @@ Object.assign(hiPhrases, {
   'Signed out their other devices': 'अपने दूसरे डिवाइस से साइन आउट किया',
 });
 
+/* Sign-in, forgot password and choosing a new password (before anyone is signed in). */
+Object.assign(hiPhrases, {
+  'Welcome back': 'फिर से स्वागत है',
+  'Sign in with your email or mobile number.': 'अपने ईमेल या मोबाइल नंबर से साइन इन करें।',
+  'Built for Indian hotels': 'भारतीय होटलों के लिए बना',
+  'Your whole hotel,': 'आपका पूरा होटल,',
+  'one calm screen.': 'एक शांत स्क्रीन पर।',
+  'Front desk, OTA channel manager, booking engine, restaurant POS, housekeeping and Night Audit. In Hindi and English.':
+    'फ्रंट डेस्क, OTA चैनल मैनेजर, बुकिंग इंजन, रेस्टोरेंट POS, हाउसकीपिंग और नाइट ऑडिट। हिंदी और अंग्रेज़ी में।',
+  "Today's Check In": 'आज के चेक-इन',
+  'OTAs in sync': 'OTA सिंक में',
+  'Every change is logged · GST-ready invoices · Data hosted in India': 'हर बदलाव दर्ज · GST वाले इनवॉइस · डेटा भारत में',
+  'Forgot password?': 'पासवर्ड भूल गए?',
+  'Demo accounts': 'डेमो अकाउंट',
+  password: 'पासवर्ड',
+  'Show password': 'पासवर्ड दिखाएँ',
+  'Hide password': 'पासवर्ड छिपाएँ',
+  'That email/mobile and password do not match.': 'यह ईमेल/मोबाइल और पासवर्ड मेल नहीं खाते।',
+  'Enter your email or mobile number': 'अपना ईमेल या मोबाइल नंबर डालें',
+  'Enter your password': 'अपना पासवर्ड डालें',
+  'you@hotel.com or 98765 43210': 'you@hotel.com या 98765 43210',
+  'Password changed. Sign in with your new password.': 'पासवर्ड बदल गया। नए पासवर्ड से साइन इन करें।',
+  'Forgot your password?': 'पासवर्ड भूल गए?',
+  'Enter the email you sign in with. We will send a link to choose a new password.': 'जिस ईमेल से साइन इन करते हैं, वह डालें। नया पासवर्ड चुनने का लिंक भेजेंगे।',
+  'Send reset link': 'रीसेट लिंक भेजें',
+  'Back to sign in': 'साइन इन पर वापस',
+  'Sign in with a mobile number only? Ask your manager or owner to set a new password in Settings → User Management.':
+    'सिर्फ़ मोबाइल नंबर से साइन इन करते हैं? मैनेजर या मालिक से कहें कि सेटिंग्स → यूज़र मैनेजमेंट में नया पासवर्ड रखें।',
+  'Enter the email you sign in with': 'जिस ईमेल से साइन इन करते हैं, वह डालें',
+  'Choose a new password': 'नया पासवर्ड चुनें',
+  'Save new password': 'नया पासवर्ड सेव करें',
+  'This link has expired.': 'इस लिंक का समय ख़त्म हो गया।',
+  'This link was already used.': 'यह लिंक पहले ही इस्तेमाल हो चुका है।',
+  'This link is not valid.': 'यह लिंक सही नहीं है।',
+  'Links work once, for 30 minutes. Ask for a new one and use the newest email.': 'लिंक एक बार, 30 मिनट तक चलते हैं। नया लिंक मँगाएँ और सबसे नया ईमेल खोलें।',
+  'Send a new link': 'नया लिंक भेजें',
+  'This link has expired. Ask for a new one.': 'इस लिंक का समय ख़त्म हो गया। नया लिंक मँगाएँ।',
+  'This link is not valid. Ask for a new one.': 'यह लिंक सही नहीं है। नया लिंक मँगाएँ।',
+  'This link was already used. Ask for a new one if you still need it.': 'यह लिंक पहले ही इस्तेमाल हो चुका है। ज़रूरत हो तो नया लिंक मँगाएँ।',
+  'Reset their password from an email link': 'ईमेल लिंक से अपना पासवर्ड रीसेट किया',
+});
+
 /** Inner parts of a sentence pattern: an on-screen phrase, a short date ("Sat, 21 Nov") or a time-ago ("5 d ago"). */
 const phrase = (text: string) => hiPhrases[text] ?? text;
 function day(text: string) {
@@ -1647,5 +1689,10 @@ export const hiPatterns: [RegExp, string | ((...groups: string[]) => string)][] 
   [/^System update: (.+?)( \(hidden\))?$/, (title, hidden) => `सिस्टम अपडेट: ${title}${hidden ? ' (छिपा हुआ)' : ''}`],
   [/^Changed plan to (\w+)$/, (plan) => `प्लान बदला: ${phrase(plan[0].toUpperCase() + plan.slice(1))}`],
   [/^Too many wrong passwords\. Try again in (\d+) minutes\.$/, 'बहुत बार गलत पासवर्ड। $1 मिनट बाद फिर कोशिश करें।'],
+  [/^(January|February|March|April|May|June|July|August|September|October|November|December) Earning$/, (m) => `${phrase(m)} की कमाई`],
+  [/^Too many sign-in attempts\. Try again in (\d+) minutes?\.$/, 'बहुत बार कोशिश हुई। $1 मिनट बाद फिर साइन इन करें।'],
+  [/^Too many (requests|tries)\. Try again in (\d+) minutes?\.$/, 'बहुत बार कोशिश हुई। $2 मिनट बाद फिर कोशिश करें।'],
+  [/^If (\S+) has a login, a link is on its way\. It works once, for 30 minutes\. Check spam too\.$/, 'अगर $1 का लॉगिन है, तो लिंक भेजा जा रहा है। यह एक बार, 30 मिनट तक चलेगा। स्पैम फ़ोल्डर भी देखें।'],
+  [/^Hello (.+)\. After this, you sign in with the new password on every device\.$/, 'नमस्ते $1। इसके बाद हर डिवाइस पर नए पासवर्ड से साइन इन करेंगे।'],
   [/^(Chrome|Safari|Edge|Firefox|Opera|Samsung Internet|Browser|Script) on (iPhone|iPad|Android|Windows|Mac|Chromebook|Linux)$/, (browser, os) => `${os} पर ${browser === 'Browser' ? 'ब्राउज़र' : browser === 'Script' ? 'स्क्रिप्ट' : browser}`],
 ];

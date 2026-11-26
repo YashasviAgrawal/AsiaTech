@@ -4,12 +4,14 @@ import { BedDouble, CalendarCheck2, Globe2, IndianRupee, ShieldCheck, Sparkles }
 import { getContext } from '@/server/context';
 import { Logo } from '@/components/shell/logo';
 import { LoginForm } from './login-form';
+import { LanguageToggle } from '@/components/shell/topbar';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Sign in' };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; reset?: string }> }) {
   if (await getContext()) redirect('/');
-  const { next } = await searchParams;
+  const { next, reset } = await searchParams;
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
@@ -22,15 +24,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
           <div className="max-w-lg">
             <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-brand-200 ring-1 ring-white/15">
-              <Sparkles className="h-3.5 w-3.5" /> Built for Indian hotels
+              <Sparkles className="h-3.5 w-3.5" /> {tx('Built for Indian hotels')}
             </p>
             <h1 className="text-4xl leading-[1.1] font-extrabold tracking-tight text-white">
-              Your whole hotel,
+              {tx('Your whole hotel,')}
               <br />
-              <span className="bg-gradient-to-r from-brand-300 to-brand-500 bg-clip-text text-transparent">one calm screen.</span>
+              <span className="bg-gradient-to-r from-brand-300 to-brand-500 bg-clip-text text-transparent">{tx('one calm screen.')}</span>
             </h1>
             <p className="mt-4 text-[15px] leading-relaxed text-ink-300">
-              Front desk, OTA channel manager, booking engine, restaurant POS, housekeeping and Night Audit. In Hindi and English.
+              {tx('Front desk, OTA channel manager, booking engine, restaurant POS, housekeeping and Night Audit. In Hindi and English.')}
             </p>
 
             {/* A glimpse of the product: not a screenshot, a live-looking summary card */}
@@ -44,14 +46,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                 <div key={item.label} className="rounded-2xl bg-white/[0.06] p-4 ring-1 ring-white/10 backdrop-blur">
                   <item.icon className={`h-5 w-5 ${item.tone}`} />
                   <p className="num mt-3 text-2xl font-extrabold text-white">{item.value}</p>
-                  <p className="mt-0.5 text-xs text-ink-400">{item.label}</p>
+                  <p className="mt-0.5 text-xs text-ink-400">{tx(item.label)}</p>
                 </div>
               ))}
             </div>
           </div>
 
           <p className="flex items-center gap-2 text-xs text-ink-500">
-            <ShieldCheck className="h-4 w-4" /> Every change is logged · GST-ready invoices · Data hosted in India
+            <ShieldCheck className="h-4 w-4" /> {tx('Every change is logged · GST-ready invoices · Data hosted in India')}
           </p>
         </div>
       </div>
@@ -59,12 +61,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       {/* Form */}
       <div className="flex items-center justify-center bg-white px-6 py-12 sm:px-12">
         <div className="w-full max-w-sm">
-          <div className="mb-10 lg:hidden">
-            <Logo dark={false} />
+          <div className="mb-10 flex items-center justify-between lg:justify-end">
+            <span className="lg:hidden">
+              <Logo dark={false} />
+            </span>
+            <LanguageToggle />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-ink-900">Welcome back</h2>
-          <p className="mt-1.5 text-sm text-ink-500">Sign in with your email or mobile number.</p>
-          <LoginForm next={next} showDemo={process.env.NODE_ENV !== 'production'} />
+          <h2 className="text-2xl font-bold tracking-tight text-ink-900">{tx('Welcome back')}</h2>
+          <p className="mt-1.5 text-sm text-ink-500">{tx('Sign in with your email or mobile number.')}</p>
+          <LoginForm next={next} showDemo={process.env.NODE_ENV !== 'production'} resetDone={reset === '1'} />
         </div>
       </div>
     </div>

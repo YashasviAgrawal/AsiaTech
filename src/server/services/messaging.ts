@@ -26,6 +26,8 @@ export interface OutgoingMessage {
   entityType?: string;
   entityId?: string;
   sentBy?: string | null;
+  /** What the message log keeps instead of the body, when the body holds a secret (a password reset link). */
+  logBody?: string;
 }
 
 export async function sendMessage(message: OutgoingMessage, tx: DbOrTx = db): Promise<{ id: string; status: 'sent' | 'failed' }> {
@@ -53,7 +55,7 @@ export async function sendMessage(message: OutgoingMessage, tx: DbOrTx = db): Pr
       channel: message.channel,
       recipient,
       template: message.template,
-      body: message.attachments?.length ? `${message.body}\n\n📎 ${message.attachments.map((a) => a.filename).join(', ')}` : message.body,
+      body: message.logBody ?? (message.attachments?.length ? `${message.body}\n\n📎 ${message.attachments.map((a) => a.filename).join(', ')}` : message.body),
       status,
       entityType: message.entityType ?? null,
       entityId: message.entityId ?? null,
