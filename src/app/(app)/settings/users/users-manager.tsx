@@ -13,6 +13,7 @@ import { Checkbox, Field, Input, Segmented, Select } from '@/components/ui/field
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/table';
 import { useRun } from '@/components/ui/use-run';
 import { tx } from '@/i18n/tx';
+import { deviceName } from '@/lib/device';
 import { useTr } from '@/i18n/client';
 
 interface Staff {
@@ -235,7 +236,7 @@ export function UsersManager({
               <span className="font-medium text-ink-800">{l.name}</span>
               <span className="text-xs text-ink-400">{tx(l.success ? 'signed in' : 'wrong password')}</span>
               <span className="ml-auto truncate text-xs text-ink-400">
-                {l.ip ?? '—'} · {formatDateTime(l.createdAt)}
+                {tx(deviceName(l.userAgent))} · {l.ip ?? '—'} · {formatDateTime(l.createdAt)}
               </span>
             </li>
           ))}

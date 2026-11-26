@@ -22,6 +22,7 @@ import {
   XCircle,
   ShieldCheck,
   Smartphone,
+  UserRound,
 } from 'lucide-react';
 import { cn, initials } from '@/lib/utils';
 import { timeAgo } from '@/lib/format';
@@ -236,6 +237,9 @@ function AccountMenu({ data }: { data: ShellData }) {
             <p className="text-[13px] font-semibold text-ink-900">{data.user.name}</p>
             {data.user.email && <p className="truncate text-xs text-ink-500">{data.user.email}</p>}
           </div>
+          <MenuItem icon={<UserRound className="h-4 w-4" />} onClick={() => (close(), router.push('/account'))}>
+            My account
+          </MenuItem>
           {data.permissions.some((p) => p === '*' || p === 'money.view') && (
             <MenuItem icon={<Smartphone className="h-4 w-4" />} onClick={() => (close(), router.push('/owner'))}>
               Owner view (phone)

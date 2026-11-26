@@ -71,7 +71,7 @@ The public booking engine is at `/book/shri-ram-portico`, and needs no login.
 | **Housekeeping** | Room status board, checklist master (duplicate clean-up), repair tickets, Hindi phone screen |
 | **Money** | Payments, Request Money (payment link → WhatsApp, auto-posted to the bill), Credit Report (ageing), Petty Cash, Night Audit wizard |
 | **Reports** | 9 reports with charts and Excel export, Activity Log |
-| **Settings** | Hotel Details (GST slabs, invoice settings), User Management (roles, login history), Branding, Notifications, Setup wizard |
+| **Settings** | Hotel Details (GST slabs, invoice settings), User Management (roles, custom roles, login history), Branding, Notifications, Setup wizard; **My account** for everyone (own password, other devices, recent sign-ins) |
 
 ## Architecture in one minute
 

@@ -68,8 +68,8 @@ housekeeping phone screen ✅ · activity log ✅
 |-------|--------|
 | `npm run typecheck` | clean |
 | `npm run lint` | clean (React Compiler rules on) |
-| `npm test` | 49 unit tests pass (money maths, Hindi phrases and patterns, incl. dates and times inside sentences, activity log lines and the setup card, secrets sealing, rate limiter, S3 signing, signed guest links, SMTP email with attachment, invoice PDF content incl. IGST / UPI QR / cancelled, ESC/POS text and KOT / bill / test tickets) |
-| `npm run test:integration` | 22 DB-backed tests pass (inventory: 3; shared rate limits: 4, including 20 simultaneous requests at a limit of 5 → exactly 5; row-level security: 3, including 24 interleaved requests for two hotels each seeing only its own rows; custom roles: 6, including no escalation, system roles locked, no removal while in use; creating a hotel: 6, including an existing owner keeping their password, clashing logins refused, built-in roles never duplicated) on a freshly seeded `hotel_os_test`, also on a brand-new Postgres 16 with the app role made as in CI |
+| `npm test` | 51 unit tests pass (device names in sign-in lists, money maths, Hindi phrases and patterns, incl. dates and times inside sentences, activity log lines and the setup card, secrets sealing, rate limiter, S3 signing, signed guest links, SMTP email with attachment, invoice PDF content incl. IGST / UPI QR / cancelled, ESC/POS text and KOT / bill / test tickets) |
+| `npm run test:integration` | 26 DB-backed tests pass (my account: 4, including 5 wrong current passwords then even the right one waits, and the session version moving on; inventory: 3; shared rate limits: 4, including 20 simultaneous requests at a limit of 5 → exactly 5; row-level security: 3, including 24 interleaved requests for two hotels each seeing only its own rows; custom roles: 6, including no escalation, system roles locked, no removal while in use; creating a hotel: 6, including an existing owner keeping their password, clashing logins refused, built-in roles never duplicated) on a freshly seeded `hotel_os_test`, also on a brand-new Postgres 16 with the app role made as in CI |
 | `npm run build` | production build passes, all routes compile |
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
@@ -78,6 +78,7 @@ housekeeping phone screen ✅ · activity log ✅
 | S3 storage | SigV4 signature equals the AWS documentation example; put / get / delete against a local S3 stand-in; app `saveImage` → bucket → `readStoredFile` round trip with `STORAGE_DRIVER=s3` |
 | Hardening | OTA tokens sealed (seed + migrate re-seal, pushes still succeed; wrong key fails one channel with "reconnect", no crash); OTA webhook 120/min then 429, other IP unaffected; 8 failed sign-ins lock that account for 15 min (right password waits too) |
 | Platform admin | `/admin` is a 404 for hotel staff; super admin publishes a System Update → it appears on the front desk dashboard; suspending the organisation signs its staff out (super admin still in); re-activating lets them back in |
+| My account | Front desk signed in on a "PC" and an "iPhone": account menu → My account; wrong current password refused; changed to a new one → this device stays in, the iPhone goes to sign-in, the old password is refused at sign-in. Signed in again on an "Android" phone, then "Sign out other devices" → Android to sign-in, PC still in. Recent sign-ins read "Samsung Internet on Android", "Safari on iPhone", "Chrome on Linux" and the wrong-password try. Same page in Hindi (password put back from the Hindi form); housekeeping's Hindi phone login opens it from the top bar; show-password button inside the field on a phone. Test log rows removed, demo password back |
 | New hotel from the platform console | `/admin` → New hotel with no email or mobile → "Give the owner an email or a mobile number to sign in with"; then "Hotel Lakeview" for a new organisation "Lakeview Hotels" on Starter → result shows sign-in address, login, first password and booking page; Add hotel on that organisation (preselected) with the same email → "already had a login", password unchanged. The owner signed in by mobile with the shown password: Home shows "Finish setting up", both hotels in the switcher, `/admin` is a 404, sidebar shows an amber "Setting up →" link to the Setup Wizard. Activity log has both creations. The whole console checked in Hindi with the crawler (only hotel data and full dates left in English); a hotel made from the Hindi dialog. Test organisations, hotels and owners removed afterwards |
 | Multi-outlet POS | duplicate bill prefix refused; café added; switcher on terminal / menu / orders ("All outlets" hides day close); bills RST/26-27/00142 and CAFE/26-27/00001 in separate consecutive series; old counter carried over by migration; fresh reset + seed OK |
 | Owner phone view | `/owner` on iPhone 13: earnings today (rooms + restaurant, WoW, sparkline), occupancy with per-type bars, desk counts, collected today by mode, money owed, month so far, needs-attention list; no horizontal scroll; Hindi checked |
@@ -115,6 +116,7 @@ Product follow-ups:
 - [x] Hindi on every screen: shared components translate their text (headers, labels, buttons, tables, tabs, dialogs, badges, filters, dropdown options, toasts), plus ~1,190 phrases and sentence patterns; the long sentences inside individual screens and dialogs are translated too
 - [x] Owner summary screen for phones (`/owner`)
 - [x] Custom roles per organisation: pick permissions (grouped), start from any role, edit, remove when nobody has it; you can only give permissions you hold
+- [x] My account for everyone: name, language, own password change (current one required, other devices signed out), sign out other devices, recent sign-ins with device names
 - [x] DB-backed integration tests (`npm run test:integration`): concurrent last-room sales, change booking, cancel, sold-out change refused
 
 Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates incl./excl. GST at the desk, live OTA codes, printer models.
@@ -122,6 +124,13 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-26
+- **My account:** every signed-in person (any role, the housekeeping phone included) opens it from the account
+  menu: name, language, password change, "Sign out other devices", and their last 10 sign-ins and wrong-password
+  tries named by device ("Safari on iPhone"). A password change needs the current password (5 wrong tries per
+  15 minutes, then a wait), refuses the email or mobile as the password, signs out every other device and keeps
+  this one signed in; both actions go to the activity log. Until now only staff managers could set a password,
+  though the new-hotel screens told owners they could change theirs. User Management's sign-in list shows device
+  names too.
 - **New hotel from the platform console:** `/admin` has New hotel (new organisation with its plan, or an existing one)
   and Add hotel on each organisation. It uses the same code as `npm run create-hotel` and shows the sign-in address,
   login, a first password (shown once) and the booking page link, each with a copy button; an owner who already has

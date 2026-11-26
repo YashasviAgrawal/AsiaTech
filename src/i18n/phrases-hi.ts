@@ -1424,6 +1424,50 @@ Object.assign(hiPhrases, {
   'Only the platform team can do this.': 'यह सिर्फ़ प्लेटफ़ॉर्म टीम कर सकती है।',
 });
 
+/* My account: every person's own login. */
+Object.assign(hiPhrases, {
+  'My account': 'मेरा अकाउंट',
+  'Your login': 'आपका लॉगिन',
+  'Your name, language and password. Changes here only affect your own login.': 'आपका नाम, भाषा और पासवर्ड। यहाँ के बदलाव सिर्फ़ आपके लॉगिन पर लागू होते हैं।',
+  Profile: 'प्रोफ़ाइल',
+  'How your name appears to the team and on the activity log.': 'टीम को और एक्टिविटी लॉग में आपका नाम ऐसे दिखता है।',
+  'Your name': 'आपका नाम',
+  English: 'English',
+  'Sign in with': 'साइन इन के लिए',
+  'Your email, mobile and role are changed by whoever manages staff (Settings → User Management).': 'आपका ईमेल, मोबाइल और भूमिका वही बदलते हैं जो स्टाफ़ संभालते हैं (सेटिंग्स → यूज़र मैनेजमेंट)।',
+  'Saved.': 'सेव हो गया।',
+  'Changing it signs you out on every other device.': 'इसे बदलने पर बाकी सभी डिवाइस से साइन आउट हो जाएगा।',
+  'Show passwords': 'पासवर्ड दिखाएँ',
+  'Hide passwords': 'पासवर्ड छिपाएँ',
+  'Current password': 'मौजूदा पासवर्ड',
+  'New password': 'नया पासवर्ड',
+  'New password again': 'नया पासवर्ड दोबारा',
+  'At least 8 characters. A short sentence is easy to remember and hard to guess.': 'कम से कम 8 अक्षर। एक छोटा वाक्य याद रखना आसान और अंदाज़ा लगाना मुश्किल होता है।',
+  'The two new passwords are not the same': 'दोनों नए पासवर्ड एक जैसे नहीं हैं',
+  'Change password': 'पासवर्ड बदलें',
+  'Other devices': 'दूसरे डिवाइस',
+  'Signed in on a shared counter PC or a lost phone? Sign out everywhere else; this device stays signed in.':
+    'काउंटर के साझा PC या खोए फ़ोन पर साइन इन है? बाकी हर जगह से साइन आउट करें; यह डिवाइस साइन इन रहेगा।',
+  'Sign out other devices': 'दूसरे डिवाइस से साइन आउट करें',
+  'Sign out on every other device?': 'बाकी सभी डिवाइस से साइन आउट करें?',
+  'Phones and PCs where you are signed in will go back to the sign-in page. This device stays signed in.':
+    'जिन फ़ोन और PC पर आप साइन इन हैं, वे साइन-इन पेज पर लौट जाएँगे। यह डिवाइस साइन इन रहेगा।',
+  'Recent sign-ins': 'हाल के साइन-इन',
+  "Your last sign-ins and wrong-password tries. Something you don't recognise? Change your password.": 'आपके पिछले साइन-इन और गलत पासवर्ड की कोशिशें। कुछ अनजाना दिखे? पासवर्ड बदलें।',
+  'Unknown device': 'अनजान डिवाइस',
+  'Password changed. Other devices are signed out.': 'पासवर्ड बदल गया। दूसरे डिवाइस से साइन आउट हो गया।',
+  'Signed out on every other device.': 'बाकी सभी डिवाइस से साइन आउट हो गया।',
+  'Enter your current password': 'मौजूदा पासवर्ड डालें',
+  'The new password needs at least 8 characters': 'नए पासवर्ड में कम से कम 8 अक्षर चाहिए',
+  'Choose a password different from the current one': 'मौजूदा पासवर्ड से अलग पासवर्ड चुनें',
+  'Your current password is not right.': 'आपका मौजूदा पासवर्ड सही नहीं है।',
+  'Do not use your email or mobile number as the password.': 'ईमेल या मोबाइल नंबर को पासवर्ड न बनाएँ।',
+  'Your login was not found. Sign in again.': 'आपका लॉगिन नहीं मिला। फिर से साइन इन करें।',
+  'Your name is too short': 'आपका नाम बहुत छोटा है',
+  'Changed their own password': 'अपना पासवर्ड बदला',
+  'Signed out their other devices': 'अपने दूसरे डिवाइस से साइन आउट किया',
+});
+
 /** Inner parts of a sentence pattern: an on-screen phrase, a short date ("Sat, 21 Nov") or a time-ago ("5 d ago"). */
 const phrase = (text: string) => hiPhrases[text] ?? text;
 function day(text: string) {
@@ -1602,4 +1646,6 @@ export const hiPatterns: [RegExp, string | ((...groups: string[]) => string)][] 
   [/^Created hotel (.+) for (\S+)( \(existing login\))?$/, (h, who, existing) => `${h} होटल बनाया, ${who} के लिए${existing ? ' (पहले से लॉगिन)' : ''}`],
   [/^System update: (.+?)( \(hidden\))?$/, (title, hidden) => `सिस्टम अपडेट: ${title}${hidden ? ' (छिपा हुआ)' : ''}`],
   [/^Changed plan to (\w+)$/, (plan) => `प्लान बदला: ${phrase(plan[0].toUpperCase() + plan.slice(1))}`],
+  [/^Too many wrong passwords\. Try again in (\d+) minutes\.$/, 'बहुत बार गलत पासवर्ड। $1 मिनट बाद फिर कोशिश करें।'],
+  [/^(Chrome|Safari|Edge|Firefox|Opera|Samsung Internet|Browser|Script) on (iPhone|iPad|Android|Windows|Mac|Chromebook|Linux)$/, (browser, os) => `${os} पर ${browser === 'Browser' ? 'ब्राउज़र' : browser === 'Script' ? 'स्क्रिप्ट' : browser}`],
 ];
