@@ -68,7 +68,7 @@ housekeeping phone screen ✅ · activity log ✅
 |-------|--------|
 | `npm run typecheck` | clean |
 | `npm run lint` | clean (React Compiler rules on) |
-| `npm test` | 48 unit tests pass (money maths, Hindi phrases and patterns, incl. dates and times inside sentences and activity log lines, secrets sealing, rate limiter, S3 signing, signed guest links, SMTP email with attachment, invoice PDF content incl. IGST / UPI QR / cancelled, ESC/POS text and KOT / bill / test tickets) |
+| `npm test` | 49 unit tests pass (money maths, Hindi phrases and patterns, incl. dates and times inside sentences, activity log lines and the setup card, secrets sealing, rate limiter, S3 signing, signed guest links, SMTP email with attachment, invoice PDF content incl. IGST / UPI QR / cancelled, ESC/POS text and KOT / bill / test tickets) |
 | `npm run test:integration` | 22 DB-backed tests pass (inventory: 3; shared rate limits: 4, including 20 simultaneous requests at a limit of 5 → exactly 5; row-level security: 3, including 24 interleaved requests for two hotels each seeing only its own rows; custom roles: 6, including no escalation, system roles locked, no removal while in use; creating a hotel: 6, including an existing owner keeping their password, clashing logins refused, built-in roles never duplicated) on a freshly seeded `hotel_os_test`, also on a brand-new Postgres 16 with the app role made as in CI |
 | `npm run build` | production build passes, all routes compile |
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
@@ -78,6 +78,7 @@ housekeeping phone screen ✅ · activity log ✅
 | S3 storage | SigV4 signature equals the AWS documentation example; put / get / delete against a local S3 stand-in; app `saveImage` → bucket → `readStoredFile` round trip with `STORAGE_DRIVER=s3` |
 | Hardening | OTA tokens sealed (seed + migrate re-seal, pushes still succeed; wrong key fails one channel with "reconnect", no crash); OTA webhook 120/min then 429, other IP unaffected; 8 failed sign-ins lock that account for 15 min (right password waits too) |
 | Platform admin | `/admin` is a 404 for hotel staff; super admin publishes a System Update → it appears on the front desk dashboard; suspending the organisation signs its staff out (super admin still in); re-activating lets them back in |
+| New hotel from the platform console | `/admin` → New hotel with no email or mobile → "Give the owner an email or a mobile number to sign in with"; then "Hotel Lakeview" for a new organisation "Lakeview Hotels" on Starter → result shows sign-in address, login, first password and booking page; Add hotel on that organisation (preselected) with the same email → "already had a login", password unchanged. The owner signed in by mobile with the shown password: Home shows "Finish setting up", both hotels in the switcher, `/admin` is a 404, sidebar shows an amber "Setting up →" link to the Setup Wizard. Activity log has both creations. The whole console checked in Hindi with the crawler (only hotel data and full dates left in English); a hotel made from the Hindi dialog. Test organisations, hotels and owners removed afterwards |
 | Multi-outlet POS | duplicate bill prefix refused; café added; switcher on terminal / menu / orders ("All outlets" hides day close); bills RST/26-27/00142 and CAFE/26-27/00001 in separate consecutive series; old counter carried over by migration; fresh reset + seed OK |
 | Owner phone view | `/owner` on iPhone 13: earnings today (rooms + restaurant, WoW, sparkline), occupancy with per-type bars, desk counts, collected today by mode, money owed, month so far, needs-attention list; no horizontal scroll; Hindi checked |
 | Hindi | All 40 staff screens crawled in Hindi with untranslated text marked: only hotel data (names, room types, menu, reviews, OTA replies) is left in English; 9 main dialogs (cell / rate editor, housekeeping room, petty cash, promotion, check-out, room type, OTA mapping) checked the same way. Both languages: no leaked code or "[object Object]" on any screen, no page errors; English mode shows no Hindi apart from data. Sentences with dates and times ("Synced 5 d ago", "Sat, 21 Nov → Sun, 22 Nov · 1 night") translate inside the sentence |
@@ -101,7 +102,7 @@ Production readiness:
 - [x] Hourly worker job removes uploads no record uses (abandoned uploads, removed ID copies) after 24 h, on any storage driver
 - [x] Rate limiting on sign-in (failed attempts per network and per account), booking engine, payment and OTA webhooks, invoice links, print agent; shared between app servers with `RATE_LIMIT_STORE=postgres`
 - [x] Postgres Row-Level Security on `property_id` (38 business tables, FORCEd for the table owner; staff requests stamped per connection)
-- [x] Super-admin console `/admin`: organisations and hotels (plan, suspend / re-activate), System Update editor
+- [x] Super-admin console `/admin`: organisations and hotels (plan, suspend / re-activate, New hotel / Add hotel with the owner's first sign-in details), System Update editor; in Hindi too
 - [x] Server-side PDF for invoices: download, email attachment over SMTP, signed WhatsApp link for the guest; "Send invoice" opens right after check-out
 - [x] Thermal printing: KOTs and bills straight to the kitchen and counter printers (ESC/POS, 58/80 mm) through a one-file print agent on a hotel PC
 - [x] Docker: `app` image (standalone server, health check) and `tools` image (migrations, seed, worker, `create-hotel`); `deploy/compose.yaml` with Postgres and a non-superuser app role; HTTPS, update and backup steps in `deploy/README.md`
@@ -121,6 +122,13 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-26
+- **New hotel from the platform console:** `/admin` has New hotel (new organisation with its plan, or an existing one)
+  and Add hotel on each organisation. It uses the same code as `npm run create-hotel` and shows the sign-in address,
+  login, a first password (shown once) and the booking page link, each with a copy button; an owner who already has
+  a login keeps it. Logged in the activity log; it can never create a platform admin. The console is now in Hindi too,
+  the top bar's role name and the sidebar's business date follow the language, and a hotel still in setup shows an
+  amber "Setting up →" link in the sidebar instead of the green live dot. CI runs once per pull request (not again for
+  the branch push) and on every push to `main`.
 - **Deployment:** a `Dockerfile` with two targets (`app`: Next.js standalone server, ~390 MB, runs as `node`, health
   check; `tools`: migrations, seed, worker and `create-hotel` with runtime packages only) and `deploy/compose.yaml`
   (Postgres 16 with a `hotel` role that is not a superuser, a one-shot `migrate` step the app waits for, app, worker,

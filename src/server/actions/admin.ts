@@ -4,8 +4,10 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { superAdminActionContext } from '../context';
 import { runAction } from '../action';
+import { appUrl } from '../app-url';
 import { logActivity } from '../audit';
 import { saveSystemUpdate, setOrganization } from '../services/admin';
+import { createHotel, type NewHotelInput } from '../services/onboarding';
 
 const updateSchema = z.object({
   id: z.string().uuid().nullable().optional(),
@@ -45,4 +47,23 @@ export async function setOrganizationAction(input: z.input<typeof orgSchema>) {
     revalidatePath('/admin');
     return { ok: true };
   }, 'Organisation updated.');
+}
+
+/** A new client (or a group's next hotel): organisation, hotel in setup, owner login. The password is returned once. */
+export async function createHotelAction(input: NewHotelInput) {
+  return runAction(async () => {
+    const ctx = await superAdminActionContext();
+    // Platform team only: never a way to make another platform admin from the browser.
+    const result = await createHotel({ ...input, platformAdmin: false });
+    await logActivity({
+      propertyId: ctx.propertyId,
+      userId: ctx.userId,
+      entityType: 'property',
+      entityId: result.propertyId,
+      action: 'create',
+      summary: `Created hotel ${input.hotelName} for ${result.login}${result.existingUser ? ' (existing login)' : ''}`,
+    });
+    revalidatePath('/admin');
+    return { ...result, signInUrl: appUrl('/login'), bookingUrl: appUrl(`/book/${result.slug}`) };
+  }, 'Hotel created.');
 }

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { db, type DbOrTx } from '@/db';
 import { hkChecklistItems, organizations, properties, propertyMembers, users, type PropertySettings } from '@/db/schema';
 import { syncSystemRoles } from '@/db/system-roles';
+import { UserError } from '../errors';
 import { DEFAULT_ROOM_SLABS } from '@/lib/gst';
 import { todayIST } from '@/lib/format';
 import { nameKey, normaliseMobile, slugify } from '@/lib/utils';
@@ -94,7 +95,8 @@ export interface NewHotelResult {
   existingUser: boolean;
 }
 
-export class OnboardingError extends Error {}
+/** A reason the hotel cannot be created that the person should read (shown as-is in the console and the CLI). */
+export class OnboardingError extends UserError {}
 
 /** "Hotel Sunrise Palace" → "HSP", "Taj" → "TAJ", "Sunrise" → "SUN". */
 export function shortCodeFor(name: string): string {

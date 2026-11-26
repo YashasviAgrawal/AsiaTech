@@ -179,7 +179,7 @@ function LanguageToggle() {
 
 function AccountMenu({ data }: { data: ShellData }) {
   const router = useRouter();
-  const { t } = useT();
+  const { t, tr } = useT();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
   return (
@@ -198,7 +198,7 @@ function AccountMenu({ data }: { data: ShellData }) {
           <span className="hidden text-left leading-tight md:block">
             <span className="block max-w-36 truncate text-[13px] font-semibold text-ink-900">{data.property.name}</span>
             <span className="block max-w-36 truncate text-[11px] text-ink-500">
-              {data.user.name} · {data.user.roleName}
+              {data.user.name} · {tr(data.user.roleName)}
             </span>
           </span>
           <ChevronsUpDown className="hidden h-4 w-4 text-ink-400 md:block" />
@@ -225,7 +225,7 @@ function AccountMenu({ data }: { data: ShellData }) {
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{m.name}</span>
                 <span className="block text-[11px] text-ink-400">
-                  {m.city ?? '—'} · {m.roleName}
+                  {m.city ?? '—'} · {tr(m.roleName)}
                 </span>
               </span>
               {m.id === data.property.id && <Check className="h-4 w-4 text-brand-600" />}

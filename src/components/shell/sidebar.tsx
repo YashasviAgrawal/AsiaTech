@@ -156,7 +156,8 @@ function SidebarNav({ data, onNavigate }: { data: ShellData; onNavigate?: () => 
 }
 
 function SidebarBody({ data, onNavigate, onClose, onCollapse }: { data: ShellData; onNavigate?: () => void; onClose?: () => void; onCollapse?: () => void }) {
-  const { t } = useT();
+  const { t, tr } = useT();
+  const live = data.property.status === 'live';
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center justify-between px-5">
@@ -183,14 +184,19 @@ function SidebarBody({ data, onNavigate, onClose, onCollapse }: { data: ShellDat
         <div className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              {live && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />}
+              <span className={cn('relative inline-flex h-2 w-2 rounded-full', live ? 'bg-emerald-400' : 'bg-amber-400')} />
             </span>
             <p className="truncate text-[13px] font-semibold text-white">{data.property.name}</p>
           </div>
           <p className="mt-1 text-[11px] text-ink-400">
-            {t('top.businessDate')}: <span className="font-semibold text-ink-200">{formatDayShort(data.property.businessDate)}</span>
+            {t('top.businessDate')}: <span className="font-semibold text-ink-200">{tr(formatDayShort(data.property.businessDate))}</span>
           </p>
+          {!live && (
+            <Link href="/setup" onClick={onNavigate} className="mt-1 block text-[11px] font-semibold text-amber-300 transition hover:text-amber-200">
+              {tr('Setting up')} →
+            </Link>
+          )}
         </div>
       </div>
     </div>
