@@ -8,6 +8,7 @@ import { Card, EmptyState, PageHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/badge';
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/table';
 import { FilterBar } from '@/components/ui/filter-bar';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Payments' };
 
@@ -28,12 +29,12 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
       />
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <div className="rounded-xl border border-ink-900 bg-ink-900 p-4 text-white shadow-card">
-          <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">Collected</p>
+          <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">{tx('Collected')}</p>
           <p className="num mt-0.5 text-xl font-bold">{formatINR(total)}</p>
         </div>
         {['cash', 'upi', 'card', 'bank_transfer', 'link'].map((m) => (
           <div key={m} className="rounded-xl border border-ink-200 bg-white p-4 shadow-card">
-            <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">{PAYMENT_MODE_LABELS[m]}</p>
+            <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">{tx(PAYMENT_MODE_LABELS[m])}</p>
             <p className="num mt-0.5 text-xl font-bold text-ink-900">{formatINR(byMode[m] ?? 0)}</p>
           </div>
         ))}
@@ -78,7 +79,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
                     )}
                   </Td>
                   <Td>{titleCase(r.kind)}</Td>
-                  <Td>{PAYMENT_MODE_LABELS[r.mode]}</Td>
+                  <Td>{tx(PAYMENT_MODE_LABELS[r.mode])}</Td>
                   <Td className="max-w-40 truncate font-mono text-xs">{r.reference ?? '—'}</Td>
                   <Td className={`num text-right font-semibold ${r.kind === 'refund' ? 'text-rose-600' : 'text-ink-900'}`}>
                     {r.kind === 'refund' ? '−' : ''}

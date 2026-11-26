@@ -12,6 +12,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Field, Input, Segmented, Select } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
 import { useToast } from '@/components/ui/toast';
+import { tx } from '@/i18n/tx';
 
 interface Entry {
   id: string;
@@ -37,7 +38,7 @@ export function PettyCash({ ledger, canManage, canApprove }: { ledger: { opening
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="rounded-xl bg-gradient-to-br from-ink-900 to-ink-950 p-4 text-white shadow-card">
           <p className="flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-ink-400 uppercase">
-            <Wallet className="h-3.5 w-3.5" /> In the cash box
+            <Wallet className="h-3.5 w-3.5" /> {tx('In the cash box')}
           </p>
           <p className="num mt-1 text-2xl font-extrabold">{formatINR(ledger.closingBalance)}</p>
         </div>
@@ -72,20 +73,20 @@ export function PettyCash({ ledger, canManage, canApprove }: { ledger: { opening
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-ink-900">
-                  {e.type === 'opening' ? 'Opening balance' : e.type === 'top_up' ? 'Cash added' : e.description || e.category}
+                  {e.type === 'opening' ? tx('Opening balance') : e.type === 'top_up' ? tx('Cash added') : e.description || e.category}
                   {e.status === 'pending' && <Badge tone="warning" className="ml-2">Pending</Badge>}
                   {e.status === 'rejected' && <Badge tone="danger" className="ml-2">Rejected</Badge>}
                 </p>
                 <p className="text-xs text-ink-500">
                   {formatDay(e.entryDate)}
-                  {e.category && e.type === 'expense' ? ` · ${e.category}` : ''}
-                  {e.paidTo ? ` · paid to ${e.paidTo}` : ''}
-                  {e.createdByName ? ` · by ${e.createdByName}` : ''}
+                  {e.category && e.type === 'expense' && <> · {tx(e.category)}</>}
+                  {e.paidTo && <> · {tx(`paid to ${e.paidTo}`)}</>}
+                  {e.createdByName && <> · {tx(`by ${e.createdByName}`)}</>}
                 </p>
               </div>
               {e.billPhotoUrl && (
                 <a href={e.billPhotoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline">
-                  <ImageIcon className="h-3.5 w-3.5" /> Bill
+                  <ImageIcon className="h-3.5 w-3.5" /> {tx('Bill')}
                 </a>
               )}
               {e.status === 'pending' && canApprove && (
@@ -105,7 +106,7 @@ export function PettyCash({ ledger, canManage, canApprove }: { ledger: { opening
               <span className="num w-24 text-right text-sm text-ink-500">{formatINR(e.balance)}</span>
             </li>
           ))}
-          {ledger.entries.length === 0 && <li className="px-5 py-10 text-center text-sm text-ink-500">No entries in this period.</li>}
+          {ledger.entries.length === 0 && <li className="px-5 py-10 text-center text-sm text-ink-500">{tx('No entries in this period.')}</li>}
         </ul>
       </Card>
       {open && <EntryDialog onClose={() => setOpen(false)} canApprove={canApprove} />}
@@ -181,7 +182,7 @@ function EntryDialog({ onClose, canApprove }: { onClose: () => void; canApprove:
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
               {form.billPhotoUrl ? 'Bill photo added ✓' : 'Add bill photo'}
             </Button>
-            {!canApprove && form.amount > 2000 && <p className="mt-2 text-xs text-amber-700">Expenses above ₹2,000 need a manager&apos;s approval.</p>}
+            {!canApprove && form.amount > 2000 && <p className="mt-2 text-xs text-amber-700">{tx('Expenses above ₹2,000 need a manager’s approval.')}</p>}
           </div>
         </>
       )}

@@ -8,6 +8,7 @@ import { formatDay, formatINR, OTA_LABELS } from '@/lib/format';
 import { Card, EmptyState, PageHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/table';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Credit Report' };
 
@@ -31,7 +32,7 @@ export default async function CreditPage() {
       />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
         <div className="rounded-xl bg-ink-900 p-4 text-white shadow-card">
-          <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">Total owed</p>
+          <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">{tx('Total owed')}</p>
           <p className="num mt-1 text-2xl font-extrabold">{formatINR(report.total)}</p>
           <p className="text-xs text-ink-400">{report.count} bills</p>
         </div>
@@ -87,7 +88,11 @@ export default async function CreditPage() {
                         <Tr key={row.id}>
                           <Td>
                             <p className="font-semibold text-ink-900">{row.billTo === 'ota' ? OTA_LABELS[row.channel ?? ''] ?? row.debtor : row.debtor}</p>
-                            {row.debtor !== row.guestName && <p className="text-xs text-ink-400">Guest: {row.guestName}</p>}
+                            {row.debtor !== row.guestName && (
+                              <p className="text-xs text-ink-400">
+                                {tx('Guest:')} {row.guestName}
+                              </p>
+                            )}
                           </Td>
                           <Td>
                             <Link href={`/front-desk/bookings/${row.id}`} className="font-mono text-[13px] font-semibold text-ink-900 hover:text-brand-600">
@@ -104,7 +109,7 @@ export default async function CreditPage() {
                           <Td className="text-right">
                             {ctx.can('money.manage') && (
                               <Link href={`/money/request?booking=${row.id}`} className="text-xs font-semibold text-brand-600 hover:text-brand-700">
-                                Request →
+                                {tx('Request →')}
                               </Link>
                             )}
                           </Td>

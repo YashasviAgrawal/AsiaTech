@@ -10,6 +10,8 @@ import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Stepper, Switch } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
+import { useTr } from '@/i18n/client';
 
 /** Colour rule (rule 6, read from the AsiaTech screenshot): red = 0 left, amber = partly used, green = all free. */
 export function availabilityTone(cell: Pick<CalendarCell, 'available' | 'total'>) {
@@ -20,6 +22,7 @@ export function availabilityTone(cell: Pick<CalendarCell, 'available' | 'total'>
 
 export function AvailabilityGrid({ rows, today, canEdit }: { rows: CalendarRow[]; today: string; canEdit: boolean }) {
   const [editing, setEditing] = useState<{ row: CalendarRow; cell: CalendarCell } | null>(null);
+  const tr = useTr();
   const dates = rows[0]?.cells.map((c) => c.date) ?? [];
 
   return (
@@ -29,10 +32,10 @@ export function AvailabilityGrid({ rows, today, canEdit }: { rows: CalendarRow[]
           <thead>
             <tr>
               <th className="sticky left-0 z-20 w-56 border-b border-ink-200 bg-ink-50 px-5 py-3 text-left text-[11px] font-semibold tracking-wide text-ink-500 uppercase">
-                Room category
+                {tx('Room category')}
               </th>
               <th className="sticky left-56 z-20 w-24 border-r border-b border-ink-200 bg-ink-50 px-3 py-3 text-left text-[11px] font-semibold tracking-wide text-ink-500 uppercase">
-                Type
+                {tx('Type')}
               </th>
               {dates.map((date) => {
                 const d = parseDay(date);
@@ -74,7 +77,7 @@ export function AvailabilityGrid({ rows, today, canEdit }: { rows: CalendarRow[]
                       </td>
                     )}
                     <td className={cn('sticky left-56 z-10 w-24 border-r border-ink-200 bg-white px-3 text-[10px] font-bold tracking-wider uppercase', kind === 'available' ? 'pt-3 pb-1.5 text-ink-700' : 'py-1 text-ink-400', kind === 'blocked' && 'pb-3')}>
-                      {kind}
+                      {tx(kind)}
                     </td>
                     {row.cells.map((cell) => {
                       const isToday = cell.date === today;
@@ -86,7 +89,7 @@ export function AvailabilityGrid({ rows, today, canEdit }: { rows: CalendarRow[]
                               type="button"
                               disabled={!canEdit}
                               onClick={() => setEditing({ row, cell })}
-                              title={`${row.roomType.name} · ${formatDayShort(cell.date)}: ${cell.available} to sell${cell.stopSell ? ' · STOP-SELL' : ''}`}
+                              title={`${row.roomType.name} · ${tr(formatDayShort(cell.date))}: ${tr(`${cell.available} to sell`)}${cell.stopSell ? ` · ${tr('Stop-sell')}` : ''}`}
                               className={cn(
                                 'num relative mx-auto grid h-8 w-11 place-items-center rounded-lg text-sm font-bold ring-1 transition-all duration-150 ease-smooth',
                                 availabilityTone(cell),
@@ -166,15 +169,15 @@ function CellEditor({ row, cell, onClose }: { row: CalendarRow; cell: CalendarCe
         ].map((stat) => (
           <div key={stat.label} className="rounded-lg bg-ink-50 py-2.5">
             <p className="num text-lg font-bold text-ink-900">{stat.value}</p>
-            <p className="text-[11px] text-ink-500">{stat.label}</p>
+            <p className="text-[11px] text-ink-500">{tx(stat.label)}</p>
           </div>
         ))}
       </div>
 
       <div className="mt-5 flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-ink-900">Rooms to sell</p>
-          <p className="text-xs text-ink-500">Up to {maxSellable}. The rest are blocked.</p>
+          <p className="text-sm font-semibold text-ink-900">{tx('Rooms to sell')}</p>
+          <p className="text-xs text-ink-500">{tx(`Up to ${maxSellable}. The rest are blocked.`)}</p>
         </div>
         <div className="flex items-center gap-3">
           <span className={cn('num grid h-8 w-10 place-items-center rounded-lg text-sm font-bold ring-1', availabilityTone(preview))}>{available}</span>
@@ -184,8 +187,8 @@ function CellEditor({ row, cell, onClose }: { row: CalendarRow; cell: CalendarCe
 
       <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-ink-200 p-3">
         <div>
-          <p className="text-sm font-semibold text-ink-900">Stop-sell</p>
-          <p className="text-xs text-ink-500">Close this date on all OTAs and the booking engine.</p>
+          <p className="text-sm font-semibold text-ink-900">{tx('Stop-sell')}</p>
+          <p className="text-xs text-ink-500">{tx('Close this date on all OTAs and the booking engine.')}</p>
         </div>
         <Switch checked={stopSell} onChange={setStopSell} label="Stop-sell" />
       </div>

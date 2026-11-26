@@ -10,6 +10,7 @@ import { buttonClasses } from '@/components/ui/button-styles';
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { BarChart } from '@/components/ui/bar-chart';
+import { tx } from '@/i18n/tx';
 
 export async function generateMetadata({ params }: { params: Promise<{ key: string }> }): Promise<Metadata> {
   const { key } = await params;
@@ -41,7 +42,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
   return (
     <div>
       <Link href="/reports" className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-ink-500 hover:text-ink-800">
-        <ArrowLeft className="h-4 w-4" /> All reports
+        <ArrowLeft className="h-4 w-4" /> {tx('All reports')}
       </Link>
       <PageHeader
         eyebrow={`Reports · ${report.group}`}
@@ -49,14 +50,14 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
         description={report.description}
         actions={
           <a href={`/api/exports/report/${key}?from=${from}&to=${to}`} className={buttonClasses('primary')}>
-            <Download className="h-4 w-4" /> Export Excel
+            <Download className="h-4 w-4" /> {tx('Export Excel')}
           </a>
         }
       />
       <FilterBar className="mb-4" fields={[{ key: 'from', type: 'date', label: 'From' }, { key: 'to', type: 'date', label: 'To' }]} />
       {result.chart && result.rows.length > 0 && (
         <Card className="mb-5 p-5">
-          <p className="mb-4 text-sm font-semibold text-ink-700">{result.chart.label}</p>
+          <p className="mb-4 text-sm font-semibold text-ink-700">{tx(result.chart.label)}</p>
           <BarChart
             data={result.rows.slice(0, 40).map((r) => ({ label: String(display(r[result.chart!.labelKey], result.columns.find((c) => c.key === result.chart!.labelKey)?.type)), value: Number(r[result.chart!.valueKey] ?? 0) }))}
             format={result.chart.type === 'money' ? 'money' : result.chart.type === 'percent' ? 'percent' : 'number'}

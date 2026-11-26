@@ -11,9 +11,12 @@ import { Button } from '@/components/ui/button';
 import { Field, Input, Stepper, Switch } from '@/components/ui/fields';
 import { Badge } from '@/components/ui/badge';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
+import { useTr } from '@/i18n/client';
 
 export function RateGrid({ rows, today, canEdit }: { rows: RateRow[]; today: string; canEdit: boolean }) {
   const [editing, setEditing] = useState<{ row: RateRow; cell: RateCell } | null>(null);
+  const tr = useTr();
   const dates = rows[0]?.cells.map((c) => c.date) ?? [];
 
   return (
@@ -23,7 +26,7 @@ export function RateGrid({ rows, today, canEdit }: { rows: RateRow[]; today: str
           <thead>
             <tr>
               <th className="sticky left-0 z-20 w-64 border-r border-b border-ink-200 bg-ink-50 px-5 py-3 text-left text-[11px] font-semibold tracking-wide text-ink-500 uppercase">
-                Room type · Rate plan
+                {tx('Room type · Rate plan')}
               </th>
               {dates.map((date) => {
                 const d = parseDay(date);
@@ -79,7 +82,7 @@ export function RateGrid({ rows, today, canEdit }: { rows: RateRow[]; today: str
                               cell.stopSell ? 'bg-rose-50 ring-rose-300' : changed ? 'bg-brand-50/70 ring-brand-200' : 'bg-white ring-ink-200',
                               canEdit && 'hover:-translate-y-px hover:shadow-lift',
                             )}
-                            title={`1A ${formatINR(cell.price1)} · 2A ${formatINR(cell.price2)} · 3A ${formatINR(cell.price3)} · extra bed ${formatINR(cell.extraBed)}`}
+                            title={`1A ${formatINR(cell.price1)} · 2A ${formatINR(cell.price2)} · 3A ${formatINR(cell.price3)} · ${tr('extra bed')} ${formatINR(cell.extraBed)}`}
                           >
                             <span className={cn('num text-[13px] font-bold', cell.stopSell ? 'text-rose-700 line-through' : changed ? 'text-brand-700' : 'text-ink-900')}>
                               {cell.price2.toLocaleString('en-IN')}
@@ -151,13 +154,13 @@ function RateEditor({ row, cell, onClose }: { row: RateRow; cell: RateCell; onCl
         </Field>
       </div>
       <div className="mt-4 flex items-center justify-between rounded-lg bg-ink-50 p-3">
-        <p className="text-sm font-medium text-ink-800">Minimum stay (nights)</p>
+        <p className="text-sm font-medium text-ink-800">{tx('Minimum stay (nights)')}</p>
         <Stepper value={form.minStay} onChange={(minStay) => setForm({ ...form, minStay })} min={1} max={30} />
       </div>
       <div className="mt-3 flex items-center justify-between rounded-lg border border-ink-200 p-3">
         <div>
-          <p className="text-sm font-medium text-ink-800">Stop-sell this rate</p>
-          <p className="text-xs text-ink-500">Hide this rate plan on OTAs for this date.</p>
+          <p className="text-sm font-medium text-ink-800">{tx('Stop-sell this rate')}</p>
+          <p className="text-xs text-ink-500">{tx('Hide this rate plan on OTAs for this date.')}</p>
         </div>
         <Switch checked={form.stopSell} onChange={(stopSell) => setForm({ ...form, stopSell })} label="Stop-sell" />
       </div>

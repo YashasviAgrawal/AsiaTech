@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 interface Review {
   id: string;
@@ -53,15 +54,17 @@ export function ReviewsList({ reviews }: { reviews: Review[] }) {
             <div className="text-right text-xs text-ink-500">
               <p className="font-semibold text-ink-700">{OTA_LABELS[r.channel] ?? r.channel}</p>
               <p>
-                {r.reviewerName} · {timeAgo(r.createdAt)}
+                {r.reviewerName} · {tx(timeAgo(r.createdAt))}
               </p>
-              {r.stayDate && <p>Stayed {formatDay(r.stayDate)}</p>}
+              {r.stayDate && <p>{tx(`Stayed ${formatDay(r.stayDate)}`)}</p>}
             </div>
           </div>
           <p className="mt-2 text-sm leading-relaxed text-ink-700">{r.text}</p>
           {r.reply ? (
             <div className="mt-4 rounded-xl border-l-4 border-brand-500 bg-ink-50 p-3 text-sm">
-              <p className="text-xs font-semibold text-ink-500">Your reply {r.repliedAt && `· ${timeAgo(r.repliedAt)}`}</p>
+              <p className="text-xs font-semibold text-ink-500">
+                {tx('Your reply')} {r.repliedAt && <>· {tx(timeAgo(r.repliedAt))}</>}
+              </p>
               <p className="mt-1 text-ink-700">{r.reply}</p>
             </div>
           ) : replying === r.id ? (

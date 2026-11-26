@@ -13,6 +13,7 @@ import { Checkbox, Input } from '@/components/ui/fields';
 import { Alert } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/dialog';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 type State = Awaited<ReturnType<typeof getAuditState>>;
 type StepKey = 'no_shows' | 'room_charges' | 'pos_closed' | 'cash_match' | 'lock_day' | 'email_report';
@@ -67,8 +68,8 @@ export function NightAuditWizard({
                     {done ? <Check className="h-4 w-4" /> : i + 1}
                   </span>
                   <span className="min-w-0">
-                    <span className={cn('block text-sm font-semibold', active === step.key ? 'text-brand-700' : 'text-ink-900')}>{step.title}</span>
-                    <span className="block text-xs text-ink-500">{s?.detail ?? step.description}</span>
+                    <span className={cn('block text-sm font-semibold', active === step.key ? 'text-brand-700' : 'text-ink-900')}>{tx(step.title)}</span>
+                    <span className="block text-xs text-ink-500">{tx(s?.detail ?? step.description)}</span>
                   </span>
                 </button>
               </li>
@@ -81,8 +82,8 @@ export function NightAuditWizard({
         <Card className="p-6">
           {active === 'no_shows' && (
             <div>
-              <h2 className="text-lg font-bold text-ink-900">Mark no-shows</h2>
-              <p className="mt-1 text-sm text-ink-500">These guests were due today or earlier and have not checked in. Tick the ones who will not come. Untick anyone still expected tonight.</p>
+              <h2 className="text-lg font-bold text-ink-900">{tx('Mark no-shows')}</h2>
+              <p className="mt-1 text-sm text-ink-500">{tx('These guests were due today or earlier and have not checked in. Tick the ones who will not come. Untick anyone still expected tonight.')}</p>
               {state.pendingArrivals.length === 0 ? (
                 <Alert tone="success" className="mt-4">
                   Every arrival has checked in.
@@ -103,7 +104,10 @@ export function NightAuditWizard({
               )}
               {state.dueOuts.length > 0 && (
                 <Alert tone="warning" icon={<AlertTriangle className="h-4 w-4" />} className="mt-4" title={`${state.dueOuts.length} guest(s) were due to leave today and are still in house`}>
-                  Check them out or extend their stay from <Link href="/front-desk/today?tab=departures" className="font-semibold underline">Today Check (In-Out)</Link> before locking the day.
+                  {tx('Check them out or extend their stay before locking the day:')}{' '}
+                  <Link href="/front-desk/today?tab=departures" className="font-semibold underline">
+                    {tx('Today Check (In-Out)')}
+                  </Link>
                 </Alert>
               )}
               <div className="mt-5 flex justify-end">
@@ -116,16 +120,16 @@ export function NightAuditWizard({
 
           {active === 'room_charges' && (
             <div>
-              <h2 className="text-lg font-bold text-ink-900">Post room charges</h2>
+              <h2 className="text-lg font-bold text-ink-900">{tx('Post room charges')}</h2>
               <p className="mt-1 text-sm text-ink-500">Tonight&apos;s room rent (with GST) is added to every in-house guest&apos;s bill.</p>
               <div className="mt-5 flex items-center gap-6 rounded-xl bg-ink-50 p-5">
                 <div>
                   <p className="num text-3xl font-extrabold text-ink-900">{state.roomCharges.total}</p>
-                  <p className="text-xs text-ink-500">rooms in house tonight</p>
+                  <p className="text-xs text-ink-500">{tx('rooms in house tonight')}</p>
                 </div>
                 <div>
                   <p className="num text-3xl font-extrabold text-emerald-600">{state.roomCharges.posted}</p>
-                  <p className="text-xs text-ink-500">already posted</p>
+                  <p className="text-xs text-ink-500">{tx('already posted')}</p>
                 </div>
               </div>
               <div className="mt-5 flex justify-end">
@@ -138,18 +142,18 @@ export function NightAuditWizard({
 
           {active === 'pos_closed' && (
             <div>
-              <h2 className="text-lg font-bold text-ink-900">Restaurant day closed</h2>
+              <h2 className="text-lg font-bold text-ink-900">{tx('Restaurant day closed')}</h2>
               <ul className="mt-4 space-y-2">
                 {state.outlets.map((o) => (
                   <li key={o.id} className="flex items-center justify-between rounded-xl border border-ink-200 px-4 py-3">
                     <span className="font-medium text-ink-800">{o.name}</span>
                     {o.closed ? (
                       <span className="flex items-center gap-1 text-sm font-semibold text-emerald-600">
-                        <Check className="h-4 w-4" /> Closed
+                        <Check className="h-4 w-4" /> {tx('Closed')}
                       </span>
                     ) : (
                       <Link href="/restaurant/orders" className="text-sm font-semibold text-brand-600">
-                        Close it →
+                        {tx('Close it →')}
                       </Link>
                     )}
                   </li>
@@ -170,23 +174,23 @@ export function NightAuditWizard({
 
           {active === 'cash_match' && (
             <div>
-              <h2 className="text-lg font-bold text-ink-900">Match cash</h2>
-              <p className="mt-1 text-sm text-ink-500">Count the cash drawer. The system expects:</p>
+              <h2 className="text-lg font-bold text-ink-900">{tx('Match cash')}</h2>
+              <p className="mt-1 text-sm text-ink-500">{tx('Count the cash drawer. The system expects:')}</p>
               <dl className="mt-4 space-y-2 rounded-xl bg-ink-50 p-4 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-ink-600">Front desk cash</dt>
+                  <dt className="text-ink-600">{tx('Front desk cash')}</dt>
                   <dd className="num font-semibold">{formatINR(state.cash.frontDesk)}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-600">Restaurant cash</dt>
+                  <dt className="text-ink-600">{tx('Restaurant cash')}</dt>
                   <dd className="num font-semibold">{formatINR(state.cash.restaurant)}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-600">Petty cash spent</dt>
+                  <dt className="text-ink-600">{tx('Petty cash spent')}</dt>
                   <dd className="num font-semibold text-rose-600">−{formatINR(state.cash.pettyExpenses)}</dd>
                 </div>
                 <div className="flex justify-between border-t border-ink-200 pt-2 text-base font-bold">
-                  <dt>Expected in drawer</dt>
+                  <dt>{tx('Expected in drawer')}</dt>
                   <dd className="num">{formatINR(expectedCash)}</dd>
                 </div>
               </dl>
@@ -196,7 +200,7 @@ export function NightAuditWizard({
               </div>
               {counted !== '' && (
                 <p className={cn('mt-3 text-sm font-semibold', Math.abs(Number(counted) - expectedCash) < 1 ? 'text-emerald-600' : 'text-amber-700')}>
-                  {Math.abs(Number(counted) - expectedCash) < 1 ? 'Cash matches ✓' : `${Number(counted) > expectedCash ? 'Excess' : 'Short'} by ${formatINR(Math.abs(Number(counted) - expectedCash))}`}
+                  {tx(Math.abs(Number(counted) - expectedCash) < 1 ? 'Cash matches ✓' : `${Number(counted) > expectedCash ? 'Excess' : 'Short'} by ${formatINR(Math.abs(Number(counted) - expectedCash))}`)}
                 </p>
               )}
               <div className="mt-5 flex justify-end">
@@ -210,9 +214,12 @@ export function NightAuditWizard({
           {(active === 'lock_day' || active === 'email_report') && (
             <div>
               <h2 className="flex items-center gap-2 text-lg font-bold text-ink-900">
-                <Moon className="h-5 w-5 text-brand-600" /> Lock {formatDay(businessDate)}
+                <Moon className="h-5 w-5 text-brand-600" /> {tx(`Lock ${formatDay(businessDate)}`)}
               </h2>
-              <p className="mt-1 text-sm text-ink-500">The business date moves to tomorrow. Nothing more can be posted to this day. The report is emailed to {emails.length ? emails.join(', ') : 'nobody yet (add an email in Settings → Notifications)'}.</p>
+              <p className="mt-1 text-sm text-ink-500">
+                {tx('The business date moves to tomorrow. Nothing more can be posted to this day.')}{' '}
+                {emails.length ? tx(`The report is emailed to ${emails.join(', ')}.`) : tx('Nobody gets the report yet: add an email in Settings → Notifications.')}
+              </p>
               {state.audit?.status === 'completed' ? (
                 <Alert tone="success" className="mt-4">
                   This day is closed.
@@ -229,20 +236,26 @@ export function NightAuditWizard({
         </Card>
 
         <Card>
-          <p className="border-b border-ink-100 px-5 py-3.5 font-bold text-ink-900">Recent audits</p>
+          <p className="border-b border-ink-100 px-5 py-3.5 font-bold text-ink-900">{tx('Recent audits')}</p>
           <ul className="divide-y divide-ink-100">
             {history.map((h) => (
               <li key={h.id} className="flex flex-wrap items-center gap-x-6 gap-y-1 px-5 py-3 text-sm">
                 <span className="w-32 font-semibold text-ink-900">{formatDay(h.businessDate)}</span>
-                <span className="text-ink-500">Occupancy {h.summary.occupancy ?? '—'}%</span>
-                <span className="text-ink-500">Rooms {formatINR(Number(h.summary.roomRevenue ?? 0))}</span>
-                <span className="text-ink-500">Restaurant {formatINR(Number(h.summary.restaurantRevenue ?? 0))}</span>
+                <span className="text-ink-500">
+                  {tx('Occupancy')} {h.summary.occupancy ?? '—'}%
+                </span>
+                <span className="text-ink-500">
+                  {tx('Rooms')} {formatINR(Number(h.summary.roomRevenue ?? 0))}
+                </span>
+                <span className="text-ink-500">
+                  {tx('Restaurant')} {formatINR(Number(h.summary.restaurantRevenue ?? 0))}
+                </span>
                 <span className="ml-auto flex items-center gap-1.5 text-xs text-ink-400">
                   <Mail className="h-3.5 w-3.5" /> {h.runBy ?? '—'}
                 </span>
               </li>
             ))}
-            {history.length === 0 && <li className="px-5 py-8 text-center text-sm text-ink-500">No audits yet.</li>}
+            {history.length === 0 && <li className="px-5 py-8 text-center text-sm text-ink-500">{tx('No audits yet.')}</li>}
           </ul>
         </Card>
       </div>

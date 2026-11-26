@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 type Form = Parameters<typeof saveHotelDetailsAction>[0] & {
   legalName: string;
@@ -131,7 +132,9 @@ export function HotelForm({ initial }: { initial: Form }) {
               <Checkbox label="Room rates already include GST" description="Leave off if front-desk prices are before tax (most common)." checked={form.tax.ratesIncludeTax} onChange={(e) => set('tax', { ...form.tax, ratesIncludeTax: e.target.checked })} />
             </div>
             <p className="rounded-lg bg-ink-50 p-3 text-xs text-ink-600 sm:col-span-3">
-              Example: a {formatINR(form.tax.slabLimit)} room pays {form.tax.lowRate}% = {formatINR((form.tax.slabLimit * form.tax.lowRate) / 100)} GST. A {formatINR(form.tax.slabLimit + 1)} room pays {form.tax.highRate}%.
+              {tx(
+                `Example: a ${formatINR(form.tax.slabLimit)} room pays ${form.tax.lowRate}% = ${formatINR((form.tax.slabLimit * form.tax.lowRate) / 100)} GST. A ${formatINR(form.tax.slabLimit + 1)} room pays ${form.tax.highRate}%.`,
+              )}
             </p>
           </div>
         </Card>

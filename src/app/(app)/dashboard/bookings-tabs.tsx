@@ -11,6 +11,7 @@ import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/table';
 import { formatDay, formatINR, sourceLabel } from '@/lib/format';
 import { useT } from '@/i18n/client';
 import type { DashboardBookingRow } from '@/server/services/dashboard';
+import { tx } from '@/i18n/tx';
 
 type TabKey = 'created' | 'arriving' | 'inhouse';
 
@@ -51,7 +52,7 @@ export function BookingsTabs({
         />
       </div>
       {rows.length === 0 ? (
-        <p className="border-t border-ink-100 px-5 py-10 text-center text-sm text-ink-500">No bookings here yet.</p>
+        <p className="border-t border-ink-100 px-5 py-10 text-center text-sm text-ink-500">{tr('No bookings here yet.')}</p>
       ) : (
         <Table className="border-t border-ink-100" minWidth={880}>
           <THead>
@@ -88,7 +89,7 @@ export function BookingsTabs({
                       href={`/front-desk/bookings/${row.id}?do=assign`}
                       className="inline-flex h-7 items-center rounded-md bg-brand-50 px-2.5 text-xs font-semibold text-brand-700 ring-1 ring-brand-200 transition hover:bg-brand-100"
                     >
-                      Assign
+                      {tx('Assign')}
                     </Link>
                   ) : (
                     <span className="text-ink-400">—</span>

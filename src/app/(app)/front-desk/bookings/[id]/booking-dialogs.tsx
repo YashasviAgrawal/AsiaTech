@@ -15,6 +15,7 @@ import { StatusBadge } from '@/components/ui/badge';
 import { useRun } from '@/components/ui/use-run';
 import { PhotoGrid } from '@/components/ui/photo-upload';
 import { useToast } from '@/components/ui/toast';
+import { tx } from '@/i18n/tx';
 
 type RoomOption = { id: string; number: string; floor: string | null; hkStatus: 'clean' | 'dirty' | 'inspected' | 'out_of_order'; free: boolean; current: boolean };
 
@@ -44,7 +45,7 @@ function RoomPicker({ bookingRoomId, value, onChange, requireClean }: { bookingR
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options]);
   if (!options) return <Loader2 className="h-5 w-5 animate-spin text-ink-400" />;
-  if (options.length === 0) return <p className="text-sm text-ink-500">No rooms of this type.</p>;
+  if (options.length === 0) return <p className="text-sm text-ink-500">{tx('No rooms of this type.')}</p>;
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((o) => {
@@ -92,7 +93,7 @@ export function AssignDialog({ room, onClose }: { room: BookingDetail['rooms'][n
             Cancel
           </Button>
           <Button loading={pending} disabled={!roomId || roomId === room.roomId} onClick={() => run(() => assignRoomAction(room.id, roomId), { success: (d) => `Room ${d.number} assigned`, onSuccess: onClose })}>
-            Assign room
+            {tx('Assign room')}
           </Button>
         </>
       }
@@ -193,7 +194,7 @@ export function CheckInDialog({ data, onClose }: { data: BookingDetail; onClose:
               )
             }
           >
-            Check in & print card
+            {tx('Check in & print card')}
           </Button>
         </>
       }
@@ -202,7 +203,7 @@ export function CheckInDialog({ data, onClose }: { data: BookingDetail; onClose:
         {reserved.map((r, i) => (
           <div key={r.id}>
             <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink-900">
-              <BedDouble className="h-4 w-4" style={{ color: r.typeColor }} /> Room {i + 1} · {r.typeName}
+              <BedDouble className="h-4 w-4" style={{ color: r.typeColor }} /> {tx(`Room ${i + 1}`)} · {r.typeName}
             </p>
             <RoomPicker bookingRoomId={r.id} value={assign[r.id]} onChange={(id) => setAssign((a) => ({ ...a, [r.id]: id }))} requireClean />
           </div>
@@ -211,7 +212,7 @@ export function CheckInDialog({ data, onClose }: { data: BookingDetail; onClose:
 
         <div className="rounded-xl border border-ink-200 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold text-ink-900">Guest ID</p>
+            <p className="text-sm font-semibold text-ink-900">{tx('Guest ID')}</p>
             <Checkbox label="Foreign national (Form-III)" checked={foreign} onChange={(e) => setForeign(e.target.checked)} />
           </div>
           {!foreign ? (
@@ -258,14 +259,14 @@ export function CheckInDialog({ data, onClose }: { data: BookingDetail; onClose:
               <Field label="Arrival in India">
                 <Input type="date" value={f.arrivalInIndia} onChange={(e) => setF({ ...f, arrivalInIndia: e.target.value })} />
               </Field>
-              <p className="text-xs text-amber-700 sm:col-span-3">Form-C must be filed on the FRRO portal within 24 hours. A countdown appears on the booking.</p>
+              <p className="text-xs text-amber-700 sm:col-span-3">{tx('Form-C must be filed on the FRRO portal within 24 hours. A countdown appears on the booking.')}</p>
             </div>
           )}
           <div className="mt-4 border-t border-ink-100 pt-3">
             <p className="mb-2 text-xs font-medium text-ink-500">
               {foreign ? 'Passport and visa pages' : 'ID photo, front and back'}
-              {(g.idPhotos?.length ?? 0) > 0 && <span className="text-emerald-700"> · on file from an earlier stay</span>}
-              <span className="text-ink-400"> · kept private, staff only</span>
+              {(g.idPhotos?.length ?? 0) > 0 && <span className="text-emerald-700"> {tx('· on file from an earlier stay')}</span>}
+              <span className="text-ink-400"> {tx('· kept private, staff only')}</span>
             </p>
             <PhotoGrid folder="ids" value={idPhotos} onChange={setIdPhotos} max={4} webcam scanLabel={foreign ? 'Scan passport' : 'Scan ID'} tileClassName="h-20 w-28" />
           </div>
@@ -329,31 +330,31 @@ export function CheckOutDialog({ data, businessDate, onClose, onCheckedOut }: { 
               })
             }
           >
-            <Printer className="h-4 w-4" /> Check out & create invoice
+            <Printer className="h-4 w-4" /> {tx('Check out & create invoice')}
           </Button>
         </>
       }
     >
       {early && (
         <Alert tone="warning" icon={<AlertTriangle className="h-4 w-4" />} className="mb-4">
-          Leaving early: the booking was until {formatDay(b.checkOut)}. Unused nights are removed from the bill and go back on sale.
+          {tx(`Leaving early: the booking was until ${formatDay(b.checkOut)}. Unused nights are removed from the bill and go back on sale.`)}
         </Alert>
       )}
       <dl className="space-y-2 rounded-xl bg-ink-50 p-4 text-sm">
         <div className="flex justify-between">
-          <dt className="text-ink-500">Room charges</dt>
+          <dt className="text-ink-500">{tx('Room charges')}</dt>
           <dd className="num font-medium">{formatINR(totals.room)}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-ink-500">Restaurant & extras</dt>
+          <dt className="text-ink-500">{tx('Restaurant & extras')}</dt>
           <dd className="num font-medium">{formatINR(totals.extras)}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-ink-500">Paid</dt>
+          <dt className="text-ink-500">{tx('Paid')}</dt>
           <dd className="num font-medium text-emerald-700">−{formatINR(totals.paid)}</dd>
         </div>
         <div className="flex justify-between border-t border-ink-200 pt-2 text-base font-bold">
-          <dt>Balance</dt>
+          <dt>{tx('Balance')}</dt>
           <dd className="num">{formatINR(totals.balance)}</dd>
         </div>
       </dl>

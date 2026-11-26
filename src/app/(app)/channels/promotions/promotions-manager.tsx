@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog } from '@/components/ui/dialog';
 import { Checkbox, Field, Input, Segmented, Switch } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 type PromoType = 'basic' | 'early_bird' | 'last_minute' | 'long_stay' | 'coupon';
 interface Promo {
@@ -54,13 +55,13 @@ export function PromotionsManager({ promotions }: { promotions: Promo[] }) {
             <div key={p.id} className={cn('card overflow-hidden', !p.isActive && 'opacity-60')}>
               <div className={cn('flex items-center gap-3 bg-gradient-to-br p-4 text-white', meta.tone)}>
                 <meta.icon className="h-5 w-5" />
-                <span className="text-sm font-semibold">{meta.label}</span>
+                <span className="text-sm font-semibold">{tx(meta.label)}</span>
                 <span className="num ml-auto text-2xl font-extrabold">{p.discountType === 'percent' ? `${p.value}%` : formatINR(p.value)}</span>
               </div>
               <div className="p-4">
                 <p className="font-bold text-ink-900">{p.name}</p>
                 <p className="mt-0.5 text-xs text-ink-500">
-                  {p.type === 'coupon' ? `Code ${p.couponCode}` : meta.condition?.replace('N', String(p.conditionValue ?? '—')) ?? 'All dates'}
+                  {p.type === 'coupon' ? <>{tx('Code')} {p.couponCode}</> : tx(meta.condition?.replace('N', String(p.conditionValue ?? '—')) ?? 'All dates')}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1">
                   {p.channels.map((c) => (
@@ -71,12 +72,12 @@ export function PromotionsManager({ promotions }: { promotions: Promo[] }) {
                 </div>
                 <div className="mt-4 flex items-center gap-2 border-t border-ink-100 pt-3">
                   <Switch size="sm" checked={p.isActive} onChange={(isActive) => run(() => savePromotionAction({ ...p, isActive }))} label="Active" />
-                  <span className="text-xs text-ink-500">{p.pushedAt ? `Pushed ${timeAgo(p.pushedAt)}` : 'Not pushed yet'}</span>
+                  <span className="text-xs text-ink-500">{tx(p.pushedAt ? `Pushed ${timeAgo(p.pushedAt)}` : 'Not pushed yet')}</span>
                   <Button size="icon-sm" variant="ghost" className="ml-auto" onClick={() => setEditing(p)} aria-label="Edit">
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   <Button size="sm" variant="secondary" disabled={pending || !p.isActive} onClick={() => run(() => pushPromotionAction(p.id), { success: (d) => `Pushed to ${d.channels} OTA(s)` })}>
-                    <Send className="h-3.5 w-3.5" /> Push
+                    <Send className="h-3.5 w-3.5" /> {tx('Push')}
                   </Button>
                 </div>
               </div>
@@ -126,7 +127,7 @@ function PromoDialog({ promo, onClose }: { promo: Promo | null; onClose: () => v
           const m = TYPES[t];
           return (
             <button key={t} type="button" onClick={() => setForm({ ...form, type: t })} className={cn('flex flex-col items-center gap-1.5 rounded-xl border p-3 text-xs font-semibold transition', form.type === t ? 'border-brand-500 bg-brand-50 text-brand-700 ring-4 ring-brand-100' : 'border-ink-200 text-ink-600 hover:border-ink-300')}>
-              <m.icon className="h-5 w-5" /> {m.label}
+              <m.icon className="h-5 w-5" /> {tx(m.label)}
             </button>
           );
         })}

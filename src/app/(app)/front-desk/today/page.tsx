@@ -5,6 +5,7 @@ import { formatDayLong } from '@/lib/format';
 import { PageHeader } from '@/components/ui/card';
 import { ButtonLink } from '@/components/ui/button';
 import { TodayBoard } from './today-board';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Today Check (In-Out)' };
 
@@ -22,7 +23,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
         actions={
           ctx.can('bookings.create') && (
             <ButtonLink href="/front-desk/reservations/new?walkin=1" variant="outline">
-              Walk-in
+              {tx('Walk-in')}
             </ButtonLink>
           )
         }

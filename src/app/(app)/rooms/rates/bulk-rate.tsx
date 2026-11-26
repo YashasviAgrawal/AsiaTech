@@ -11,6 +11,7 @@ import { WeekdayPicker } from '@/components/ui/weekday-picker';
 import { Alert } from '@/components/ui/card';
 import { useRun } from '@/components/ui/use-run';
 import { useToast } from '@/components/ui/toast';
+import { tx } from '@/i18n/tx';
 
 export function BulkRateButton({ plans, defaultFrom }: { plans: { id: string; label: string; mealPlan: string }[]; defaultFrom: string }) {
   const [open, setOpen] = useState(false);
@@ -129,7 +130,7 @@ function BulkRateDialog({ plans, defaultFrom, onClose }: { plans: { id: string; 
 
           <div className="rounded-xl border border-ink-200 p-4">
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-semibold text-ink-900">Price</p>
+              <p className="text-sm font-semibold text-ink-900">{tx('Price')}</p>
               <Segmented
                 size="sm"
                 value={direction}
@@ -185,17 +186,17 @@ function BulkRateDialog({ plans, defaultFrom, onClose }: { plans: { id: string; 
       ) : (
         <div>
           <Alert tone="warning" className="mb-4">
-            <strong>{preview.total}</strong> rate{preview.total === 1 ? '' : 's'} will change. You can undo afterwards.
+            {tx(`${preview.total} ${preview.total === 1 ? 'rate' : 'rates'} will change. You can undo afterwards.`)}
           </Alert>
           <div className="scrollbar-thin max-h-[48vh] overflow-y-auto rounded-xl border border-ink-200">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-ink-50 text-left text-[11px] tracking-wide text-ink-500 uppercase">
                 <tr>
-                  <th className="px-3 py-2 font-semibold">Plan</th>
-                  <th className="px-3 py-2 font-semibold">Date</th>
-                  <th className="px-3 py-2 text-right font-semibold">2 adults</th>
-                  <th className="px-3 py-2 text-center font-semibold">Min stay</th>
-                  <th className="px-3 py-2 text-center font-semibold">Stop-sell</th>
+                  <th className="px-3 py-2 font-semibold">{tx('Plan')}</th>
+                  <th className="px-3 py-2 font-semibold">{tx('Date')}</th>
+                  <th className="px-3 py-2 text-right font-semibold">{tx('2 adults')}</th>
+                  <th className="px-3 py-2 text-center font-semibold">{tx('Min stay')}</th>
+                  <th className="px-3 py-2 text-center font-semibold">{tx('Stop-sell')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">

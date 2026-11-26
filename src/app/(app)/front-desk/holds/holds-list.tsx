@@ -8,6 +8,7 @@ import { formatDayShort, formatINR } from '@/lib/format';
 import { cancelBookingAction, confirmHoldAction, extendHoldAction } from '@/server/actions/reservations';
 import { Button } from '@/components/ui/button';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 interface HoldRow {
   id: string;
@@ -43,7 +44,7 @@ export function HoldsList({ rows, canEdit, canCancel }: { rows: HoldRow[]; canEd
             <span className={cn('flex w-24 flex-col items-center rounded-xl px-2 py-2 ring-1', tone)}>
               <Clock className="h-4 w-4" />
               <span className="num mt-1 text-sm font-bold">{minutes <= 0 ? 'Expiring' : minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} m`}</span>
-              <span className="text-[10px] font-medium opacity-80">left</span>
+              <span className="text-[10px] font-medium opacity-80">{tx('left')}</span>
             </span>
             <div className="min-w-0 flex-1">
               <Link href={`/front-desk/bookings/${row.id}`} className="font-semibold text-ink-900 hover:text-brand-600">
@@ -60,7 +61,7 @@ export function HoldsList({ rows, canEdit, canCancel }: { rows: HoldRow[]; canEd
                     <TimerReset className="h-3.5 w-3.5" /> Extend 2 h
                   </Button>
                   <Button size="sm" disabled={pending} onClick={() => run(() => confirmHoldAction(row.id), { success: (d) => `${d.bookingNo} confirmed` })}>
-                    <BadgeCheck className="h-3.5 w-3.5" /> Confirm
+                    <BadgeCheck className="h-3.5 w-3.5" /> {tx('Confirm')}
                   </Button>
                 </>
               )}

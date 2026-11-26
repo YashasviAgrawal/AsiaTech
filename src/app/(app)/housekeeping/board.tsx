@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Drawer } from '@/components/ui/dialog';
 import { Field, Input, Select } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 type Status = 'clean' | 'dirty' | 'inspected' | 'out_of_order';
 
@@ -54,7 +55,7 @@ export function HousekeepingBoard({ rooms, staff, canManage, businessDate }: { r
           <option value="">All floors</option>
           {floors.map((f) => (
             <option key={f} value={f}>
-              Floor {f}
+              {`Floor ${f}`}
             </option>
           ))}
         </Select>
@@ -63,7 +64,7 @@ export function HousekeepingBoard({ rooms, staff, canManage, businessDate }: { r
       {byFloor.map(({ floor: f, rooms: list }) =>
         list.length === 0 ? null : (
           <section key={f}>
-            <p className="mb-2.5 text-[11px] font-bold tracking-wider text-ink-400 uppercase">Floor {f}</p>
+            <p className="mb-2.5 text-[11px] font-bold tracking-wider text-ink-400 uppercase">{tx(`Floor ${f}`)}</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6">
               {list.map((room) => {
                 const style = HK_STYLE[room.hkStatus as Status];
@@ -84,7 +85,7 @@ export function HousekeepingBoard({ rooms, staff, canManage, businessDate }: { r
                     <div className="mt-auto space-y-1.5 pt-3 text-xs">
                       {occ.kind === 'vacant' ? (
                         <p className="flex items-center gap-1.5 text-ink-400">
-                          <BedDouble className="h-3.5 w-3.5" /> Vacant
+                          <BedDouble className="h-3.5 w-3.5" /> {tx('Vacant')}
                         </p>
                       ) : (
                         <p className="flex items-center gap-1.5 font-medium text-ink-700">
@@ -94,14 +95,14 @@ export function HousekeepingBoard({ rooms, staff, canManage, businessDate }: { r
                         </p>
                       )}
                       {occ.kind !== 'vacant' && (
-                        <p className="text-[11px] text-ink-500">{occ.kind === 'arriving' ? 'Arriving today' : occ.kind === 'departing' ? 'Departing today' : `Leaves ${formatDayShort(occ.checkOut!)}`}</p>
+                        <p className="text-[11px] text-ink-500">{tx(occ.kind === 'arriving' ? 'Arriving today' : occ.kind === 'departing' ? 'Departing today' : `Leaves ${formatDayShort(occ.checkOut!)}`)}</p>
                       )}
                       {room.hkStatus === 'out_of_order' && <p className="truncate text-[11px] font-medium text-rose-700">{room.oooReason}</p>}
                       <div className="flex items-center gap-1.5">
                         {room.task?.assigneeName && (
                           <span className="flex items-center gap-1 rounded-full bg-white/80 px-1.5 py-0.5 text-[10px] font-semibold text-ink-700 ring-1 ring-ink-200">
                             <span className="grid h-4 w-4 place-items-center rounded-full bg-ink-800 text-[8px] text-white">{initials(room.task.assigneeName)}</span>
-                            {room.task.status === 'in_progress' ? 'Cleaning' : 'Assigned'}
+                            {tx(room.task.status === 'in_progress' ? 'Cleaning' : 'Assigned')}
                           </span>
                         )}
                         {room.openTickets > 0 && (
@@ -111,7 +112,7 @@ export function HousekeepingBoard({ rooms, staff, canManage, businessDate }: { r
                         )}
                         {room.hkStatus === 'dirty' && occ.kind === 'arriving' && (
                           <span className="flex items-center gap-1 rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                            <CircleAlert className="h-2.5 w-2.5" /> Priority
+                            <CircleAlert className="h-2.5 w-2.5" /> {tx('Priority')}
                           </span>
                         )}
                       </div>
@@ -140,7 +141,7 @@ function RoomDrawer({ room, staff, canManage, businessDate, onClose }: { room: B
 
   return (
     <Drawer open onClose={onClose} title={`Room ${room.number}`} description={room.typeName} width="sm">
-      <p className="mb-2 text-xs font-semibold tracking-wide text-ink-400 uppercase">Status</p>
+      <p className="mb-2 text-xs font-semibold tracking-wide text-ink-400 uppercase">{tx('Status')}</p>
       <div className="grid grid-cols-3 gap-2">
         {statuses.map((s) => (
           <button
@@ -162,15 +163,17 @@ function RoomDrawer({ room, staff, canManage, businessDate, onClose }: { room: B
         <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50/40 p-3">
           {room.hkStatus === 'out_of_order' ? (
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-rose-800">Out of order · {room.oooReason}</p>
-              <p className="text-xs text-rose-700">Blocked in inventory until {room.oooUntil ? formatDayShort(room.oooUntil) : '—'}.</p>
+              <p className="text-sm font-semibold text-rose-800">
+                {tx('Out of order')} · {room.oooReason}
+              </p>
+              <p className="text-xs text-rose-700">{tx(`Blocked in inventory until ${room.oooUntil ? formatDayShort(room.oooUntil) : '—'}.`)}</p>
               <Button size="sm" variant="outline" loading={pending} onClick={() => run(() => setRoomStatusAction(room.id, 'dirty'), { success: 'Room back in service (needs cleaning)', onSuccess: onClose })}>
                 Back in service
               </Button>
             </div>
           ) : !showOoo ? (
             <button onClick={() => setShowOoo(true)} className="flex w-full items-center gap-2 text-sm font-semibold text-rose-700">
-              <Wrench className="h-4 w-4" /> Put out of order…
+              <Wrench className="h-4 w-4" /> {tx('Put out of order…')}
             </button>
           ) : (
             <div className="space-y-3">
@@ -181,7 +184,7 @@ function RoomDrawer({ room, staff, canManage, businessDate, onClose }: { room: B
                 <Input type="date" min={addDay(businessDate, 1)} value={oooUntil} onChange={(e) => setOooUntil(e.target.value)} />
               </Field>
               <Button size="sm" variant="danger" loading={pending} onClick={() => run(() => setRoomStatusAction(room.id, 'out_of_order', { reason: oooReason, until: oooUntil }), { onSuccess: onClose, success: `Room ${room.number} out of order` })}>
-                Block room
+                {tx('Block room')}
               </Button>
             </div>
           )}
@@ -190,7 +193,7 @@ function RoomDrawer({ room, staff, canManage, businessDate, onClose }: { room: B
 
       {canManage && room.hkStatus !== 'out_of_order' && (
         <div className="mt-6">
-          <p className="mb-2 text-xs font-semibold tracking-wide text-ink-400 uppercase">Assign cleaning</p>
+          <p className="mb-2 text-xs font-semibold tracking-wide text-ink-400 uppercase">{tx('Assign cleaning')}</p>
           <div className="flex gap-2">
             <Select value={assignee} onChange={(e) => setAssignee(e.target.value)}>
               <option value="">Unassigned</option>
@@ -204,7 +207,9 @@ function RoomDrawer({ room, staff, canManage, businessDate, onClose }: { room: B
               <Sparkles className="h-4 w-4" /> Assign
             </Button>
           </div>
-          {room.task && <p className="mt-2 text-xs text-ink-500">Current task: {room.task.status.replace('_', ' ')} {room.task.assigneeName ? `· ${room.task.assigneeName}` : ''}</p>}
+          {room.task && <p className="mt-2 text-xs text-ink-500">
+              {tx('Current task:')} {tx(room.task.status.replaceAll('_', ' '))} {room.task.assigneeName ? `· ${room.task.assigneeName}` : ''}
+            </p>}
         </div>
       )}
     </Drawer>

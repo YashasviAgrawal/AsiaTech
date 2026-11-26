@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Field, Input, Segmented, Select, Stepper } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 interface Line {
   key: string;
@@ -203,7 +204,7 @@ export function ModifyDialog({
           {/* Rooms */}
           <section className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-ink-900">Rooms</h3>
+              <h3 className="text-sm font-semibold text-ink-900">{tx('Rooms')}</h3>
               {!inHouse && lines.length < 20 && (
                 <Button size="sm" variant="soft" onClick={addRoom}>
                   <Plus className="h-4 w-4" /> Add room
@@ -257,13 +258,13 @@ export function ModifyDialog({
                     <span className="flex items-center gap-2">
                       Extra beds <Stepper size="sm" value={line.extraBeds} min={0} max={type?.maxExtraBeds ?? 1} onChange={(v) => update(line.key, { extraBeds: v })} label="Extra beds" />
                     </span>
-                    {!line.id && <span className="rounded-full bg-brand-100 px-2 py-0.5 font-semibold text-brand-700">New room</span>}
+                    {!line.id && <span className="rounded-full bg-brand-100 px-2 py-0.5 font-semibold text-brand-700">{tx('New room')}</span>}
                     {upgraded && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 font-semibold text-violet-700">
                         <Sparkles className="h-3 w-3" /> {original.typeName} → {type?.name}
                       </span>
                     )}
-                    {line.inHouse && <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700">In house</span>}
+                    {line.inHouse && <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700">{tx('In house')}</span>}
                   </div>
                 </div>
               );
@@ -288,7 +289,7 @@ export function ModifyDialog({
           </section>
           {b.source === 'ota' && (
             <p className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-800">
-              This is an OTA booking. Room availability is pushed to the channels automatically, but the OTA’s own copy of the booking is not changed. Ask the guest to change it on the OTA too, or note it here.
+              {tx('This is an OTA booking. Room availability is pushed to the channels automatically, but the OTA’s own copy of the booking is not changed. Ask the guest to change it on the OTA too, or note it here.')}
             </p>
           )}
         </div>
@@ -296,7 +297,7 @@ export function ModifyDialog({
         {/* Live summary */}
         <aside className="h-fit space-y-4 rounded-2xl border border-ink-200/80 bg-gradient-to-b from-ink-50/80 to-white p-4 lg:sticky lg:top-0">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-ink-900">New price</h3>
+            <h3 className="text-sm font-semibold text-ink-900">{tx('New price')}</h3>
             {loading && nights > 0 && <Loader2 className="h-4 w-4 animate-spin text-ink-400" />}
           </div>
           <div className="flex items-center gap-2 text-sm">
@@ -321,12 +322,12 @@ export function ModifyDialog({
             {preview && (
               <>
                 <div className="flex justify-between">
-                  <dt className="text-ink-500">Room charges</dt>
+                  <dt className="text-ink-500">{tx('Room charges')}</dt>
                   <dd className="num text-ink-800">{formatINR(preview.quote.roomAmount)}</dd>
                 </div>
                 {preview.quote.discountAmount > 0 && (
                   <div className="flex justify-between">
-                    <dt className="text-ink-500">Discount</dt>
+                    <dt className="text-ink-500">{tx('Discount')}</dt>
                     <dd className="num text-emerald-700">−{formatINR(preview.quote.discountAmount)}</dd>
                   </div>
                 )}
@@ -341,7 +342,7 @@ export function ModifyDialog({
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <dt className="text-ink-500">Paid so far</dt>
+                  <dt className="text-ink-500">{tx('Paid so far')}</dt>
                   <dd className="num text-ink-800">{formatINR(preview.paid)}</dd>
                 </div>
                 {balanceAfter !== null && (
@@ -356,14 +357,14 @@ export function ModifyDialog({
           {(previewError || (preview && preview.problems.length > 0)) && (
             <div className="space-y-1 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
               <p className="flex items-center gap-1.5 font-semibold">
-                <TriangleAlert className="h-3.5 w-3.5" /> Cannot save yet
+                <TriangleAlert className="h-3.5 w-3.5" /> {tx('Cannot save yet')}
               </p>
               {previewError ? <p>{previewError}</p> : preview!.problems.map((p) => <p key={p}>{p}</p>)}
             </div>
           )}
           {preview && preview.quote.restrictions.length > 0 && (
             <div className="space-y-1 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-              <p className="font-semibold">Rate rules for these dates</p>
+              <p className="font-semibold">{tx('Rate rules for these dates')}</p>
               {preview.quote.restrictions.map((r) => (
                 <p key={r.ratePlanId + r.kind}>{r.message}</p>
               ))}

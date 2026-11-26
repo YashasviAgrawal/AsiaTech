@@ -10,6 +10,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { Dialog } from '@/components/ui/dialog';
 import { Field, Input, Segmented } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 type Outlet = { id: string; name: string; code: string; defaultTaxRate: number };
 
@@ -24,7 +25,7 @@ export function OutletsCard({ outlets, current }: { outlets: Outlet[]; current: 
         description="Restaurant, café, bar or room service: each has its own menu, tables and bill series."
         action={
           <Button size="sm" variant="soft" onClick={() => setEditing('new')}>
-            <Plus className="h-4 w-4" /> Add outlet
+            <Plus className="h-4 w-4" /> {tx('Add outlet')}
           </Button>
         }
       />
@@ -34,10 +35,10 @@ export function OutletsCard({ outlets, current }: { outlets: Outlet[]; current: 
             <Link href={`/restaurant/menu?outlet=${o.id}`} className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-ink-900">{o.name}</p>
               <p className="font-mono text-[11px] text-ink-500">
-                Bills {o.code}/… · GST {o.defaultTaxRate}%
+                {tx('Bills')} {o.code}/… · GST {o.defaultTaxRate}%
               </p>
             </Link>
-            {o.id === current && <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-semibold text-brand-700">Editing</span>}
+            {o.id === current && <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-semibold text-brand-700">{tx('Editing')}</span>}
             <button type="button" onClick={() => setEditing(o)} className="grid h-8 w-8 place-items-center rounded-lg text-ink-400 hover:bg-ink-100 hover:text-ink-700" aria-label={`Edit ${o.name}`}>
               <Pencil className="h-4 w-4" />
             </button>

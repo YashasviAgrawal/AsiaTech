@@ -10,6 +10,7 @@ import { buttonClasses } from '@/components/ui/button-styles';
 import { StatusBadge } from '@/components/ui/badge';
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/table';
 import { FilterBar } from '@/components/ui/filter-bar';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Booking Report' };
 
@@ -42,7 +43,7 @@ export default async function BookingReportPage({ searchParams }: { searchParams
             <ExportButton href={`/api/exports/bookings?${exportQuery}`} printHref={`/print/bookings?${exportQuery}`} />
             {ctx.can('bookings.create') && (
               <Link href="/front-desk/reservations/new" className={buttonClasses('primary')}>
-                <Plus className="h-4 w-4" /> New booking
+                <Plus className="h-4 w-4" /> {tx('New booking')}
               </Link>
             )}
           </>
@@ -94,7 +95,7 @@ export default async function BookingReportPage({ searchParams }: { searchParams
           { label: 'Balance due', value: formatINR(summary.balance) },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-ink-200 bg-white px-4 py-3 shadow-card">
-            <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">{s.label}</p>
+            <p className="text-[11px] font-medium tracking-wide text-ink-400 uppercase">{tx(s.label)}</p>
             <p className="num mt-0.5 text-lg font-bold text-ink-900">{s.value}</p>
           </div>
         ))}
@@ -133,7 +134,7 @@ export default async function BookingReportPage({ searchParams }: { searchParams
                     <p className="font-medium text-ink-900">{r.guestName}</p>
                     {r.mobile && <p className="num text-xs text-ink-400">{r.mobile}</p>}
                   </Td>
-                  <Td className="whitespace-nowrap">{sourceLabel(r.source, r.channel)}</Td>
+                  <Td className="whitespace-nowrap">{tx(sourceLabel(r.source, r.channel))}</Td>
                   <Td className="whitespace-nowrap">{formatDay(r.checkIn)}</Td>
                   <Td className="whitespace-nowrap">
                     {formatDay(r.checkOut)}
@@ -141,11 +142,11 @@ export default async function BookingReportPage({ searchParams }: { searchParams
                   </Td>
                   <Td className="max-w-52">
                     <p className="truncate">{r.roomTypes}</p>
-                    {r.roomNumbers && <p className="num text-xs font-semibold text-ink-500">Room {r.roomNumbers}</p>}
+                    {r.roomNumbers && <p className="num text-xs font-semibold text-ink-500">{tx(`Room ${r.roomNumbers}`)}</p>}
                   </Td>
                   <Td className="num text-right font-semibold text-ink-900">{formatINR(r.totalAmount + r.extras)}</Td>
                   <Td className="num text-right font-semibold">
-                    {['cancelled', 'no_show'].includes(r.status) ? <span className="text-ink-300">—</span> : r.balance > 0.5 ? <span className="text-amber-700">{formatINR(r.balance)}</span> : <span className="text-emerald-600">Paid</span>}
+                    {['cancelled', 'no_show'].includes(r.status) ? <span className="text-ink-300">—</span> : r.balance > 0.5 ? <span className="text-amber-700">{formatINR(r.balance)}</span> : <span className="text-emerald-600">{tx('Paid')}</span>}
                   </Td>
                   <Td>
                     <StatusBadge status={r.status} />
@@ -155,7 +156,7 @@ export default async function BookingReportPage({ searchParams }: { searchParams
             </TBody>
           </Table>
         )}
-        {truncated && <p className="border-t border-ink-100 px-5 py-3 text-xs text-ink-500">Showing the first 200. Narrow the filters or export to Excel for everything.</p>}
+        {truncated && <p className="border-t border-ink-100 px-5 py-3 text-xs text-ink-500">{tx('Showing the first 200. Narrow the filters or export to Excel for everything.')}</p>}
       </Card>
     </div>
   );

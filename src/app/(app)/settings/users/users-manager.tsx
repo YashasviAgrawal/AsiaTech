@@ -12,6 +12,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Checkbox, Field, Input, Segmented, Select } from '@/components/ui/fields';
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/table';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 interface Staff {
   id: string;
@@ -66,7 +67,7 @@ export function UsersManager({
                 <ShieldCheck className="h-3.5 w-3.5" /> {showMatrix ? 'Hide' : 'What can each role do?'}
               </Button>
               <Button size="sm" onClick={() => setEditing('new')}>
-                <Plus className="h-3.5 w-3.5" /> Add staff
+                <Plus className="h-3.5 w-3.5" /> {tx('Add staff')}
               </Button>
             </div>
           }
@@ -102,7 +103,7 @@ export function UsersManager({
                   {!s.isActive && <Badge tone="danger" className="ml-1">Inactive</Badge>}
                 </Td>
                 <Td>{s.language === 'hi' ? 'हिंदी' : 'English'}</Td>
-                <Td className="text-xs">{s.lastLoginAt ? timeAgo(s.lastLoginAt) : 'Never'}</Td>
+                <Td className="text-xs">{tx(s.lastLoginAt ? timeAgo(s.lastLoginAt) : 'Never')}</Td>
                 <Td className="text-right whitespace-nowrap">
                   <Button size="icon-sm" variant="ghost" onClick={() => setEditing(s)} aria-label="Edit">
                     <Pencil className="h-3.5 w-3.5" />
@@ -126,7 +127,7 @@ export function UsersManager({
             <table className="w-full min-w-[820px] text-sm">
               <thead className="bg-ink-50 text-[11px] tracking-wide text-ink-500 uppercase">
                 <tr>
-                  <th className="px-5 py-2.5 text-left font-semibold">Permission</th>
+                  <th className="px-5 py-2.5 text-left font-semibold">{tx('Permission')}</th>
                   {roles.map((r) => (
                     <th key={r.key} className="px-3 py-2.5 text-center font-semibold">
                       {r.name}
@@ -161,13 +162,13 @@ export function UsersManager({
             <li key={l.id} className="flex flex-wrap items-center gap-3 px-5 py-2.5 text-sm">
               {l.success ? <Check className="h-4 w-4 text-emerald-600" /> : <XCircle className="h-4 w-4 text-rose-600" />}
               <span className="font-medium text-ink-800">{l.name}</span>
-              <span className="text-xs text-ink-400">{l.success ? 'signed in' : 'wrong password'}</span>
+              <span className="text-xs text-ink-400">{tx(l.success ? 'signed in' : 'wrong password')}</span>
               <span className="ml-auto truncate text-xs text-ink-400">
                 {l.ip ?? '—'} · {formatDateTime(l.createdAt)}
               </span>
             </li>
           ))}
-          {logins.length === 0 && <li className="px-5 py-8 text-center text-sm text-ink-500">No sign-ins yet.</li>}
+          {logins.length === 0 && <li className="px-5 py-8 text-center text-sm text-ink-500">{tx('No sign-ins yet.')}</li>}
         </ul>
       </Card>
 

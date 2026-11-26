@@ -9,6 +9,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { Field, Input, Textarea } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
 import { PhotoGrid } from '@/components/ui/photo-upload';
+import { tx } from '@/i18n/tx';
 
 const SWATCHES = ['#e11d48', '#be123c', '#7c3aed', '#0284c7', '#059669', '#d97706', '#0f172a', '#9a3412'];
 
@@ -54,7 +55,7 @@ export function BrandingForm({ initial, hotelName, city, slug }: { initial: { pr
             </div>
           ) : (
             <button type="button" onClick={() => setShowLinks(true)} className="text-xs font-semibold text-ink-500 hover:text-ink-800">
-              Images already online? Paste links instead
+              {tx('Images already online? Paste links instead')}
             </button>
           )}
           <div className="flex justify-between">
@@ -95,15 +96,15 @@ export function BrandingForm({ initial, hotelName, city, slug }: { initial: { pr
         <div className="p-5">
           <div className="grid grid-cols-3 gap-2 rounded-xl border border-ink-200 p-2 text-xs">
             <div className="rounded-lg bg-ink-50 p-2">
-              <p className="text-ink-400">Check-in</p>
-              <p className="font-semibold">Today</p>
+              <p className="text-ink-400">{tx('Check-in')}</p>
+              <p className="font-semibold">{tx('Today')}</p>
             </div>
             <div className="rounded-lg bg-ink-50 p-2">
-              <p className="text-ink-400">Check-out</p>
-              <p className="font-semibold">Tomorrow</p>
+              <p className="text-ink-400">{tx('Check-out')}</p>
+              <p className="font-semibold">{tx('Tomorrow')}</p>
             </div>
             <button className="rounded-lg text-sm font-bold text-white" style={{ backgroundColor: form.primaryColor }}>
-              Search
+              {tx('Search')}
             </button>
           </div>
           <p className="mt-4 line-clamp-3 text-sm text-ink-600">{form.aboutText || 'Tell guests what makes your hotel special.'}</p>

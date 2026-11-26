@@ -15,6 +15,7 @@ import { Checkbox, Field, Input, Segmented, Select, Stepper } from '@/components
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/table';
 import { useRun } from '@/components/ui/use-run';
 import { useToast } from '@/components/ui/toast';
+import { tx } from '@/i18n/tx';
 
 type PrinterRow = {
   id: string;
@@ -177,7 +178,7 @@ function CopyLine({ value, label }: { value: string; label: string }) {
 function KeyDialog({ created, onClose }: { created: { key: string; server: string }; onClose: () => void }) {
   const command = `node asiatech-print-agent.mjs --server ${created.server} --key ${created.key}`;
   return (
-    <Dialog open onClose={onClose} size="lg" icon={<KeyRound className="h-5 w-5" />} title="Agent key created" description="Copy it now: it is shown only once." footer={<Button onClick={onClose}>Done</Button>}>
+    <Dialog open onClose={onClose} size="lg" icon={<KeyRound className="h-5 w-5" />} title="Agent key created" description="Copy it now: it is shown only once." footer={<Button onClick={onClose}>{tx('Done')}</Button>}>
       <div className="space-y-4">
         <CopyLine label="Run this on the print PC (in the folder where you saved the agent)" value={command} />
         <CopyLine label="Key only" value={created.key} />
@@ -206,7 +207,7 @@ function PrintersCard({ printers, outlets, agentOnline }: { printers: PrinterRow
         description="KOTs go to the kitchen printer, bills to the counter printer. Without a printer here, the terminal opens the browser print window as before."
         action={
           <Button size="sm" variant="soft" onClick={() => setEditing('new')}>
-            <Plus className="h-4 w-4" /> Add printer
+            <Plus className="h-4 w-4" /> {tx('Add printer')}
           </Button>
         }
       />
@@ -259,7 +260,7 @@ function PrintersCard({ printers, outlets, agentOnline }: { printers: PrinterRow
                     })
                   }
                 >
-                  <Printer className="h-3.5 w-3.5" /> Test
+                  <Printer className="h-3.5 w-3.5" /> {tx('Test')}
                 </Button>
                 <button type="button" onClick={() => setEditing(p)} className="grid h-8 w-8 place-items-center rounded-lg text-ink-400 hover:bg-ink-100 hover:text-ink-700" aria-label={`Edit ${p.name}`}>
                   <Pencil className="h-4 w-4" />

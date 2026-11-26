@@ -8,6 +8,7 @@ import { requireContext } from '@/server/context';
 import { cn } from '@/lib/utils';
 import { PageHeader } from '@/components/ui/card';
 import { GoLiveButton } from './go-live';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Setup Wizard' };
 
@@ -50,9 +51,9 @@ export default async function SetupPage() {
                 {step.done ? <CheckCircle2 className="h-5 w-5" /> : <step.icon className="h-5 w-5" />}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-xs font-semibold text-ink-400">Step {i + 1}</span>
-                <span className="block font-bold text-ink-900">{step.title}</span>
-                <span className="block text-sm text-ink-500">{step.detail}</span>
+                <span className="block text-xs font-semibold text-ink-400">{tx(`Step ${i + 1}`)}</span>
+                <span className="block font-bold text-ink-900">{tx(step.title)}</span>
+                <span className="block text-sm text-ink-500">{tx(step.detail)}</span>
               </span>
               <ArrowRight className="h-5 w-5 text-ink-300 transition group-hover:translate-x-0.5 group-hover:text-brand-600" />
             </Link>
@@ -63,8 +64,8 @@ export default async function SetupPage() {
             <Rocket className="h-5 w-5" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-xs font-semibold text-ink-400">Step 5</span>
-            <span className="block font-bold text-ink-900">Go live</span>
+            <span className="block text-xs font-semibold text-ink-400">{tx('Step 5')}</span>
+            <span className="block font-bold text-ink-900">{tx('Go live')}</span>
             <span className="block text-sm text-ink-500">{p.status === 'live' ? 'Taking bookings on every channel.' : ready ? 'Everything is ready. Start selling.' : 'Finish the steps above first.'}</span>
           </span>
           {p.status !== 'live' && <GoLiveButton disabled={!ready} />}

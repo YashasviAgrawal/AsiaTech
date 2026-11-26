@@ -4,6 +4,7 @@ import { RefreshCw, RotateCcw } from 'lucide-react';
 import { processQueueAction, retrySyncAction } from '@/server/actions/channels';
 import { Button } from '@/components/ui/button';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 export function RetryButton({ id }: { id: string }) {
   const { run, pending } = useRun();
@@ -18,7 +19,7 @@ export function SendNowButton() {
   const { run, pending } = useRun();
   return (
     <Button variant="outline" loading={pending} onClick={() => run(() => processQueueAction(), { success: (d) => `${d.processed} processed · ${d.ok} sent · ${d.failed} failed` })}>
-      <RefreshCw className="h-4 w-4" /> Send waiting updates
+      <RefreshCw className="h-4 w-4" /> {tx('Send waiting updates')}
     </Button>
   );
 }

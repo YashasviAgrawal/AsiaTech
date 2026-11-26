@@ -4,6 +4,7 @@ import { ArrowUpRight, BarChart3, BedDouble, ClipboardList, IndianRupee, Sparkle
 import { requireContext } from '@/server/context';
 import { REPORTS } from '@/server/services/reports';
 import { PageHeader } from '@/components/ui/card';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Reports' };
 
@@ -28,8 +29,8 @@ export default async function ReportsPage() {
               <s.icon className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block font-semibold text-ink-900">{s.title}</span>
-              <span className="block text-xs text-ink-500">{s.description}</span>
+              <span className="block font-semibold text-ink-900">{tx(s.title)}</span>
+              <span className="block text-xs text-ink-500">{tx(s.description)}</span>
             </span>
             <ArrowUpRight className="h-4 w-4 text-ink-300 group-hover:text-brand-600" />
           </Link>
@@ -41,7 +42,7 @@ export default async function ReportsPage() {
           return (
             <section key={group}>
               <h2 className="mb-3 flex items-center gap-2 text-sm font-bold tracking-wide text-ink-500 uppercase">
-                <Icon className="h-4 w-4" /> {group}
+                <Icon className="h-4 w-4" /> {tx(group)}
               </h2>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {REPORTS.filter((r) => r.group === group).map((r) => (
@@ -50,8 +51,8 @@ export default async function ReportsPage() {
                       <BarChart3 className="h-5 w-5" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block font-semibold text-ink-900">{r.title}</span>
-                      <span className="mt-0.5 block text-sm text-ink-500">{r.description}</span>
+                      <span className="block font-semibold text-ink-900">{tx(r.title)}</span>
+                      <span className="mt-0.5 block text-sm text-ink-500">{tx(r.description)}</span>
                     </span>
                   </Link>
                 ))}

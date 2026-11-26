@@ -10,6 +10,7 @@ import { Badge, StatusBadge } from '@/components/ui/badge';
 import { Dialog } from '@/components/ui/dialog';
 import { Field, Input, Segmented, Select, Textarea } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 interface Ticket {
   id: string;
@@ -39,7 +40,7 @@ export function TicketList({ tickets }: { tickets: Ticket[] }) {
             </p>
             {t.description && <p className="mt-0.5 text-sm text-ink-600">{t.description}</p>}
             <p className="mt-0.5 text-xs text-ink-400">
-              {t.reportedBy ?? 'Staff'} · {timeAgo(t.createdAt)}
+              {t.reportedBy ?? tx('Staff')} · {tx(timeAgo(t.createdAt))}
             </p>
           </div>
           <StatusBadge status={t.status} />

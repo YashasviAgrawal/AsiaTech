@@ -11,6 +11,7 @@ import { StatusBadge } from '@/components/ui/badge';
 import { Field, Input, Segmented, Select } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
 import { useToast } from '@/components/ui/toast';
+import { tx } from '@/i18n/tx';
 
 interface Req {
   id: string;
@@ -46,9 +47,9 @@ export function RequestMoney({ prefill, requests }: { prefill: { bookingId: stri
     <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
       <Card className="h-fit overflow-hidden">
         <div className="bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white">
-          <p className="text-sm font-medium text-brand-100">{prefill ? `Booking ${prefill.bookingNo}` : 'New payment request'}</p>
+          <p className="text-sm font-medium text-brand-100">{prefill ? <>{tx('Booking')} {prefill.bookingNo}</> : tx('New payment request')}</p>
           <p className="num mt-1 text-4xl font-extrabold tracking-tight">{formatINR(form.amount || 0)}</p>
-          <p className="mt-1 text-xs text-brand-100">UPI, cards and net banking</p>
+          <p className="mt-1 text-xs text-brand-100">{tx('UPI, cards and net banking')}</p>
         </div>
         <div className="space-y-4 p-5">
           <Field label="Amount">
@@ -131,8 +132,8 @@ export function RequestMoney({ prefill, requests }: { prefill: { bookingId: stri
                   )}
                 </p>
                 <p className="text-[11px] text-ink-400">
-                  Sent {formatDateTime(r.createdAt)}
-                  {r.status === 'success' && r.paidAt ? ` · paid ${formatDateTime(r.paidAt)}` : r.linkExpiresAt ? ` · expires ${formatDateTime(r.linkExpiresAt)}` : ''}
+                  {tx(`Sent ${formatDateTime(r.createdAt)}`)}
+                  {r.status === 'success' && r.paidAt ? <> · {tx(`paid ${formatDateTime(r.paidAt)}`)}</> : r.linkExpiresAt ? <> · {tx(`expires ${formatDateTime(r.linkExpiresAt)}`)}</> : null}
                 </p>
               </div>
               <StatusBadge status={r.status} label={r.status === 'success' ? 'Paid' : undefined} />
@@ -153,7 +154,7 @@ export function RequestMoney({ prefill, requests }: { prefill: { bookingId: stri
               )}
             </li>
           ))}
-          {requests.length === 0 && <li className="px-5 py-10 text-center text-sm text-ink-500">No payment requests yet.</li>}
+          {requests.length === 0 && <li className="px-5 py-10 text-center text-sm text-ink-500">{tx('No payment requests yet.')}</li>}
         </ul>
       </Card>
     </div>

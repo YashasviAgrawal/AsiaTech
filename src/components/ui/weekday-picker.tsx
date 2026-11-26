@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { tx } from '@/i18n/tx';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -24,13 +25,13 @@ export function WeekdayPicker({ value, onChange }: { value: number[]; onChange: 
       ))}
       <span className="mx-1 h-5 w-px bg-ink-200" />
       <button type="button" onClick={() => onChange([0, 1, 2, 3, 4, 5, 6])} className="text-xs font-medium text-brand-600 hover:text-brand-700">
-        All
+        {tx('All')}
       </button>
       <button type="button" onClick={() => onChange([5, 6])} className="text-xs font-medium text-brand-600 hover:text-brand-700">
-        Fri–Sat
+        {tx('Fri–Sat')}
       </button>
       <button type="button" onClick={() => onChange([0, 1, 2, 3, 4])} className="text-xs font-medium text-brand-600 hover:text-brand-700">
-        Sun–Thu
+        {tx('Sun–Thu')}
       </button>
     </div>
   );

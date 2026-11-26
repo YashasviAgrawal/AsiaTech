@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input, Select } from './fields';
+import { tx } from '@/i18n/tx';
 
 export interface FilterField {
   key: string;
@@ -83,7 +84,7 @@ export function FilterBar({ fields, className }: { fields: FilterField[]; classN
           }}
           className="inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-ink-500 hover:bg-ink-100 hover:text-ink-800"
         >
-          <X className="h-3.5 w-3.5" /> Clear
+          <X className="h-3.5 w-3.5" /> {tx('Clear')}
         </button>
       )}
     </div>

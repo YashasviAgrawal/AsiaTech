@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { addDay, formatDay } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { tx } from '@/i18n/tx';
 
 /** Pre / date search / Next / Today, as in AsiaTech's calendar ("Search 19-11-2026"), driven by ?start=. */
 export function DateNav({ start, days, today, className }: { start: string; days: number; today: string; className?: string }) {
@@ -41,7 +42,7 @@ export function DateNav({ start, days, today, className }: { start: string; days
       </div>
       {start !== today && (
         <Link href={href(today)} className="h-9 rounded-lg px-3 text-sm leading-9 font-medium text-brand-600 transition hover:bg-brand-50" scroll={false}>
-          Today
+          {tx('Today')}
         </Link>
       )}
     </div>

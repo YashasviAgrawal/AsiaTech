@@ -11,6 +11,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/badge';
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/table';
 import { GuestEditor } from './guest-editor';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Guest' };
 
@@ -26,11 +27,11 @@ export default async function GuestPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="space-y-6">
       <Link href="/front-desk/guests" className="inline-flex items-center gap-1 text-sm font-medium text-ink-500 hover:text-ink-800">
-        <ArrowLeft className="h-4 w-4" /> Guests
+        <ArrowLeft className="h-4 w-4" /> {tx('Guests')}
       </Link>
       {guest.mergedIntoId && (
         <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-          This profile was merged. <Link href={`/front-desk/guests/${guest.mergedIntoId}`} className="font-semibold underline">Open the kept profile</Link>
+          {tx('This profile was merged.')} <Link href={`/front-desk/guests/${guest.mergedIntoId}`} className="font-semibold underline">{tx('Open the kept profile')}</Link>
         </p>
       )}
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">

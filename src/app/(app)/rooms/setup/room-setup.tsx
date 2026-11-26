@@ -12,6 +12,8 @@ import { Dialog } from '@/components/ui/dialog';
 import { Checkbox, Field, Input, Select, Stepper, Textarea } from '@/components/ui/fields';
 import { PhotoGrid } from '@/components/ui/photo-upload';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
+import { useTr } from '@/i18n/client';
 
 interface RoomRow {
   id: string;
@@ -68,6 +70,7 @@ type DialogState =
 
 export function RoomSetup({ types }: { types: TypeRow[] }) {
   const [dialog, setDialog] = useState<DialogState>(null);
+  const tr = useTr();
   const close = () => setDialog(null);
   const totalRooms = types.reduce((t, x) => t + x.rooms.filter((r) => r.isActive).length, 0);
 
@@ -75,7 +78,7 @@ export function RoomSetup({ types }: { types: TypeRow[] }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-600">
-          <strong className="text-ink-900">{types.length}</strong> room types · <strong className="text-ink-900">{totalRooms}</strong> active rooms
+          <strong className="text-ink-900">{types.length}</strong> {tx('room types')} · <strong className="text-ink-900">{totalRooms}</strong> {tx('active rooms')}
         </p>
         <Button onClick={() => setDialog({ kind: 'type' })}>
           <Plus className="h-4 w-4" /> Add room type
@@ -104,10 +107,11 @@ export function RoomSetup({ types }: { types: TypeRow[] }) {
                 </div>
                 <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-500">
                   <span className="flex items-center gap-1">
-                    <BedDouble className="h-3.5 w-3.5" /> {type.rooms.filter((r) => r.isActive).length} rooms{type.bedType ? ` · ${type.bedType}` : ''}
+                    <BedDouble className="h-3.5 w-3.5" /> {tx(`${type.rooms.filter((r) => r.isActive).length} rooms`)}
+                    {type.bedType ? ` · ${type.bedType}` : ''}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5" /> up to {type.maxAdults} adults, {type.maxChildren} children, {type.maxExtraBeds} extra bed
+                    <Users className="h-3.5 w-3.5" /> {tx(`up to ${type.maxAdults} adults, ${type.maxChildren} children, ${type.maxExtraBeds} extra bed`)}
                   </span>
                   {type.sizeSqft ? (
                     <span className="flex items-center gap-1">
@@ -132,7 +136,7 @@ export function RoomSetup({ types }: { types: TypeRow[] }) {
 
           <div className="grid gap-0 lg:grid-cols-[1fr_1.4fr]">
             <div className="border-b border-ink-100 p-5 lg:border-r lg:border-b-0">
-              <p className="mb-3 text-[11px] font-semibold tracking-wider text-ink-400 uppercase">Rooms</p>
+              <p className="mb-3 text-[11px] font-semibold tracking-wider text-ink-400 uppercase">{tx('Rooms')}</p>
               <div className="flex flex-wrap gap-2">
                 {type.rooms.map((room) => (
                   <button
@@ -142,26 +146,26 @@ export function RoomSetup({ types }: { types: TypeRow[] }) {
                       'num group flex items-center gap-1.5 rounded-lg border border-ink-200 bg-white px-2.5 py-1.5 text-sm font-bold text-ink-800 transition hover:border-ink-300 hover:shadow-card',
                       !room.isActive && 'border-dashed text-ink-400 line-through',
                     )}
-                    title={`Floor ${room.floor ?? '—'} · ${room.hkStatus.replace('_', ' ')}`}
+                    title={`${tr(`Floor ${room.floor ?? '—'}`)} · ${tr(room.hkStatus.replaceAll('_', ' '))}`}
                   >
                     <span className={cn('h-1.5 w-1.5 rounded-full', HK_DOT[room.hkStatus])} />
                     {room.number}
                   </button>
                 ))}
-                {type.rooms.length === 0 && <p className="text-sm text-ink-500">No rooms yet. Add room numbers to start selling.</p>}
+                {type.rooms.length === 0 && <p className="text-sm text-ink-500">{tx('No rooms yet. Add room numbers to start selling.')}</p>}
               </div>
             </div>
             <div className="p-5">
-              <p className="mb-3 text-[11px] font-semibold tracking-wider text-ink-400 uppercase">Rate plans (standard price per night)</p>
+              <p className="mb-3 text-[11px] font-semibold tracking-wider text-ink-400 uppercase">{tx('Rate plans (standard price per night)')}</p>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[460px] text-sm">
                   <thead className="text-left text-[11px] text-ink-500">
                     <tr>
-                      <th className="pb-2 font-medium">Plan</th>
-                      <th className="pb-2 text-right font-medium">1 adult</th>
-                      <th className="pb-2 text-right font-medium">2 adults</th>
-                      <th className="pb-2 text-right font-medium">3 adults</th>
-                      <th className="pb-2 text-right font-medium">Extra bed</th>
+                      <th className="pb-2 font-medium">{tx('Plan')}</th>
+                      <th className="pb-2 text-right font-medium">{tx('1 adult')}</th>
+                      <th className="pb-2 text-right font-medium">{tx('2 adults')}</th>
+                      <th className="pb-2 text-right font-medium">{tx('3 adults')}</th>
+                      <th className="pb-2 text-right font-medium">{tx('Extra bed')}</th>
                       <th className="pb-2" />
                     </tr>
                   </thead>
@@ -170,10 +174,10 @@ export function RoomSetup({ types }: { types: TypeRow[] }) {
                       <tr key={plan.id} className={cn(!plan.isActive && 'opacity-50')}>
                         <td className="py-2 pr-2">
                           <span className="flex items-center gap-1.5 font-medium text-ink-800">
-                            {plan.name}
+                            {tx(plan.name)}
                             {plan.isDefault && <Star className="h-3 w-3 fill-amber-400 text-amber-400" />}
                           </span>
-                          <span className="text-[11px] text-ink-500">{MEAL_PLAN_LABELS[plan.mealPlan]}</span>
+                          <span className="text-[11px] text-ink-500">{tx(MEAL_PLAN_LABELS[plan.mealPlan])}</span>
                         </td>
                         <td className="num py-2 text-right text-ink-700">{formatINR(plan.price1)}</td>
                         <td className="num py-2 text-right font-semibold text-ink-900">{formatINR(plan.price2)}</td>
@@ -189,7 +193,7 @@ export function RoomSetup({ types }: { types: TypeRow[] }) {
                   </tbody>
                 </table>
               </div>
-              {type.plans.length === 0 && <p className="text-sm text-ink-500">Add at least one rate plan so this room type can be sold.</p>}
+              {type.plans.length === 0 && <p className="text-sm text-ink-500">{tx('Add at least one rate plan so this room type can be sold.')}</p>}
             </div>
           </div>
         </Card>
@@ -265,7 +269,7 @@ function RoomTypeDialog({ type, onClose }: { type?: TypeRow; onClose: () => void
           ] as const
         ).map(([key, label, min, max]) => (
           <div key={key} className="rounded-lg bg-ink-50 p-2.5 text-center">
-            <p className="mb-1.5 text-[11px] font-medium text-ink-500">{label}</p>
+            <p className="mb-1.5 text-[11px] font-medium text-ink-500">{tx(label)}</p>
             <Stepper size="sm" value={form[key]} onChange={(v) => set(key, v)} min={min} max={max} />
           </div>
         ))}
@@ -287,7 +291,7 @@ function RoomTypeDialog({ type, onClose }: { type?: TypeRow; onClose: () => void
                 onClick={() => set('amenities', on ? form.amenities.filter((x) => x !== a) : [...form.amenities, a])}
                 className={cn('rounded-full px-3 py-1 text-xs font-medium ring-1 transition', on ? 'bg-ink-900 text-white ring-ink-900' : 'bg-white text-ink-600 ring-ink-300 hover:text-ink-900')}
               >
-                {a}
+                {tx(a)}
               </button>
             );
           })}
@@ -330,7 +334,7 @@ function AddRoomsDialog({ type, onClose }: { type: TypeRow; onClose: () => void 
             Cancel
           </Button>
           <Button loading={pending} onClick={() => run(() => addRoomsAction({ roomTypeId: type.id, numbers, floor }), { success: (d) => `Added ${d.added} room${d.added === 1 ? '' : 's'}`, onSuccess: onClose })}>
-            Add rooms
+            {tx('Add rooms')}
           </Button>
         </>
       }

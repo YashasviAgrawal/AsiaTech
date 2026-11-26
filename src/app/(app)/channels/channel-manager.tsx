@@ -12,6 +12,8 @@ import { Dialog } from '@/components/ui/dialog';
 import { Field, Input } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
 import { useToast } from '@/components/ui/toast';
+import { tx } from '@/i18n/tx';
+import { useTr } from '@/i18n/client';
 
 interface Channel {
   id: string;
@@ -44,6 +46,7 @@ export function ChannelManager({ channels, focus }: { channels: Channel[]; focus
   const [connecting, setConnecting] = useState<Channel | null>(null);
   const [mapping, setMapping] = useState<Channel | null>(null);
   const { run, pending } = useRun();
+  const tr = useTr();
   const queued = channels.reduce((t, c) => t + c.queued, 0);
   const problems = channels.filter((c) => c.status === 'connected' && ['parked_business', 'closed', 'suspended'].includes(c.listingStatus));
 
@@ -54,12 +57,14 @@ export function ChannelManager({ channels, focus }: { channels: Channel[]; focus
           <AlertOctagon className="h-5 w-5 text-rose-600" />
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-rose-900">
-              Property not bookable on {OTA_LABELS[c.ota]}. Reason: {c.listingStatus === 'parked_business' ? 'Parked business' : c.listingStatus}
+              {tr(`Property not bookable on ${OTA_LABELS[c.ota]}. Reason: ${c.listingStatus === 'parked_business' ? 'Parked business' : c.listingStatus}`)}
             </p>
-            <p className="text-sm text-rose-800">{c.listingMessage ?? 'Fix it in the OTA extranet, then re-check here.'} Updates to this OTA are paused and will be re-sent once it is open.</p>
+            <p className="text-sm text-rose-800">
+              {tr(c.listingMessage ?? 'Fix it in the OTA extranet, then re-check here.')} {tr('Updates to this OTA are paused and will be re-sent once it is open.')}
+            </p>
           </div>
           <Button variant="danger" loading={pending} onClick={() => run(() => fixListingAction(c.id), { success: (d) => (d.status === 'open' ? 'Listing is open again. Updates re-sent.' : `Still ${d.status}`) })}>
-            <Wrench className="h-4 w-4" /> Fix listing
+            <Wrench className="h-4 w-4" /> {tx('Fix listing')}
           </Button>
         </div>
       ))}
@@ -67,13 +72,13 @@ export function ChannelManager({ channels, focus }: { channels: Channel[]; focus
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink-200 bg-white px-4 py-3 shadow-card">
         <p className="flex items-center gap-2 text-sm text-ink-600">
           {queued > 0 ? <Loader2 className="h-4 w-4 animate-spin text-brand-600" /> : <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
-          {queued > 0 ? `${queued} update(s) waiting to be sent` : 'All updates sent'}
+          {tr(queued > 0 ? `${queued} update(s) waiting to be sent` : 'All updates sent')}
           <Link href="/channels/sync-log" className="ml-2 font-semibold text-brand-600 hover:text-brand-700">
-            Sync log →
+            {tx('Sync log →')}
           </Link>
         </p>
         <Button size="sm" variant="outline" loading={pending} onClick={() => run(() => processQueueAction(), { success: (d) => `${d.ok} sent, ${d.failed} failed` })}>
-          <RefreshCw className="h-3.5 w-3.5" /> Send now
+          <RefreshCw className="h-3.5 w-3.5" /> {tx('Send now')}
         </Button>
       </div>
 
@@ -87,7 +92,7 @@ export function ChannelManager({ channels, focus }: { channels: Channel[]; focus
                 <span className={cn('grid h-12 w-12 shrink-0 place-items-center rounded-xl text-sm font-black', style.bg, style.text)}>{style.letter}</span>
                 <div className="min-w-0 flex-1">
                   <p className="font-bold text-ink-900">{OTA_LABELS[c.ota]}</p>
-                  <p className="text-xs text-ink-500">{c.hotelCode ? `Hotel code ${c.hotelCode}` : 'Not connected yet'}</p>
+                  <p className="text-xs text-ink-500">{c.hotelCode ? `${tr('Hotel code')} ${c.hotelCode}` : tr('Not connected yet')}</p>
                 </div>
                 <StatusBadge status={c.status} />
               </div>
@@ -96,32 +101,32 @@ export function ChannelManager({ channels, focus }: { channels: Channel[]; focus
                   <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
                     <div className="rounded-lg bg-ink-50 py-2">
                       <dd className="num text-lg font-bold text-ink-900">{c.bookings30d}</dd>
-                      <dt className="text-[10px] text-ink-500">bookings / 30d</dt>
+                      <dt className="text-[10px] text-ink-500">{tr('bookings / 30d')}</dt>
                     </div>
                     <div className="rounded-lg bg-ink-50 py-2">
                       <dd className="num text-lg font-bold text-ink-900">{c.mapped}</dd>
-                      <dt className="text-[10px] text-ink-500">rates mapped</dt>
+                      <dt className="text-[10px] text-ink-500">{tr('rates mapped')}</dt>
                     </div>
                     <div className={cn('rounded-lg py-2', c.failed24h ? 'bg-rose-50' : 'bg-ink-50')}>
                       <dd className={cn('num text-lg font-bold', c.failed24h ? 'text-rose-600' : 'text-ink-900')}>{c.failed24h}</dd>
-                      <dt className="text-[10px] text-ink-500">failed / 24h</dt>
+                      <dt className="text-[10px] text-ink-500">{tr('failed / 24h')}</dt>
                     </div>
                   </dl>
                   <div className="mt-3 flex items-center justify-between text-xs text-ink-500">
                     <span>
-                      Listing:{' '}
+                      {tr('Listing:')}{' '}
                       <Badge tone={c.listingStatus === 'open' ? 'success' : c.listingStatus === 'unknown' ? 'neutral' : 'danger'} dot>
                         {c.listingStatus === 'parked_business' ? 'Parked business' : c.listingStatus}
                       </Badge>
                     </span>
-                    <span>{c.lastSyncAt ? `Synced ${timeAgo(c.lastSyncAt)}` : 'Never synced'}</span>
+                    <span>{tr(c.lastSyncAt ? `Synced ${timeAgo(c.lastSyncAt)}` : 'Never synced')}</span>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2 border-t border-ink-100 pt-4">
                     <Button size="sm" variant="outline" onClick={() => setMapping(c)}>
-                      <Map className="h-3.5 w-3.5" /> Mapping
+                      <Map className="h-3.5 w-3.5" /> {tr('Mapping')}
                     </Button>
-                    <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => simulateOtaBookingAction(c.ota as Parameters<typeof simulateOtaBookingAction>[0]), { success: (d) => ('bookingNo' in d && d.bookingNo ? `Test booking ${d.bookingNo} received` : 'Received') })} title="Send a test booking through the webhook">
-                      <Send className="h-3.5 w-3.5" /> Test booking
+                    <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => simulateOtaBookingAction(c.ota as Parameters<typeof simulateOtaBookingAction>[0]), { success: (d) => ('bookingNo' in d && d.bookingNo ? `Test booking ${d.bookingNo} received` : 'Received') })} title={tr('Send a test booking through the webhook')}>
+                      <Send className="h-3.5 w-3.5" /> {tx('Test booking')}
                     </Button>
                     <Button size="sm" variant="ghost" className="ml-auto text-ink-500" disabled={pending} onClick={() => run(() => disconnectChannelAction(c.id))}>
                       <Unplug className="h-3.5 w-3.5" />
@@ -130,9 +135,9 @@ export function ChannelManager({ channels, focus }: { channels: Channel[]; focus
                 </>
               ) : (
                 <div className="mt-4 flex flex-1 flex-col justify-end">
-                  <p className="mb-3 text-xs text-ink-500">{c.ota === 'makemytrip' || c.ota === 'goibibo' ? 'Select AsiaTech as your channel manager in the InGo-MMT extranet, then paste the hotel code and access token.' : 'Connected through the Channex channel API.'}</p>
+                  <p className="mb-3 text-xs text-ink-500">{tr(c.ota === 'makemytrip' || c.ota === 'goibibo' ? 'Select AsiaTech as your channel manager in the InGo-MMT extranet, then paste the hotel code and access token.' : 'Connected through the Channex channel API.')}</p>
                   <Button variant="soft" onClick={() => setConnecting(c)}>
-                    <PlugZap className="h-4 w-4" /> Connect
+                    <PlugZap className="h-4 w-4" /> {tr('Connect')}
                   </Button>
                 </div>
               )}
@@ -168,9 +173,9 @@ function ConnectDialog({ channel, onClose }: { channel: Channel; onClose: () => 
       }
     >
       <ol className="mb-4 space-y-1.5 rounded-xl bg-ink-50 p-4 text-sm text-ink-700">
-        <li>1. Open the {OTA_LABELS[channel.ota]} extranet.</li>
-        <li>2. Choose AsiaTech as the channel manager.</li>
-        <li>3. Copy the hotel code and access token here.</li>
+        <li>{tx(`1. Open the ${OTA_LABELS[channel.ota]} extranet.`)}</li>
+        <li>{tx('2. Choose AsiaTech as the channel manager.')}</li>
+        <li>{tx('3. Copy the hotel code and access token here.')}</li>
       </ol>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Hotel code">
@@ -218,10 +223,10 @@ function MappingDialog({ channel, onClose }: { channel: Channel; onClose: () => 
         <table className="w-full text-sm">
           <thead className="text-left text-[11px] tracking-wide text-ink-500 uppercase">
             <tr>
-              <th className="pb-2 font-semibold">Your room & rate</th>
+              <th className="pb-2 font-semibold">{tx('Your room & rate')}</th>
               <th className="pb-2 font-semibold" />
-              <th className="pb-2 font-semibold">OTA room ID</th>
-              <th className="pb-2 font-semibold">OTA rate ID</th>
+              <th className="pb-2 font-semibold">{tx('OTA room ID')}</th>
+              <th className="pb-2 font-semibold">{tx('OTA rate ID')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-100">

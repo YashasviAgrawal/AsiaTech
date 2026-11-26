@@ -80,7 +80,7 @@ housekeeping phone screen ✅ · activity log ✅
 | Platform admin | `/admin` is a 404 for hotel staff; super admin publishes a System Update → it appears on the front desk dashboard; suspending the organisation signs its staff out (super admin still in); re-activating lets them back in |
 | Multi-outlet POS | duplicate bill prefix refused; café added; switcher on terminal / menu / orders ("All outlets" hides day close); bills RST/26-27/00142 and CAFE/26-27/00001 in separate consecutive series; old counter carried over by migration; fresh reset + seed OK |
 | Owner phone view | `/owner` on iPhone 13: earnings today (rooms + restaurant, WoW, sparkline), occupancy with per-type bars, desk counts, collected today by mode, money owed, month so far, needs-attention list; no horizontal scroll; Hindi checked |
-| Hindi | Dashboard, Today board, booking page, POS, money and settings checked in Hindi: page chrome, task sentences ("… का चेक-आउट करें"), dates and months translated; data (names, room types, menu) stays as entered; English mode unchanged |
+| Hindi | All 40 staff screens crawled in Hindi with untranslated text marked: only hotel data (names, room types, menu, reviews, OTA replies) is left in English; 9 main dialogs (cell / rate editor, housekeeping room, petty cash, promotion, check-out, room type, OTA mapping) checked the same way. Both languages: no leaked code or "[object Object]" on any screen, no page errors; English mode shows no Hindi apart from data. Sentences with dates and times ("Synced 5 d ago", "Sat, 21 Nov → Sun, 22 Nov · 1 night") translate inside the sentence |
 | Exports and undo | Payments, Credit, Petty Cash, Activity Log export with the screen's filters (valid .xlsx, 403 without permission); Booking Report prints / saves as A4 landscape PDF; folio line void → Undo → void → Restore keeps the linked restaurant bill in step; POS order void → restore puts the room-bill line back; restore refused on another business day |
 | Uploads | fake image refused; ID uploaded + webcam scan (fake camera) saved on the guest at check-in; private file 200 for staff, login redirect for anonymous; room photos + cover order on the booking page; logo/cover on the booking page for anonymous visitors; CSS-injection link refused |
 | Invoice PDF and sending | checked out a guest in the browser → "Send invoice" opened by itself with the guest's mobile and email filled in → sent on WhatsApp (signed link) and email (PDF attached, 47 KB) → logged on the booking's history; PDF text checked (GSTIN, CGST/SGST split, amount in words, "Fully paid"); balance-due bill shows the UPI QR for the right amount; guest link opens the PDF signed out, tampered or swapped tokens → 404, 30 requests/min then 429; staff route 401 signed out; Hindi dialog checked |
@@ -105,7 +105,7 @@ Production readiness:
 Product follow-ups:
 - [x] "Change booking" dialog (dates, add/remove rooms, room type upgrade, plan, occupancy) with a live availability re-check
 - [x] Guest ID scan at check-in (webcam or phone camera, private storage), room type photos, logo and cover photo upload
-- [x] Hindi on every screen: shared components translate their text (headers, labels, buttons, tables, tabs, dialogs, badges, filters, toasts), plus ~640 phrases and sentence patterns. Follow-up: a few long sentences inside individual screens are still English
+- [x] Hindi on every screen: shared components translate their text (headers, labels, buttons, tables, tabs, dialogs, badges, filters, dropdown options, toasts), plus ~1,190 phrases and sentence patterns; the long sentences inside individual screens and dialogs are translated too
 - [x] Owner summary screen for phones (`/owner`)
 - [x] DB-backed integration tests (`npm run test:integration`): concurrent last-room sales, change booking, cancel, sold-out change refused
 
@@ -114,6 +114,12 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-26
+- **Hindi, second sweep:** every staff screen and the main dialogs checked in Hindi with a crawler that marks any text
+  the dictionary does not know. Fixed: the Booking Report, new reservation form, night audit, rooms and rates, channel
+  manager, reports, support and settings screens had sentences written straight into the page; dropdown options and
+  switch / stepper labels now follow the language; the trend chip on stat tiles; "out_of_order" shown as
+  "out of_order". 390 phrases and 94 sentence patterns added (activity log lines, sync log lines, night audit
+  steps, dates and "5 d ago" inside sentences). Hotel data (guest names, room types, menu, reviews) stays as entered.
 - **Row-level security (`0007_row_level_security`):** Postgres policies on `property_id` for 38 business tables,
   FORCEd so they apply to the app's own role. Staff requests stamp their hotel on each pooled connection, so a query
   that forgets its property filter still cannot read or write another hotel's rows. Background work, webhooks, the

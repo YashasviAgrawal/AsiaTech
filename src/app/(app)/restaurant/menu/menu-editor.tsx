@@ -10,6 +10,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { Dialog } from '@/components/ui/dialog';
 import { Checkbox, Field, Input, Select, Switch } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 interface Item {
   id: string;
@@ -35,7 +36,7 @@ export function MenuEditor({ outletId, categories, items, tables }: { outletId: 
           description={`${items.length} items in ${categories.length} categories`}
           action={
             <Button size="sm" onClick={() => setEditing('new')}>
-              <Plus className="h-3.5 w-3.5" /> Add item
+              <Plus className="h-3.5 w-3.5" /> {tx('Add item')}
             </Button>
           }
         />
@@ -67,7 +68,7 @@ export function MenuEditor({ outletId, categories, items, tables }: { outletId: 
 
       <div className="space-y-6">
         <Card className="p-5">
-          <p className="mb-3 text-sm font-bold text-ink-900">Categories</p>
+          <p className="mb-3 text-sm font-bold text-ink-900">{tx('Categories')}</p>
           <div className="flex gap-2">
             <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Chinese" />
             <Button loading={pending} onClick={() => run(() => saveCategoryAction(outletId, category), { onSuccess: () => setCategory('') })}>
@@ -76,12 +77,12 @@ export function MenuEditor({ outletId, categories, items, tables }: { outletId: 
           </div>
         </Card>
         <Card className="p-5">
-          <p className="mb-3 text-sm font-bold text-ink-900">Tables</p>
+          <p className="mb-3 text-sm font-bold text-ink-900">{tx('Tables')}</p>
           <ul className="mb-3 grid grid-cols-4 gap-2">
             {tables.map((t) => (
               <li key={t.id} className="group relative rounded-lg border border-ink-200 p-2 text-center">
                 <p className="text-sm font-bold">{t.name}</p>
-                <p className="text-[10px] text-ink-400">{t.seats} seats</p>
+                <p className="text-[10px] text-ink-400">{tx(`${t.seats} seats`)}</p>
                 <button onClick={() => run(() => removeTableAction(t.id))} className="absolute -top-1.5 -right-1.5 hidden rounded-full bg-white p-0.5 text-rose-500 shadow ring-1 ring-ink-200 group-hover:block" aria-label="Remove table">
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -92,7 +93,7 @@ export function MenuEditor({ outletId, categories, items, tables }: { outletId: 
             <Input value={table.name} onChange={(e) => setTable({ ...table, name: e.target.value })} placeholder="T9" />
             <Input type="number" min={1} value={table.seats} onChange={(e) => setTable({ ...table, seats: Number(e.target.value) || 1 })} className="w-20" />
             <Button loading={pending} onClick={() => run(() => saveTableAction(outletId, table.name, table.seats), { onSuccess: () => setTable({ name: '', seats: 4 }) })}>
-              Add
+              {tx('Add')}
             </Button>
           </div>
         </Card>

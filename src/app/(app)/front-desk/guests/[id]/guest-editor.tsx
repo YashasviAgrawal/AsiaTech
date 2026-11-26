@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox, Field, Input, Textarea } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 interface GuestData {
   id: string;
@@ -45,11 +46,11 @@ export function GuestEditor({ guest, stats, canEdit, meta }: { guest: GuestData;
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
             <p className="num text-xl font-extrabold">{stats.stays}</p>
-            <p className="text-[11px] text-ink-400">stays</p>
+            <p className="text-[11px] text-ink-400">{tx('stays')}</p>
           </div>
           <div className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
             <p className="num text-xl font-extrabold">{formatINR(stats.spend)}</p>
-            <p className="text-[11px] text-ink-400">paid to date</p>
+            <p className="text-[11px] text-ink-400">{tx('paid to date')}</p>
           </div>
         </div>
       </div>

@@ -12,6 +12,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
 import { useToast } from '@/components/ui/toast';
+import { tx } from '@/i18n/tx';
 
 type LinkInfo = { url: string; mobile: string | null; email: string | null; invoiceNo: string; total: number; due: number; status: string; text: string };
 
@@ -93,7 +94,7 @@ export function SendInvoiceDialog({ invoiceId, onClose, afterCheckout = false }:
               })
             }
           >
-            <Send className="h-4 w-4" /> Send
+            <Send className="h-4 w-4" /> {tx('Send')}
           </Button>
         </>
       }

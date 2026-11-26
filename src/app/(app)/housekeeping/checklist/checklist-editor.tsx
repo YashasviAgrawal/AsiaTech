@@ -17,6 +17,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Checkbox, Field, Input, Select, Textarea } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
 import { useToast } from '@/components/ui/toast';
+import { tx } from '@/i18n/tx';
 
 type Category = 'cleaning' | 'amenities' | 'maintenance';
 interface Item {
@@ -81,7 +82,7 @@ export function ChecklistEditor({ items: initial, roomTypes }: { items: Item[]; 
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-600">
-          <strong className="text-ink-900">{items.length}</strong> items · drag <GripVertical className="inline h-3.5 w-3.5" /> to reorder or move between groups. Duplicates are blocked, whatever the capital letters.
+          <strong className="text-ink-900">{items.length}</strong> {tx('items')} · <GripVertical className="inline h-3.5 w-3.5" /> {tx('Drag to reorder or move between groups. Duplicates are blocked, whatever the capital letters.')}
         </p>
         <Button variant="outline" onClick={() => setImportOpen(true)}>
           <Import className="h-4 w-4" /> Clean up old AsiaTech list
@@ -117,7 +118,7 @@ export function ChecklistEditor({ items: initial, roomTypes }: { items: Item[]; 
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-ink-900">{item.name}</span>
                       <span className="block truncate text-xs text-ink-400">
-                        {item.nameHi ?? 'Add Hindi name'} · {item.roomTypeIds.length ? item.roomTypeIds.map((id) => roomTypes.find((t) => t.id === id)?.code).join(', ') : 'All rooms'}
+                        {item.nameHi ?? tx('Add Hindi name')} · {item.roomTypeIds.length ? item.roomTypeIds.map((id) => roomTypes.find((t) => t.id === id)?.code).join(', ') : 'All rooms'}
                       </span>
                     </span>
                     <button onClick={() => setEditing(item)} className="rounded p-1 text-ink-300 opacity-0 transition group-hover:opacity-100 hover:bg-ink-100 hover:text-ink-700" aria-label="Edit">

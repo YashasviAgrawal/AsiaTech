@@ -9,6 +9,7 @@ import { actorFromContext } from '@/server/services/actor';
 import { Card, EmptyState, PageHeader } from '@/components/ui/card';
 import { ButtonLink } from '@/components/ui/button';
 import { HoldsList } from './holds-list';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Hold Booking' };
 
@@ -42,7 +43,7 @@ export default async function HoldsPage() {
         actions={
           ctx.can('bookings.create') && (
             <ButtonLink href="/front-desk/reservations/new?hold=1">
-              <Plus className="h-4 w-4" /> New hold
+              <Plus className="h-4 w-4" /> {tx('New hold')}
             </ButtonLink>
           )
         }

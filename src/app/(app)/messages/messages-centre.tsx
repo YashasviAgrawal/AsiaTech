@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input, Textarea } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 interface Msg {
   id: string;
@@ -73,7 +74,7 @@ export function MessagesCentre({ rows, stats, hotelName }: { rows: Msg[]; stats:
                 </li>
               );
             })}
-            {list.length === 0 && <li className="p-6 text-center text-sm text-ink-500">No messages yet.</li>}
+            {list.length === 0 && <li className="p-6 text-center text-sm text-ink-500">{tx('No messages yet.')}</li>}
           </ul>
         </Card>
 
@@ -93,17 +94,21 @@ export function MessagesCentre({ rows, stats, hotelName }: { rows: Msg[]; stats:
                     {formatDateTime(selected.createdAt).split(', ')[1]} <CheckCheck className="h-3 w-3 text-sky-500" />
                   </p>
                 </div>
-                {selected.error && <p className="mt-3 text-xs font-medium text-rose-700">Not sent: {selected.error}</p>}
+                {selected.error && (
+                  <p className="mt-3 text-xs font-medium text-rose-700">
+                    {tx('Not sent:')} {tx(selected.error)}
+                  </p>
+                )}
               </div>
             </div>
           ) : (
-            <p className="p-10 text-center text-sm text-ink-500">Select a message</p>
+            <p className="p-10 text-center text-sm text-ink-500">{tx('Select a message')}</p>
           )}
         </Card>
 
         <Card className="h-fit p-5">
           <p className="mb-3 flex items-center gap-2 font-bold text-ink-900">
-            <Send className="h-4 w-4 text-brand-600" /> New WhatsApp message
+            <Send className="h-4 w-4 text-brand-600" /> {tx('New WhatsApp message')}
           </p>
           <Input value={to} onChange={(e) => setTo(e.target.value.replace(/\D/g, '').slice(-10))} placeholder="Mobile number" inputMode="tel" leading={<span className="text-xs font-semibold">+91</span>} className="pl-11" />
           <Textarea value={body} onChange={(e) => setBody(e.target.value)} className="mt-3 min-h-36" />
@@ -112,7 +117,7 @@ export function MessagesCentre({ rows, stats, hotelName }: { rows: Msg[]; stats:
               Send
             </Button>
             <a href={`https://wa.me/91${to}?text=${encodeURIComponent(body)}`} target="_blank" rel="noreferrer" className={cn('inline-flex h-10 items-center rounded-lg px-3 text-sm font-medium ring-1 ring-ink-300 hover:bg-ink-50', to.length !== 10 && 'pointer-events-none opacity-50')}>
-              Open in WhatsApp
+              {tx('Open in WhatsApp')}
             </a>
           </div>
         </Card>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight, BedDouble, CalendarDays, CalendarPlus, ConciergeBell, CornerDownLeft, Loader2, Search, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useT } from '@/i18n/client';
+import { tx } from '@/i18n/tx';
 
 export interface SearchResult {
   type: 'booking' | 'guest' | 'room' | 'action';
@@ -128,12 +129,12 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
         <div className="scrollbar-thin max-h-[55vh] overflow-y-auto p-2">
           {query.trim().length >= 2 && !loading && list.length === 0 && (
             <div className="px-3 py-6 text-center">
-              <p className="text-sm font-medium text-ink-700">No booking, guest or room matches &ldquo;{query}&rdquo;</p>
+              <p className="text-sm font-medium text-ink-700">{tx(`No booking, guest or room matches “${query}”`)}</p>
               <button
                 onClick={() => go({ type: 'action', id: 'new', title: '', href: `/front-desk/reservations/new?guest=${encodeURIComponent(query)}` })}
                 className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
               >
-                <CalendarPlus className="h-4 w-4" /> Make a new reservation for &ldquo;{query}&rdquo;
+                <CalendarPlus className="h-4 w-4" /> {tx(`Make a new reservation for “${query}”`)}
               </button>
             </div>
           )}
@@ -171,7 +172,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
           <span className="flex items-center gap-1">
             <kbd className="kbd">↵</kbd> open
           </span>
-          <span className="ml-auto">Search by booking ID, name, mobile or room number</span>
+          <span className="ml-auto">{tx('Search by booking ID, name, mobile or room number')}</span>
         </div>
       </div>
     </div>,

@@ -163,7 +163,7 @@ function ConfirmDialogInner({
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={loading}>
-            Go back
+            {tx('Go back')}
           </Button>
           <Button variant={variant} loading={loading} disabled={requireReason && reason.trim().length < 3} onClick={() => onConfirm(reason.trim())}>
             {tx(confirmLabel)}
@@ -177,7 +177,7 @@ function ConfirmDialogInner({
           <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Type a short reason" autoFocus />
         </Field>
       )}
-      {!preview && !requireReason && <p className="text-sm text-ink-600">You can undo this from the notification that appears.</p>}
+      {!preview && !requireReason && <p className="text-sm text-ink-600">{tx('You can undo this from the notification that appears.')}</p>}
     </Dialog>
   );
 }

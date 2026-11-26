@@ -20,6 +20,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { tx } from '@/i18n/tx';
 import { addDay, formatDay, formatDayShort, formatINR, MEAL_PLAN_LABELS, nightsBetween } from '@/lib/format';
 import {
   availabilityAction,
@@ -78,8 +79,8 @@ function Step({ n, title, description, children, aside }: { n: number; title: st
         <div className="flex items-start gap-3">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ink-900 text-xs font-bold text-white">{n}</span>
           <div>
-            <h2 className="text-[15px] font-bold text-ink-900">{title}</h2>
-            {description && <p className="mt-0.5 text-xs text-ink-500">{description}</p>}
+            <h2 className="text-[15px] font-bold text-ink-900">{tx(title)}</h2>
+            {description && <p className="mt-0.5 text-xs text-ink-500">{tx(description)}</p>}
           </div>
         </div>
         {aside}
@@ -336,8 +337,8 @@ export function ReservationForm({
                   <div className="min-w-0 flex-1 pl-1.5">
                     <p className="truncate text-sm font-semibold text-ink-900">{type.name}</p>
                     <p className="mt-0.5 flex items-center gap-2 text-xs text-ink-500">
-                      <span className={cn('badge px-2 py-0', tone)}>{left <= 0 ? 'Sold out' : `${left} left`}</span>
-                      {plan && <span className="num">from {formatINR(plan.price2)}</span>}
+                      <span className={cn('badge px-2 py-0', tone)}>{tx(left <= 0 ? 'Sold out' : `${left} left`)}</span>
+                      {plan && <span className="num">{tx(`from ${formatINR(plan.price2)}`)}</span>}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
@@ -367,7 +368,7 @@ export function ReservationForm({
                       )}
                       aria-label={`Add ${type.name}`}
                     >
-                      {countOfType(type.id) > 0 ? <Plus className="h-3.5 w-3.5" /> : 'Add'}
+                      {countOfType(type.id) > 0 ? <Plus className="h-3.5 w-3.5" /> : tx('Add')}
                     </button>
                   </div>
                 </div>
@@ -402,16 +403,16 @@ export function ReservationForm({
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2.5 text-xs text-ink-600">
                       <label className="flex items-center gap-2">
-                        Adults <Stepper size="sm" value={line.adults} onChange={(v) => updateLine(line.key, { adults: v })} min={1} max={type.maxAdults} />
+                        {tx('Adults')} <Stepper size="sm" value={line.adults} onChange={(v) => updateLine(line.key, { adults: v })} min={1} max={type.maxAdults} />
                       </label>
                       <label className="flex items-center gap-2">
-                        Children <Stepper size="sm" value={line.children} onChange={(v) => updateLine(line.key, { children: v })} min={0} max={type.maxChildren} />
+                        {tx('Children')} <Stepper size="sm" value={line.children} onChange={(v) => updateLine(line.key, { children: v })} min={0} max={type.maxChildren} />
                       </label>
                       <label className="flex items-center gap-2">
-                        Extra beds <Stepper size="sm" value={line.extraBeds} onChange={(v) => updateLine(line.key, { extraBeds: v })} min={0} max={type.maxExtraBeds} />
+                        {tx('Extra beds')} <Stepper size="sm" value={line.extraBeds} onChange={(v) => updateLine(line.key, { extraBeds: v })} min={0} max={type.maxExtraBeds} />
                       </label>
                       <label className="ml-auto flex items-center gap-2">
-                        Rate / night
+                        {tx('Rate / night')}
                         <input
                           type="number"
                           min={0}
@@ -431,7 +432,7 @@ export function ReservationForm({
           {shortOn.length > 0 && (
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
               <span className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" /> Not enough {shortOn.map((t) => t.name).join(', ')} for every night.
+                <AlertTriangle className="h-4 w-4" /> {tx(`Not enough ${shortOn.map((t) => t.name).join(', ')} for every night.`)}
               </span>
               {canOverbook && <Checkbox label="Overbook anyway (manager)" checked={allowOverbook} onChange={(e) => setAllowOverbook(e.target.checked)} />}
             </div>
@@ -487,7 +488,7 @@ export function ReservationForm({
                       {[g.mobile, g.city, `${g.stays} stay${g.stays === 1 ? '' : 's'}`, g.lastStay && `last ${formatDay(g.lastStay)}`].filter(Boolean).join(' · ')}
                     </span>
                   </span>
-                  <span className="text-xs font-semibold text-emerald-700">Use details →</span>
+                  <span className="text-xs font-semibold text-emerald-700">{tx('Use details →')}</span>
                 </button>
               ))}
             </div>
@@ -496,7 +497,7 @@ export function ReservationForm({
           {visibleDuplicates.length > 0 && (
             <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
               <p className="flex items-center gap-2 text-sm font-semibold text-amber-900">
-                <AlertTriangle className="h-4 w-4" /> Is this the same guest?
+                <AlertTriangle className="h-4 w-4" /> {tx('Is this the same guest?')}
               </p>
               <ul className="mt-2 space-y-1.5">
                 {visibleDuplicates.map((d) => (
@@ -505,7 +506,7 @@ export function ReservationForm({
                       <strong>{d.name}</strong> {d.mobile && <span className="text-amber-700">· {d.mobile}</span>} <span className="text-xs text-amber-700">({d.reason})</span>
                     </span>
                     <button type="button" className="text-xs font-semibold text-amber-900 underline underline-offset-2" onClick={() => applyGuest({ id: d.id, name: d.name, mobile: d.mobile, email: null, city: null, nationality: 'Indian', company: null, companyGstin: null, isVip: false, stays: 0, lastStay: null })}>
-                      Use this guest
+                      {tx('Use this guest')}
                     </button>
                   </li>
                 ))}
@@ -533,7 +534,7 @@ export function ReservationForm({
           <div className="mt-4 rounded-xl border border-ink-200 p-3.5">
             <div className="flex items-center justify-between">
               <p className="flex items-center gap-2 text-sm font-medium text-ink-800">
-                <Building2 className="h-4 w-4 text-ink-400" /> Bill to a company (GST invoice)
+                <Building2 className="h-4 w-4 text-ink-400" /> {tx('Bill to a company (GST invoice)')}
               </p>
               <Switch checked={billToCompany} onChange={setBillToCompany} label="Bill to company" size="sm" />
             </div>
@@ -581,7 +582,7 @@ export function ReservationForm({
             </Field>
           )}
           <button type="button" onClick={() => setShowMore((v) => !v)} className="mt-4 flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700">
-            <ChevronDown className={cn('h-4 w-4 transition-transform', showMore && 'rotate-180')} /> Special requests and internal notes
+            <ChevronDown className={cn('h-4 w-4 transition-transform', showMore && 'rotate-180')} /> {tx('Special requests and internal notes')}
           </button>
           {showMore && (
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
@@ -601,28 +602,28 @@ export function ReservationForm({
         <Card className="overflow-hidden">
           <div className="bg-ink-950 p-5 text-white">
             <p className="flex items-center gap-2 text-xs font-medium text-ink-400">
-              <CalendarRange className="h-3.5 w-3.5" /> {formatDayShort(checkIn)} → {formatDayShort(checkOut)} · {nights} night{nights === 1 ? '' : 's'}
+              <CalendarRange className="h-3.5 w-3.5" /> {tx(`${formatDayShort(checkIn)} → ${formatDayShort(checkOut)} · ${nights} night${nights === 1 ? '' : 's'}`)}
             </p>
             <p className="num mt-2 text-3xl font-extrabold tracking-tight">{shownQuote ? formatINR(shownQuote.totalAmount) : '₹0'}</p>
             <p className="mt-1 text-xs text-ink-400">
-              {lines.length} room{lines.length === 1 ? '' : 's'} · incl. GST {quoting && <Loader2 className="ml-1 inline h-3 w-3 animate-spin" />}
+              {tx(`${lines.length} room${lines.length === 1 ? '' : 's'} · incl. GST`)} {quoting && <Loader2 className="ml-1 inline h-3 w-3 animate-spin" />}
             </p>
           </div>
 
           <div className="space-y-2.5 p-5 text-sm">
-            {shownQuoteError && <p className="rounded-lg bg-rose-50 p-2.5 text-xs text-rose-700">{shownQuoteError}</p>}
+            {shownQuoteError && <p className="rounded-lg bg-rose-50 p-2.5 text-xs text-rose-700">{tx(shownQuoteError)}</p>}
             {shownQuote && shownQuote.restrictions.length > 0 && (
               <div className="rounded-lg bg-amber-50 p-2.5 text-xs text-amber-900 ring-1 ring-amber-200">
-                <p className="font-semibold">Rate rules for these dates</p>
+                <p className="font-semibold">{tx('Rate rules for these dates')}</p>
                 <ul className="mt-1 list-disc space-y-0.5 pl-4">
                   {shownQuote.restrictions.map((r) => (
-                    <li key={r.ratePlanId + r.kind}>{r.message}</li>
+                    <li key={r.ratePlanId + r.kind}>{tx(r.message)}</li>
                   ))}
                 </ul>
-                <p className="mt-1 text-amber-700">The booking engine and OTAs follow these rules. The front desk can still book.</p>
+                <p className="mt-1 text-amber-700">{tx('The booking engine and OTAs follow these rules. The front desk can still book.')}</p>
               </div>
             )}
-            {!shownQuote && !shownQuoteError && <p className="text-ink-500">Add a room to see the price.</p>}
+            {!shownQuote && !shownQuoteError && <p className="text-ink-500">{tx('Add a room to see the price.')}</p>}
             {shownQuote && (
               <>
                 {shownQuote.rooms.map((room, i) => (
@@ -631,14 +632,14 @@ export function ReservationForm({
                       <span className="block truncate">{room.roomTypeName}</span>
                       <span className="text-xs text-ink-400">
                         {room.mealPlan} · {room.adults}A{room.children ? ` ${room.children}C` : ''}
-                        {room.extraBeds ? ` + ${room.extraBeds} bed` : ''}
+                        {room.extraBeds ? <> + {room.extraBeds} {tx('bed')}</> : null}
                       </span>
                     </span>
                     <span className="num font-medium whitespace-nowrap text-ink-900">{formatINR(room.amount)}</span>
                   </div>
                 ))}
                 <button type="button" onClick={() => setShowNightly((v) => !v)} className="text-xs font-medium text-brand-600">
-                  {showNightly ? 'Hide' : 'Show'} night-by-night
+                  {tx(showNightly ? 'Hide night-by-night' : 'Show night-by-night')}
                 </button>
                 {showNightly && (
                   <div className="space-y-1 rounded-lg bg-ink-50 p-2.5 text-xs">
@@ -646,7 +647,7 @@ export function ReservationForm({
                       room.nightly.map((n) => (
                         <div key={`${i}-${n.date}`} className="flex justify-between text-ink-600">
                           <span>
-                            {formatDayShort(n.date)} · Room {i + 1}
+                            {tx(`${formatDayShort(n.date)} · Room ${i + 1}`)}
                           </span>
                           <span className="num">
                             {formatINR(n.amount)} <span className="text-ink-400">@{n.taxRate}%</span>
@@ -659,7 +660,7 @@ export function ReservationForm({
                 <div className="space-y-1.5 border-t border-dashed border-ink-200 pt-2.5">
                   {shownQuote.discountAmount > 0 && (
                     <div className="flex justify-between text-emerald-700">
-                      <span>Discount</span>
+                      <span>{tx('Discount')}</span>
                       <span className="num">−{formatINR(shownQuote.discountAmount)}</span>
                     </div>
                   )}
@@ -670,17 +671,17 @@ export function ReservationForm({
                     </div>
                   ))}
                   <div className="flex justify-between pt-1 text-[15px] font-bold text-ink-900">
-                    <span>Total</span>
+                    <span>{tx('Total')}</span>
                     <span className="num">{formatINR(shownQuote.totalAmount)}</span>
                   </div>
                   {paidNow > 0 && (
                     <>
                       <div className="flex justify-between text-ink-600">
-                        <span>Advance</span>
+                        <span>{tx('Advance')}</span>
                         <span className="num">−{formatINR(paidNow)}</span>
                       </div>
                       <div className="flex justify-between font-semibold text-amber-700">
-                        <span>Balance at check-in</span>
+                        <span>{tx('Balance at check-in')}</span>
                         <span className="num">{formatINR(balance)}</span>
                       </div>
                     </>
@@ -693,7 +694,7 @@ export function ReservationForm({
           <div className="space-y-3 border-t border-ink-100 bg-ink-50/60 p-5">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-sm font-medium text-ink-800">
-                <Clock className="h-4 w-4 text-ink-400" /> Hold instead of confirm
+                <Clock className="h-4 w-4 text-ink-400" /> {tx('Hold instead of confirm')}
               </span>
               <Switch checked={hold} onChange={setHold} size="sm" label="Hold booking" />
             </div>
@@ -706,22 +707,22 @@ export function ReservationForm({
                     onClick={() => setHoldHours(p.hours)}
                     className={cn('rounded-full px-2.5 py-1 text-xs font-semibold ring-1 transition', holdHours === p.hours ? 'bg-amber-500 text-white ring-amber-500' : 'bg-white text-ink-600 ring-ink-300')}
                   >
-                    {p.label}
+                    {tx(p.label)}
                   </button>
                 ))}
               </div>
             )}
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-sm font-medium text-ink-800">
-                <MessageCircle className="h-4 w-4 text-emerald-600" /> Send on WhatsApp
+                <MessageCircle className="h-4 w-4 text-emerald-600" /> {tx('Send on WhatsApp')}
               </span>
               <Switch checked={sendWhatsApp && Boolean(mobile)} onChange={setSendWhatsApp} size="sm" disabled={!mobile} label="Send WhatsApp confirmation" />
             </div>
             <Button size="lg" className={cn('w-full', hold && 'bg-amber-500 shadow-amber-500/20 hover:bg-amber-600')} disabled={!canSubmit} loading={saving} onClick={submit}>
               {hold ? <Clock className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
-              {hold ? `Hold for ${HOLD_PRESETS.find((p) => p.hours === holdHours)?.label ?? `${holdHours} h`}` : 'Confirm booking'}
+              {tx(hold ? `Hold for ${HOLD_PRESETS.find((p) => p.hours === holdHours)?.label ?? `${holdHours} h`}` : 'Confirm booking')}
             </Button>
-            {!canSubmit && <p className="text-center text-xs text-ink-500">{lines.length === 0 ? 'Add a room' : name.trim().length < 2 ? 'Enter the guest name' : shownQuoteError ?? 'Not enough rooms'}</p>}
+            {!canSubmit && <p className="text-center text-xs text-ink-500">{tx(lines.length === 0 ? 'Add a room' : name.trim().length < 2 ? 'Enter the guest name' : (shownQuoteError ?? 'Not enough rooms'))}</p>}
           </div>
         </Card>
       </aside>

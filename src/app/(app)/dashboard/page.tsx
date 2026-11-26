@@ -31,6 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import { TasksList } from './tasks-list';
 import { BookingsTabs } from './bookings-tabs';
 import { OccupancyRing } from './occupancy-ring';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Dashboard' };
 
@@ -197,7 +198,7 @@ export default async function DashboardPage() {
                 <li key={u.id} className="rounded-lg p-2.5 transition hover:bg-ink-50">
                   <div className="flex items-center gap-2">
                     {u.tag && <Badge tone="brand">{u.tag}</Badge>}
-                    <span className="text-[11px] text-ink-400">{timeAgo(u.publishedAt)}</span>
+                    <span className="text-[11px] text-ink-400">{tx(timeAgo(u.publishedAt))}</span>
                   </div>
                   <p className="mt-1.5 text-sm font-semibold text-ink-900">{u.title}</p>
                   <p className="mt-0.5 text-xs leading-relaxed text-ink-500">{u.body}</p>

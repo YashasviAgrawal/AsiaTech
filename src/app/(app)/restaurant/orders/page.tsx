@@ -58,7 +58,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             { label: 'Open orders', value: formatNumber(totals.open) },
           ].map((s) => (
             <div key={s.label} className={`rounded-xl border p-4 shadow-card ${s.strong ? 'border-ink-900 bg-ink-900 text-white' : 'border-ink-200 bg-white'}`}>
-              <p className={`text-[11px] font-medium tracking-wide uppercase ${s.strong ? 'text-ink-400' : 'text-ink-400'}`}>{s.label}</p>
+              <p className={`text-[11px] font-medium tracking-wide uppercase ${s.strong ? 'text-ink-400' : 'text-ink-400'}`}>{tx(s.label)}</p>
               <p className="num mt-0.5 text-xl font-bold">{s.value}</p>
             </div>
           ))}

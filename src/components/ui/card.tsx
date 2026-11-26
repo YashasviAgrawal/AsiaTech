@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, TrendingDown, TrendingUp } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { Sparkline } from './sparkline';
+import { TrendChip } from './trend-chip';
 import { cn } from '@/lib/utils';
 import { tx } from '@/i18n/tx';
 
@@ -103,8 +104,6 @@ export function StatTile({
   className?: string;
 }) {
   const t = TILE_TONES[tone];
-  const up = trend?.delta !== null && trend?.delta !== undefined && trend.delta > 0;
-  const down = trend?.delta !== null && trend?.delta !== undefined && trend.delta < 0;
   return (
     <Link
       href={href}
@@ -123,19 +122,7 @@ export function StatTile({
       <p className="relative mt-1.5 text-xs font-medium text-ink-500">{tx(label)}</p>
       <div className="relative mt-2 flex min-h-7 items-end justify-between gap-2">
         <div className="min-w-0">
-          {trend && trend.delta !== null && (
-            <p
-              className={cn(
-                'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold whitespace-nowrap',
-                up ? 'bg-emerald-50 text-emerald-700' : down ? 'bg-rose-50 text-rose-700' : 'bg-ink-100 text-ink-500',
-              )}
-              title={`${trend.delta > 0 ? '+' : ''}${trend.delta}% ${trend.compare}`}
-            >
-              {up ? <TrendingUp className="h-3 w-3" /> : down ? <TrendingDown className="h-3 w-3" /> : null}
-              {trend.delta > 0 ? '+' : ''}
-              {trend.delta}%<span className="ml-0.5 font-medium opacity-70">{trend.compare.includes('month') ? 'MoM' : 'WoW'}</span>
-            </p>
-          )}
+          {trend && trend.delta !== null && <TrendChip delta={trend.delta} compare={trend.compare} />}
           {hint && <p className="mt-1 truncate text-[11px] text-ink-400">{tx(hint)}</p>}
         </div>
         {trend && trend.series.some((v) => v > 0) && <Sparkline values={trend.series} className={cn('shrink-0', t.spark)} width={72} height={26} />}

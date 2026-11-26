@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/card';
 import { DateNav } from '@/components/ui/date-nav';
 import { RateGrid } from './rate-grid';
 import { BulkRateButton } from './bulk-rate';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Rate Management' };
 
@@ -29,8 +30,7 @@ export default async function RatesPage({ searchParams }: { searchParams: Promis
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <DateNav start={start} days={DAYS} today={today} />
         <p className="text-xs text-ink-500">
-          Showing the <strong className="text-ink-700">2-adult</strong> price. <span className="font-semibold text-brand-700">Rose</span> = changed from the
-          standard rate.
+          {tx('Showing the 2-adult price.')} <span className="font-semibold text-brand-700">{tx('Rose')}</span> {tx('= changed from the standard rate.')}
         </p>
       </div>
       <RateGrid rows={rows} today={today} canEdit={canEdit} />

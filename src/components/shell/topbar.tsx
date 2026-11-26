@@ -32,6 +32,7 @@ import { markNotificationsReadAction, setLanguageAction, signOutAction, switchPr
 import { Popover, MenuItem } from '@/components/ui/popover';
 import { useToast } from '@/components/ui/toast';
 import type { ShellData } from './types';
+import { tx } from '@/i18n/tx';
 
 function IconLink({ href, label, children, external, badge }: { href: string; label: string; children: React.ReactNode; external?: boolean; badge?: React.ReactNode }) {
   return (
@@ -89,12 +90,12 @@ function Notifications({ data }: { data: ShellData }) {
                 disabled={pending}
                 onClick={() => startTransition(async () => void (await markNotificationsReadAction()))}
               >
-                Mark all read
+                {tx('Mark all read')}
               </button>
             )}
           </div>
           <div className="scrollbar-thin max-h-96 overflow-y-auto p-1.5">
-            {data.notifications.length === 0 && <p className="px-3 py-8 text-center text-sm text-ink-500">You&apos;re all caught up.</p>}
+            {data.notifications.length === 0 && <p className="px-3 py-8 text-center text-sm text-ink-500">{tx('You’re all caught up.')}</p>}
             {data.notifications.map((n) => (
               <button
                 key={n.id}
@@ -108,7 +109,7 @@ function Notifications({ data }: { data: ShellData }) {
                 <span className="min-w-0 flex-1">
                   <span className="block text-[13px] font-semibold text-ink-900">{n.title}</span>
                   {n.body && <span className="mt-0.5 block truncate text-xs text-ink-500">{n.body}</span>}
-                  <span className="mt-1 block text-[11px] text-ink-400">{timeAgo(n.createdAt)}</span>
+                  <span className="mt-1 block text-[11px] text-ink-400">{tx(timeAgo(n.createdAt))}</span>
                 </span>
                 {!n.read && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-brand-500" />}
               </button>
@@ -303,7 +304,7 @@ export function Topbar({ data, onOpenMenu, onOpenSearch }: { data: ShellData; on
           <IconLink
             href="/messages"
             label={t('top.whatsapp')}
-            badge={<span className="absolute -top-1 -right-1.5 rounded-full bg-brand-600 px-1 py-px text-[8px] font-bold tracking-wide text-white uppercase ring-2 ring-white">New</span>}
+            badge={<span className="absolute -top-1 -right-1.5 rounded-full bg-brand-600 px-1 py-px text-[8px] font-bold tracking-wide text-white uppercase ring-2 ring-white">{tx('New')}</span>}
           >
             <MessageCircle className="h-[18px] w-[18px] text-emerald-600" />
           </IconLink>

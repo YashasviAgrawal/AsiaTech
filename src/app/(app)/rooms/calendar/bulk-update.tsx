@@ -12,6 +12,7 @@ import { WeekdayPicker } from '@/components/ui/weekday-picker';
 import { Alert } from '@/components/ui/card';
 import { useRun } from '@/components/ui/use-run';
 import { useToast } from '@/components/ui/toast';
+import { tx } from '@/i18n/tx';
 
 const MODES: { value: BulkInput['mode']; label: string; description: string; icon: typeof Layers; needsValue?: boolean }[] = [
   { value: 'set_available', label: 'Set rooms to sell', description: 'Sell exactly this many', icon: PackageCheck, needsValue: true },
@@ -158,17 +159,17 @@ function BulkUpdateDialog({ roomTypes, defaultFrom, onClose }: { roomTypes: { id
       ) : (
         <div>
           <Alert tone="warning" className="mb-4">
-            <strong>{preview.total}</strong> date{preview.total === 1 ? '' : 's'} will change. Check the list, then apply. You can undo it from the notification afterwards.
+            {tx(`${preview.total} ${preview.total === 1 ? 'date' : 'dates'} will change. Check the list, then apply. You can undo it from the notification afterwards.`)}
           </Alert>
           <div className="scrollbar-thin max-h-[48vh] overflow-y-auto rounded-xl border border-ink-200">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-ink-50 text-left text-[11px] tracking-wide text-ink-500 uppercase">
                 <tr>
-                  <th className="px-3 py-2 font-semibold">Room type</th>
-                  <th className="px-3 py-2 font-semibold">Date</th>
-                  <th className="px-3 py-2 text-center font-semibold">To sell</th>
-                  <th className="px-3 py-2 text-center font-semibold">Blocked</th>
-                  <th className="px-3 py-2 text-center font-semibold">Stop-sell</th>
+                  <th className="px-3 py-2 font-semibold">{tx('Room type')}</th>
+                  <th className="px-3 py-2 font-semibold">{tx('Date')}</th>
+                  <th className="px-3 py-2 text-center font-semibold">{tx('To sell')}</th>
+                  <th className="px-3 py-2 text-center font-semibold">{tx('Blocked')}</th>
+                  <th className="px-3 py-2 text-center font-semibold">{tx('Stop-sell')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
@@ -176,7 +177,7 @@ function BulkUpdateDialog({ roomTypes, defaultFrom, onClose }: { roomTypes: { id
                   <tr key={row.id}>
                     <td className="px-3 py-2 text-ink-800">
                       {row.roomTypeName}
-                      {row.note && <p className="text-[11px] text-amber-700">{row.note}</p>}
+                      {row.note && <p className="text-[11px] text-amber-700">{tx(row.note)}</p>}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-ink-600">{formatDayShort(row.date)}</td>
                     <td className="num px-3 py-2 text-center">
@@ -193,7 +194,7 @@ function BulkUpdateDialog({ roomTypes, defaultFrom, onClose }: { roomTypes: { id
               </tbody>
             </table>
           </div>
-          {preview.total > preview.rows.length && <p className="mt-2 text-xs text-ink-500">Showing the first {preview.rows.length} of {preview.total}.</p>}
+          {preview.total > preview.rows.length && <p className="mt-2 text-xs text-ink-500">{tx(`Showing the first ${preview.rows.length} of ${preview.total}.`)}</p>}
         </div>
       )}
     </Dialog>
@@ -201,12 +202,14 @@ function BulkUpdateDialog({ roomTypes, defaultFrom, onClose }: { roomTypes: { id
 }
 
 function Change({ before, after }: { before: number | string; after: number | string }) {
-  if (before === after) return <span className="text-ink-400">{before}</span>;
+  // On / Off are words; numbers pass through tx unchanged.
+  const show = (v: number | string) => (typeof v === 'string' ? tx(v) : v);
+  if (before === after) return <span className="text-ink-400">{show(before)}</span>;
   return (
     <span className="inline-flex items-center gap-1 font-semibold">
-      <span className="text-ink-400 line-through">{before}</span>
+      <span className="text-ink-400 line-through">{show(before)}</span>
       <ArrowRight className="h-3 w-3 text-ink-300" />
-      <span className="text-brand-700">{after}</span>
+      <span className="text-brand-700">{show(after)}</span>
     </span>
   );
 }

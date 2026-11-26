@@ -238,7 +238,7 @@ export function PhotoGrid({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={url} alt={`Photo ${index + 1}`} className={cn('h-full w-full', fit === 'cover' ? 'object-cover' : 'object-contain p-2')} loading="lazy" />
           </a>
-          {cover && index === 0 && <span className="absolute top-1.5 left-1.5 rounded-full bg-ink-900/75 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur">Cover</span>}
+          {cover && index === 0 && <span className="absolute top-1.5 left-1.5 rounded-full bg-ink-900/75 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur">{tx('Cover')}</span>}
           <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
             {cover && index > 0 && (
               <button

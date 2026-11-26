@@ -9,6 +9,7 @@ import { initials } from '@/lib/utils';
 import { Card, EmptyState, PageHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FilterBar } from '@/components/ui/filter-bar';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Activity Log' };
 
@@ -60,7 +61,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
                       )}
                     </p>
                     <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-ink-400">
-                      <span>{userName ?? 'System'}</span>·<span>{formatDateTime(log.createdAt)}</span>
+                      <span>{userName ?? tx('System')}</span>·<span>{formatDateTime(log.createdAt)}</span>
                       <Badge tone="neutral" className="py-0 text-[10px]">
                         {titleCase(log.entityType)}
                       </Badge>

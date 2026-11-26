@@ -12,6 +12,7 @@ import { Tabs } from '@/components/ui/tabs';
 import { StatusBadge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/fields';
 import { buttonClasses } from '@/components/ui/button-styles';
+import { tx } from '@/i18n/tx';
 
 type Board = Awaited<ReturnType<typeof getTodayBoard>>;
 type Row = Board['arrivals'][number];
@@ -129,7 +130,7 @@ function BoardRow({ row, tab, businessDate, canCheckIn }: { row: Row; tab: Tab; 
           {late && <span className="ml-2 font-semibold text-rose-600">{tr('Arrival date passed')}</span>}
         </p>
       </div>
-      {row.roomHk && tab === 'arrivals' && row.brStatus === 'reserved' && <span className={cn('badge capitalize', HK_TONE[row.roomHk])}>{row.roomHk.replace('_', ' ')}</span>}
+      {row.roomHk && tab === 'arrivals' && row.brStatus === 'reserved' && <span className={cn('badge capitalize', HK_TONE[row.roomHk])}>{tx(row.roomHk.replaceAll('_', ' '))}</span>}
       <div className="w-28 text-right">
         <p className={cn('num text-sm font-bold', row.balance > 0.5 ? 'text-amber-700' : 'text-emerald-600')}>{row.balance > 0.5 ? formatINR(row.balance) : tr('Paid')}</p>
         <p className="text-[11px] text-ink-400">{tr('balance')}</p>

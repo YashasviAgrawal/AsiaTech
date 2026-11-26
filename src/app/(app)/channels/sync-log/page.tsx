@@ -9,6 +9,7 @@ import { Tabs } from '@/components/ui/tabs';
 import { StatusBadge } from '@/components/ui/badge';
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/table';
 import { RetryButton, SendNowButton } from './sync-buttons';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Sync Log' };
 
@@ -60,11 +61,11 @@ export default async function SyncLogPage({ searchParams }: { searchParams: Prom
                   <Tr key={log.id}>
                     <Td className="text-xs whitespace-nowrap">{formatDateTime(log.processedAt ?? log.createdAt)}</Td>
                     <Td className="font-medium">{ota ? OTA_LABELS[ota] : '—'}</Td>
-                    <Td className="text-xs capitalize">{log.direction}</Td>
-                    <Td className="max-w-72 truncate text-[13px]">{log.message}</Td>
+                    <Td className="text-xs capitalize">{tx(log.direction)}</Td>
+                    <Td className="max-w-72 truncate text-[13px]">{tx(log.message)}</Td>
                     <Td className="max-w-72 truncate text-xs text-ink-500">
-                      {response?.error ?? response?.message ?? '—'}
-                      {log.retries > 0 && <span className="ml-1 text-ink-400">({log.retries} retries)</span>}
+                      {tx(response?.error ?? response?.message ?? '—')}
+                      {log.retries > 0 && <span className="ml-1 text-ink-400">({tx(`${log.retries} retries`)})</span>}
                     </Td>
                     <Td>
                       <StatusBadge status={log.status} />

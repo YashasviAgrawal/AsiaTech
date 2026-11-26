@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Input, Select, Switch } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
+import { tx } from '@/i18n/tx';
 
 export function NotificationsForm({ initial }: { initial: { zeroBookingsAlert: boolean; zeroBookingsMonths: number; dailySummary: boolean; emails: string[] } }) {
   const [form, setForm] = useState(initial);
@@ -22,17 +23,17 @@ export function NotificationsForm({ initial }: { initial: { zeroBookingsAlert: b
               <TrendingDown className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-ink-900">Zero-bookings alert</p>
+              <p className="font-semibold text-ink-900">{tx('Zero-bookings alert')}</p>
               <p className="text-sm text-ink-500">
-                Receive an email if the property gets no bookings for the past{' '}
+                {tx('Receive an email if the property gets no bookings for the past')}{' '}
                 <Select value={form.zeroBookingsMonths} onChange={(e) => setForm({ ...form, zeroBookingsMonths: Number(e.target.value) })} className="inline-block h-8 w-auto py-0.5 text-sm">
                   {[1, 2, 3, 6].map((m) => (
                     <option key={m} value={m}>
-                      {m} month{m > 1 ? 's' : ''}
+                      {`${m} month${m > 1 ? 's' : ''}`}
                     </option>
                   ))}
                 </Select>
-                . Checked monthly.
+                {tx('. Checked monthly.')}
               </p>
             </div>
             <Switch checked={form.zeroBookingsAlert} onChange={(zeroBookingsAlert) => setForm({ ...form, zeroBookingsAlert })} label="Zero-bookings alert" />
@@ -43,7 +44,7 @@ export function NotificationsForm({ initial }: { initial: { zeroBookingsAlert: b
             </span>
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-ink-900">Daily summary (Night Audit report)</p>
-              <p className="text-sm text-ink-500">Occupancy, ADR, revenue and cash after every Night Audit.</p>
+              <p className="text-sm text-ink-500">{tx('Occupancy, ADR, revenue and cash after every Night Audit.')}</p>
             </div>
             <Switch checked={form.dailySummary} onChange={(dailySummary) => setForm({ ...form, dailySummary })} label="Daily summary" />
           </li>
@@ -71,7 +72,7 @@ export function NotificationsForm({ initial }: { initial: { zeroBookingsAlert: b
                 setEmail('');
               }}
             >
-              <Plus className="h-4 w-4" /> Add
+              <Plus className="h-4 w-4" /> {tx('Add')}
             </Button>
           </div>
         </div>

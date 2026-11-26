@@ -35,7 +35,7 @@ export function CloseDayButton({ outletId, closed, totals }: { outletId: string;
           <dl className="grid grid-cols-2 gap-2 text-sm">
             {(['cash', 'upi', 'card', 'room_transfer', 'complimentary'] as const).map((k) => (
               <div key={k} className="flex justify-between rounded-lg bg-ink-50 px-3 py-2">
-                <dt className="text-ink-500 capitalize">{k.replace('_', ' ')}</dt>
+                <dt className="text-ink-500 capitalize">{tx(k.replaceAll('_', ' '))}</dt>
                 <dd className="num font-semibold">{formatINR(totals[k] ?? 0)}</dd>
               </div>
             ))}

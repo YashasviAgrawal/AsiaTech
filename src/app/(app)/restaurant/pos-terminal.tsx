@@ -12,6 +12,7 @@ import { ConfirmDialog, Dialog } from '@/components/ui/dialog';
 import { Input, Select } from '@/components/ui/fields';
 import { useRun } from '@/components/ui/use-run';
 import { useToast } from '@/components/ui/toast';
+import { tx } from '@/i18n/tx';
 
 type Terminal = NonNullable<Awaited<ReturnType<typeof getPosTerminal>>>;
 type Order = Terminal['orders'][number];
@@ -290,7 +291,7 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
                 })
               }
             >
-              <Printer className="h-4 w-4" /> Print bill
+              <Printer className="h-4 w-4" /> {tx('Print bill')}
             </Button>
           )}
           {selected && selected.status === 'billed' && (
@@ -469,7 +470,7 @@ function SettleDialog({
       </div>
       {canComp && (
         <button disabled={pending} onClick={() => onSettle('complimentary')} className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-ink-500 hover:text-ink-800">
-          <Receipt className="h-3.5 w-3.5" /> Mark complimentary
+          <Receipt className="h-3.5 w-3.5" /> {tx('Mark complimentary')}
         </button>
       )}
     </Dialog>

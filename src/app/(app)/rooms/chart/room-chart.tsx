@@ -8,6 +8,8 @@ import { addDay, dateRange, formatDayShort, formatINR, isWeekend, nightsBetween,
 import type { ChartStay } from '@/server/services/roomchart';
 import { assignRoomAction, moveStayAction } from '@/server/actions/frontoffice';
 import { useToast } from '@/components/ui/toast';
+import { tx } from '@/i18n/tx';
+import { useTr } from '@/i18n/client';
 
 interface ChartRoom {
   id: string;
@@ -51,6 +53,7 @@ export function RoomChart({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const tr = useTr();
   const dates = useMemo(() => dateRange(start, days), [start, days]);
   const end = addDay(start, days);
   const [drag, setDrag] = useState<Drag | null>(null);
@@ -180,7 +183,7 @@ export function RoomChart({
             {/* Header */}
             <div className="sticky top-0 z-20 flex border-b border-ink-200 bg-ink-50">
               <div className="sticky left-0 z-10 flex items-end border-r border-ink-200 bg-ink-50 px-4 pb-2 text-[11px] font-semibold tracking-wide text-ink-500 uppercase" style={{ width: LABEL }}>
-                Room
+                {tx('Room')}
               </div>
               {dates.map((date) => {
                 const d = parseDay(date);
@@ -227,7 +230,7 @@ export function RoomChart({
                     }}
                   >
                     <div className="sticky left-0 z-10 flex items-center gap-2 border-r border-ink-200 bg-white px-4" style={{ width: LABEL }}>
-                      <span className={cn('h-2 w-2 shrink-0 rounded-full', HK_DOT[room.hkStatus])} title={room.hkStatus.replace('_', ' ')} />
+                      <span className={cn('h-2 w-2 shrink-0 rounded-full', HK_DOT[room.hkStatus])} title={tr(room.hkStatus.replaceAll('_', ' '))} />
                       <span className="num text-sm font-extrabold text-ink-900">{room.number}</span>
                       <span className="truncate text-[11px] text-ink-400">{room.typeCode}</span>
                       {room.hkStatus === 'out_of_order' && <span className="ml-auto rounded bg-rose-50 px-1 text-[9px] font-bold text-rose-600">OOO</span>}
@@ -244,7 +247,7 @@ export function RoomChart({
                           canBook && date >= today && 'hover:bg-brand-50',
                         )}
                         style={{ width: COL }}
-                        aria-label={`Book room ${room.number} on ${date}`}
+                        aria-label={tr(`Book room ${room.number} on ${formatDayShort(date)}`)}
                       />
                     ))}
                   </div>
@@ -285,12 +288,12 @@ export function RoomChart({
                   >
                     {saving === stay.id ? <Loader2 className="mx-2 h-3.5 w-3.5 shrink-0 animate-spin" /> : null}
                     <span className="truncate px-2">{stay.guestName}</span>
-                    {stay.balance > 0.5 && stay.status !== 'departed' && <span className="mr-1 ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300 ring-2 ring-white/60" title="Balance due" />}
+                    {stay.balance > 0.5 && stay.status !== 'departed' && <span className="mr-1 ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300 ring-2 ring-white/60" title={tr('Balance due')} />}
                     {canEdit && stay.status !== 'departed' && (
                       <span
                         className="absolute inset-y-0 right-0 w-2.5 cursor-ew-resize rounded-r-lg bg-black/10 opacity-0 transition group-hover:opacity-100"
                         onPointerDown={(e) => onPointerDown(e, stay, 'resize')}
-                        title="Drag to extend or shorten"
+                        title={tr('Drag to extend or shorten')}
                       />
                     )}
                   </div>
@@ -301,21 +304,21 @@ export function RoomChart({
         </div>
         <div className="flex flex-wrap items-center gap-4 border-t border-ink-100 px-5 py-3 text-[11px] text-ink-500">
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-5 rounded bg-sky-500" /> Reserved
+            <span className="h-2.5 w-5 rounded bg-sky-500" /> {tx('Reserved')}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-5 rounded bg-emerald-500" /> In house
+            <span className="h-2.5 w-5 rounded bg-emerald-500" /> {tx('In house')}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-5 rounded bg-amber-200 ring-1 ring-amber-300" /> On hold
+            <span className="h-2.5 w-5 rounded bg-amber-200 ring-1 ring-amber-300" /> {tx('On hold')}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-5 rounded bg-ink-200" /> Departed
+            <span className="h-2.5 w-5 rounded bg-ink-200" /> {tx('Departed')}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> Balance due
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> {tx('Balance due')}
           </span>
-          <span className="ml-auto">Dots by room numbers show housekeeping status.</span>
+          <span className="ml-auto">{tx('Dots by room numbers show housekeeping status.')}</span>
         </div>
       </div>
 
@@ -323,10 +326,10 @@ export function RoomChart({
       <aside className="card h-fit overflow-hidden">
         <div className="flex items-center gap-2 border-b border-ink-100 px-4 py-3">
           <Inbox className="h-4 w-4 text-brand-600" />
-          <p className="text-sm font-bold text-ink-900">Unassigned</p>
+          <p className="text-sm font-bold text-ink-900">{tx('Unassigned')}</p>
           <span className="num ml-auto rounded-full bg-ink-100 px-2 py-0.5 text-xs font-bold text-ink-600">{unassigned.length}</span>
         </div>
-        <p className="px-4 pt-3 text-xs text-ink-500">Drag a booking onto a room of the same type.</p>
+        <p className="px-4 pt-3 text-xs text-ink-500">{tx('Drag a booking onto a room of the same type.')}</p>
         <ul className="scrollbar-thin max-h-[60vh] space-y-2 overflow-y-auto p-3">
           {unassigned.map((stay) => {
             const type = rooms.find((r) => r.roomTypeId === stay.roomTypeId);
@@ -351,7 +354,7 @@ export function RoomChart({
               </li>
             );
           })}
-          {unassigned.length === 0 && <li className="py-6 text-center text-xs text-ink-400">Every booking in this range has a room.</li>}
+          {unassigned.length === 0 && <li className="py-6 text-center text-xs text-ink-400">{tx('Every booking in this range has a room.')}</li>}
         </ul>
       </aside>
 

@@ -2,7 +2,7 @@
 
 import { useTr } from '@/i18n/client';
 import { tx } from '@/i18n/tx';
-import { forwardRef, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { Children, cloneElement, forwardRef, isValidElement, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { AlertCircle, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -75,10 +75,21 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
   return <textarea ref={ref} className={cn('input min-h-[88px] resize-y', className)} placeholder={placeholder ? tr(placeholder) : placeholder} {...props} />;
 });
 
+/** Plain-text <option>s (and <optgroup> labels) are translated, so every dropdown follows the language switch. */
+function translateOptions(children: ReactNode, tr: (text: string) => string): ReactNode {
+  return Children.map(children, (child) => {
+    if (!isValidElement<{ children?: ReactNode; label?: string }>(child)) return child;
+    if (child.type === 'option' && typeof child.props.children === 'string') return cloneElement(child, undefined, tr(child.props.children));
+    if (child.type === 'optgroup') return cloneElement(child, { label: child.props.label ? tr(child.props.label) : undefined }, translateOptions(child.props.children, tr));
+    return child;
+  });
+}
+
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean }>(function Select(
   { className, invalid, children, ...props },
   ref,
 ) {
+  const tr = useTr();
   return (
     <select
       ref={ref}
@@ -90,7 +101,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
       )}
       {...props}
     >
-      {children}
+      {translateOptions(children, tr)}
     </select>
   );
 });
@@ -131,12 +142,13 @@ export function Switch({
   name?: string;
   size?: 'sm' | 'md';
 }) {
+  const tr = useTr();
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      aria-label={label}
+      aria-label={label ? tr(label) : undefined}
       disabled={disabled}
       onClick={() => onChange?.(!checked)}
       className={cn(
@@ -173,17 +185,18 @@ export function Stepper({
   label?: string;
   size?: 'sm' | 'md';
 }) {
+  const tr = useTr();
   const btn = cn(
     'grid place-items-center rounded-md text-ink-600 transition hover:bg-ink-100 active:scale-95 disabled:opacity-30',
     size === 'sm' ? 'h-7 w-7' : 'h-8 w-8',
   );
   return (
-    <div className="inline-flex items-center gap-1 rounded-lg border border-ink-300 bg-white p-0.5" role="group" aria-label={label}>
-      <button type="button" className={btn} onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label="Decrease">
+    <div className="inline-flex items-center gap-1 rounded-lg border border-ink-300 bg-white p-0.5" role="group" aria-label={label ? tr(label) : undefined}>
+      <button type="button" className={btn} onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label={tr('Decrease')}>
         <Minus className="h-3.5 w-3.5" />
       </button>
       <span className={cn('num min-w-6 text-center font-semibold text-ink-900', size === 'sm' ? 'text-xs' : 'text-sm')}>{value}</span>
-      <button type="button" className={btn} onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label="Increase">
+      <button type="button" className={btn} onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label={tr('Increase')}>
         <Plus className="h-3.5 w-3.5" />
       </button>
     </div>

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { BookOpen, Headset, Keyboard, Mail, MessageCircle, Phone } from 'lucide-react';
 import { requireContext } from '@/server/context';
 import { Card, CardHeader, PageHeader } from '@/components/ui/card';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Help & support' };
 
@@ -33,10 +34,10 @@ export default async function SupportPage() {
           <ul className="divide-y divide-ink-100">
             {GUIDES.map((g) => (
               <li key={g.q} className="px-5 py-4">
-                <p className="font-semibold text-ink-900">{g.q}</p>
-                <p className="mt-1 text-sm text-ink-600">{g.a}</p>
+                <p className="font-semibold text-ink-900">{tx(g.q)}</p>
+                <p className="mt-1 text-sm text-ink-600">{tx(g.a)}</p>
                 <Link href={g.href} className="mt-1.5 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">
-                  Take me there →
+                  {tx('Take me there →')}
                 </Link>
               </li>
             ))}
@@ -50,7 +51,7 @@ export default async function SupportPage() {
                 <Phone className="h-4 w-4 text-ink-400" /> <span className="num font-medium">+91 141 400 0000</span>
               </li>
               <li className="flex items-center gap-3">
-                <MessageCircle className="h-4 w-4 text-emerald-600" /> <span className="font-medium">WhatsApp support</span>
+                <MessageCircle className="h-4 w-4 text-emerald-600" /> <span className="font-medium">{tx('WhatsApp support')}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-ink-400" /> <span className="font-medium">support@asiatech.in</span>
@@ -62,7 +63,7 @@ export default async function SupportPage() {
             <ul className="space-y-2 p-5 text-sm">
               {SHORTCUTS.map(([k, label]) => (
                 <li key={k} className="flex items-center justify-between gap-3">
-                  <span className="text-ink-600">{label}</span>
+                  <span className="text-ink-600">{tx(label)}</span>
                   <kbd className="kbd px-1.5">{k}</kbd>
                 </li>
               ))}

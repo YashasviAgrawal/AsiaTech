@@ -9,6 +9,7 @@ import { buttonClasses } from '@/components/ui/button-styles';
 import { Badge } from '@/components/ui/badge';
 import { AvailabilityGrid } from './availability-grid';
 import { BulkUpdateButton } from './bulk-update';
+import { tx } from '@/i18n/tx';
 
 export const metadata: Metadata = { title: 'Availability Calendar' };
 
@@ -28,14 +29,14 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         eyebrow="Rooms & Rates"
         title={
           <span>
-            Availability Calendar <span className="font-semibold text-ink-400">of {ctx.property.name}</span>
+            {tx('Availability Calendar')} <span className="font-semibold text-ink-400">{tx(`of ${ctx.property.name}`)}</span>
           </span>
         }
         description="Rooms to sell per room type and date. Click any number to change it. Every change reaches all OTAs within seconds."
         actions={
           <>
             <a href={`/api/exports/inventory?start=${start}&days=60`} className={buttonClasses('outline')}>
-              <Download className="h-4 w-4" /> Download Inventory
+              <Download className="h-4 w-4" /> {tx('Download Inventory')}
             </a>
             {canEdit && <BulkUpdateButton roomTypes={rows.map((r) => r.roomType)} defaultFrom={start} />}
           </>
@@ -46,7 +47,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         <DateNav start={start} days={DAYS} today={today} />
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="brand" className="uppercase">
-            Inventory of {formatDay(start).slice(0, -5)} to {formatDay(addDay(start, DAYS - 1)).slice(0, -5)}
+            {tx(`Inventory of ${formatDay(start).slice(0, -5)} to ${formatDay(addDay(start, DAYS - 1)).slice(0, -5)}`)}
           </Badge>
           <span className="hidden h-4 w-px bg-ink-200 sm:block" />
           <Legend />
@@ -69,12 +70,12 @@ function Legend() {
       {items.map((item) => (
         <span key={item.label} className="flex items-center gap-1.5">
           <span className={`h-2.5 w-2.5 rounded-sm ${item.cls}`} />
-          {item.label}
+          {tx(item.label)}
         </span>
       ))}
       <span className="flex items-center gap-1.5">
         <span className="h-2.5 w-2.5 rounded-sm bg-[repeating-linear-gradient(45deg,#e11d48_0_2px,#fff_2px_4px)] ring-1 ring-brand-300" />
-        Stop-sell
+        {tx('Stop-sell')}
       </span>
     </div>
   );

@@ -49,6 +49,7 @@ import { AssignDialog, ChargeDialog, CheckInDialog, CheckOutDialog, FormCDialog,
 import { ModifyDialog } from './modify-dialog';
 import { SendInvoiceDialog } from './send-invoice-dialog';
 import { PhotoGrid } from '@/components/ui/photo-upload';
+import { tx } from '@/i18n/tx';
 
 type Dialogs = 'checkin' | 'checkout' | 'payment' | 'charge' | 'cancel' | 'noshow' | 'formc' | 'modify' | { assign: string } | { sendInvoice: string; afterCheckout?: boolean } | null;
 
@@ -128,7 +129,7 @@ export function BookingView({
       {/* Header */}
       <div>
         <Link href="/front-desk/bookings" className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-ink-500 hover:text-ink-800">
-          <ArrowLeft className="h-4 w-4" /> Booking Report
+          <ArrowLeft className="h-4 w-4" /> {tx('Booking Report')}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -136,14 +137,14 @@ export function BookingView({
               <h1 className="font-mono text-2xl font-bold tracking-tight text-ink-900">{b.bookingNo}</h1>
               <StatusBadge status={b.status} />
               <Badge tone={b.source === 'ota' ? 'violet' : b.source === 'web' ? 'info' : 'neutral'}>{sourceLabel(b.source, b.channel)}</Badge>
-              {b.otaRef && <span className="font-mono text-xs text-ink-500">Ref {b.otaRef}</span>}
+              {b.otaRef && <span className="font-mono text-xs text-ink-500">{tr('Ref')} {b.otaRef}</span>}
             </div>
             <p className="mt-1.5 text-sm text-ink-500">
               {tr('Booked')} {formatDateTime(b.createdAt)}
-              {data.createdByName ? ` by ${data.createdByName}` : ''}
+              {data.createdByName ? ` ${tr(`by ${data.createdByName}`)}` : ''}
               {b.status === 'hold' && b.holdUntil && (
                 <span className="ml-2 inline-flex items-center gap-1 font-semibold text-amber-700">
-                  <Clock className="h-3.5 w-3.5" /> held until {formatDateTime(b.holdUntil)}
+                  <Clock className="h-3.5 w-3.5" /> {tr(`held until ${formatDateTime(b.holdUntil)}`)}
                 </span>
               )}
             </p>
@@ -163,7 +164,7 @@ export function BookingView({
             <Popover
               width="w-60"
               trigger={({ toggle }) => (
-                <Button variant="outline" size="icon" onClick={toggle} aria-label="More actions">
+                <Button variant="outline" size="icon" onClick={toggle} aria-label={tr('More actions')}>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               )}
@@ -193,7 +194,7 @@ export function BookingView({
                       icon={<MessageCircle className="h-4 w-4 text-emerald-600" />}
                       onClick={() => (closeMenu(), window.open(`https://wa.me/91${g.mobile}?text=${encodeURIComponent(`Namaste ${g.name.split(' ')[0]}, regarding your booking ${b.bookingNo} at ${hotel.name}: `)}`, '_blank'))}
                     >
-                      WhatsApp guest
+                      {tx('WhatsApp guest')}
                     </MenuItem>
                   )}
                   {can.requestMoney && totals.balance > 0.5 && (
@@ -293,8 +294,8 @@ export function BookingView({
                       Room {i + 1} · {room.typeName}
                     </p>
                     <p className="text-xs text-ink-500">
-                      {MEAL_PLAN_LABELS[room.mealPlan]} · {room.adults}A{room.children ? ` ${room.children}C` : ''}
-                      {room.extraBeds ? ` · ${room.extraBeds} extra bed` : ''} · {formatINR(room.amount)} + GST
+                      {tr(MEAL_PLAN_LABELS[room.mealPlan])} · {room.adults}A{room.children ? ` ${room.children}C` : ''}
+                      {room.extraBeds ? ` · ${room.extraBeds} ${tr('extra bed')}` : ''} · {formatINR(room.amount)} + GST
                     </p>
                   </div>
                   <StatusBadge status={room.status} />
@@ -310,17 +311,17 @@ export function BookingView({
               <div className="space-y-2 border-t border-ink-100 px-5 py-3.5 text-sm">
                 {b.specialRequests && (
                   <p>
-                    <span className="font-semibold text-ink-700">Requests:</span> <span className="text-ink-600">{b.specialRequests}</span>
+                    <span className="font-semibold text-ink-700">{tx('Requests:')}</span> <span className="text-ink-600">{b.specialRequests}</span>
                   </p>
                 )}
                 {b.internalNotes && (
                   <p>
-                    <span className="font-semibold text-ink-700">Staff notes:</span> <span className="text-ink-600">{b.internalNotes}</span>
+                    <span className="font-semibold text-ink-700">{tx('Staff notes:')}</span> <span className="text-ink-600">{b.internalNotes}</span>
                   </p>
                 )}
                 {b.cancelReason && (
                   <p className="text-rose-700">
-                    <span className="font-semibold">Reason:</span> {b.cancelReason}
+                    <span className="font-semibold">{tx('Reason:')}</span> {b.cancelReason}
                   </p>
                 )}
               </div>
@@ -333,7 +334,7 @@ export function BookingView({
               icon={<FileText className="h-4 w-4" />}
               title="Bill (folio)"
               description="Room charges, restaurant, extras and payments"
-              action={invoice && <Badge tone="success">Invoice {invoice.invoiceNo}</Badge>}
+              action={invoice && <Badge tone="success">{`${tr('Invoice')} ${invoice.invoiceNo}`}</Badge>}
             />
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] text-sm">
@@ -355,7 +356,7 @@ export function BookingView({
                         <td className="px-2 py-2.5 text-ink-800">
                           {line.description}
                           {line.taxRate > 0 && <span className="ml-1.5 text-xs text-ink-400">GST {line.taxRate}%</span>}
-                          {line.isVoid && line.voidReason && <span className="ml-2 text-xs no-underline">void: {line.voidReason}</span>}
+                          {line.isVoid && line.voidReason && <span className="ml-2 text-xs no-underline">{tr('void:')} {line.voidReason}</span>}
                         </td>
                         <td className={cn('num px-5 py-2.5 text-right font-medium', line.total < 0 ? 'text-emerald-700' : 'text-ink-900')}>{formatINR(line.total)}</td>
                         <td className="pr-3 text-right">
@@ -367,9 +368,9 @@ export function BookingView({
                               type="button"
                               onClick={() => run(() => restoreFolioLineAction(line.id))}
                               className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-semibold text-brand-600 no-underline transition hover:bg-brand-50"
-                              title="Put this line back on the bill"
+                              title={tr('Put this line back on the bill')}
                             >
-                              <RotateCcw className="h-3 w-3" /> Restore
+                              <RotateCcw className="h-3 w-3" /> {tx('Restore')}
                             </button>
                           )}
                         </td>
@@ -381,7 +382,7 @@ export function BookingView({
                       <tr key={p.id} className="bg-emerald-50/40">
                         <td className="px-5 py-2.5 text-ink-500">{formatDayShort(p.businessDate)}</td>
                         <td className="px-2 py-2.5 text-ink-800">
-                          {p.kind === 'refund' ? 'Refund' : p.kind === 'advance' ? 'Advance' : 'Payment'} · {PAYMENT_MODE_LABELS[p.mode] ?? p.mode}
+                          {tr(p.kind === 'refund' ? 'Refund' : p.kind === 'advance' ? 'Advance' : 'Payment')} · {tr(PAYMENT_MODE_LABELS[p.mode] ?? p.mode)}
                           {p.reference && <span className="ml-1.5 font-mono text-xs text-ink-400">{p.reference}</span>}
                         </td>
                         <td className="num px-5 py-2.5 text-right font-medium text-emerald-700">{p.kind === 'refund' ? '+' : '−'}{formatINR(p.amount)}</td>
@@ -413,14 +414,14 @@ export function BookingView({
                 <li key={event.id} className="relative flex gap-3">
                   <span className="relative z-10 mt-1 h-3 w-3 shrink-0 rounded-full border-2 border-white bg-brand-500 ring-1 ring-brand-200" />
                   <div className="min-w-0">
-                    <p className="text-sm text-ink-800">{event.summary}</p>
+                    <p className="text-sm text-ink-800">{tx(event.summary)}</p>
                     <p className="text-xs text-ink-400">
-                      {event.userName ?? 'System'} · {timeAgo(event.createdAt)}
+                      {event.userName ?? tx('System')} · {tx(timeAgo(event.createdAt))}
                     </p>
                   </div>
                 </li>
               ))}
-              {data.timeline.length === 0 && <p className="text-sm text-ink-500">No history yet.</p>}
+              {data.timeline.length === 0 && <p className="text-sm text-ink-500">{tx('No history yet.')}</p>}
             </ol>
           </Card>
         </div>
@@ -475,10 +476,10 @@ export function BookingView({
               {(can.checkin || g.idPhotos.length > 0) && <GuestIdPhotos guestId={g.id} photos={g.idPhotos} editable={can.checkin} />}
               {g.isForeign && g.passportNumber && (
                 <div className="rounded-lg bg-ink-50 p-2.5 text-xs text-ink-600">
-                  Passport {g.passportNumber} · Visa {g.visaNumber ?? '—'} ({g.visaType ?? '—'}) · arrived from {g.arrivedFrom ?? '—'}
+                  {tr('Passport')} {g.passportNumber} · {tr('Visa')} {g.visaNumber ?? '—'} ({g.visaType ?? '—'}) · {tr('arrived from')} {g.arrivedFrom ?? '—'}
                   {b.formCSubmittedAt && (
                     <p className="mt-1 flex items-center gap-1 font-semibold text-emerald-700">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Form-C submitted · {b.formCRef}
+                      <CheckCircle2 className="h-3.5 w-3.5" /> {tr('Form-C submitted')} · {b.formCRef}
                     </p>
                   )}
                 </div>
@@ -494,7 +495,7 @@ export function BookingView({
           <Card className="p-5">
             <p className="text-xs font-semibold tracking-wide text-ink-400 uppercase">{tr('Balance due')}</p>
             <p className={cn('num mt-1 text-3xl font-extrabold tracking-tight', totals.balance > 0.5 ? 'text-ink-900' : 'text-emerald-600')}>
-              {totals.balance > 0.5 ? formatINR(totals.balance) : 'Fully paid'}
+              {totals.balance > 0.5 ? formatINR(totals.balance) : tr('Fully paid')}
             </p>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-ink-100">
               <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.min(100, totals.grandTotal > 0 ? (totals.paid / totals.grandTotal) * 100 : 0)}%` }} />
