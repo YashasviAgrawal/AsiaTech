@@ -43,6 +43,13 @@
       "when": 1795632809658,
       "tag": "0005_printing",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795680316376,
+      "tag": "0006_rate_limit_store",
+      "breakpoints": true
     }
   ]
 }

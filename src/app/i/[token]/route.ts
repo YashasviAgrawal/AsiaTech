@@ -11,7 +11,7 @@ import { renderInvoicePdf } from '@/server/pdf/invoice-pdf';
  * token works (see share-links.ts), and requests are rate limited so tokens cannot be brute-forced.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ token: string }> }) {
-  const limited = limitRequest(request, 'invoice-link', 30, 60_000);
+  const limited = await limitRequest(request, 'invoice-link', 30, 60_000);
   if (limited) return limited;
   const { token } = await params;
   const id = readShareToken('invoice', token);

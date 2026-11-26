@@ -10,7 +10,7 @@ const unauthorised = () => Response.json({ error: 'Unknown or revoked print agen
  * so KOTs reach the kitchen within a second without the agent hammering the server.
  */
 export async function GET(request: Request) {
-  const limited = limitRequest(request, 'print-agent', 240, 60_000);
+  const limited = await limitRequest(request, 'print-agent', 240, 60_000);
   if (limited) return limited;
   const ip = ipFrom((name) => request.headers.get(name));
   const agent = await authenticateAgent(request.headers.get('authorization'), ip);

@@ -8,7 +8,7 @@ import { limitRequest } from '@/server/rate-limit';
  * The "mock" provider is accepted only outside production.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
-  const limited = limitRequest(request, 'webhook:pay', 60, 60_000);
+  const limited = await limitRequest(request, 'webhook:pay', 60, 60_000);
   if (limited) return limited;
   const { provider } = await params;
   const raw = await request.text();

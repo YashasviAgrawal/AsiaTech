@@ -32,8 +32,7 @@ export async function loginAction(_previous: LoginState, formData: FormData): Pr
   const headerList0 = await headers();
   const ipKey = `login:ip:${ipFrom((name) => headerList0.get(name))}`;
   const accountKey = `login:id:${identifier.trim().toLowerCase()}`;
-  const byIp = peekLimit(ipKey, 30, 15 * 60_000);
-  const byAccount = peekLimit(accountKey, 8, 15 * 60_000);
+  const [byIp, byAccount] = await Promise.all([peekLimit(ipKey, 30, 15 * 60_000), peekLimit(accountKey, 8, 15 * 60_000)]);
   if (!byIp.ok || !byAccount.ok) {
     const wait = Math.ceil(Math.max(byIp.retryAfterSeconds, byAccount.retryAfterSeconds) / 60);
     return { error: `Too many sign-in attempts. Try again in ${wait} minute${wait === 1 ? '' : 's'}.`, identifier };
@@ -55,8 +54,7 @@ export async function loginAction(_previous: LoginState, formData: FormData): Pr
   await db.insert(loginHistory).values({ userId: user?.id ?? null, identifier, success: Boolean(valid), ip, userAgent });
 
   if (!user || !valid) {
-    recordHit(ipKey);
-    recordHit(accountKey);
+    await Promise.all([recordHit(ipKey), recordHit(accountKey)]);
     return { error: 'That email/mobile and password do not match.', identifier };
   }
 

@@ -28,7 +28,7 @@ function authorised(request: NextRequest) {
  * desk, so a sold-out room type is refused (409) instead of being double-sold.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ ota: string }> }) {
-  const limited = limitRequest(request, 'webhook:ota', 120, 60_000);
+  const limited = await limitRequest(request, 'webhook:ota', 120, 60_000);
   if (limited) return limited;
   if (!authorised(request)) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   const { ota } = await params;

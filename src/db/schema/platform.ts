@@ -140,3 +140,10 @@ export const uploads = pgTable(
   },
   (t) => [index('uploads_created_idx').on(t.createdAt), index('uploads_url_idx').on(t.url)],
 );
+
+/**
+ * Shared rate-limit log, used when RATE_LIMIT_STORE=postgres (several app servers). One row per counted
+ * request; rows older than an hour are deleted. The table is UNLOGGED (see the migration): fast, and losing
+ * it in a database crash only resets the limits.
+ */
+export const rateLimitHits = pgTable('rate_limit_hits', { key: text('key').notNull(), at: ts('at').notNull() }, (t) => [index('rate_limit_hits_key_idx').on(t.key, t.at)]);

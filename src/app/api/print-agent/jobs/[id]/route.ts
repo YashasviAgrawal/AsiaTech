@@ -6,7 +6,7 @@ const body = z.object({ ok: z.boolean(), error: z.string().max(500).nullable().o
 
 /** The print agent reports whether a job printed. */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const limited = limitRequest(request, 'print-agent-report', 600, 60_000);
+  const limited = await limitRequest(request, 'print-agent-report', 600, 60_000);
   if (limited) return limited;
   const agent = await authenticateAgent(request.headers.get('authorization'), ipFrom((name) => request.headers.get(name)));
   if (!agent) return Response.json({ error: 'Unknown or revoked print agent key.' }, { status: 401 });
