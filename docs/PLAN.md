@@ -160,7 +160,7 @@ and tests. All database tables are created in M0, so modules never need disrupti
 
 - [x] Hotel Details: name, legal name, GSTIN (validated), state code, address, phone/email, check-in/out time, invoice prefix and footer, tax slabs
 - [x] User Management: invite or add staff, role per property, activate/deactivate, reset password, **login history**
-- [x] Roles: permission matrix view (system roles; custom roles later)
+- [x] Roles: permission matrix view, plus custom roles per organisation (pick permissions, start from a system role; nobody can give a role more than they have)
 - [x] Branding: logo, brand colour, booking-page hero, live preview, image upload
 - [x] Notifications settings: **zero-bookings monthly email** (no bookings for 3 months), daily summary toggle
 - [x] Property switcher (one login, many hotels) in the top bar
@@ -209,7 +209,7 @@ and tests. All database tables are created in M0, so modules never need disrupti
 - [x] **System Update** panel, posted from the super-admin console (`/admin`)
 - [x] **Today's Bookings** table (Booking ID, Source, Name, Check In, Check Out, Room Name, Room Assigned, Status) with an **Assign** button
 - [x] Notifications centre (badge): new bookings, cancellations, sync errors; mark read
-- [x] Owner's phone view (responsive dashboard: tiles 2-up, occupancy card) · 🟡 dedicated owner summary screen pending
+- [x] Owner's phone view (responsive dashboard: tiles 2-up, occupancy card) and a dedicated owner summary screen (`/owner`)
 
 ### M6 · Housekeeping
 **Goal:** clean, inspected rooms with no paper. Feature **#28**, Hindi phone screen.

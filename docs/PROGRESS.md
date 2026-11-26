@@ -68,8 +68,8 @@ housekeeping phone screen ✅ · activity log ✅
 |-------|--------|
 | `npm run typecheck` | clean |
 | `npm run lint` | clean (React Compiler rules on) |
-| `npm test` | 46 unit tests pass (money maths, Hindi phrases and patterns, secrets sealing, rate limiter, S3 signing, signed guest links, SMTP email with attachment, invoice PDF content incl. IGST / UPI QR / cancelled, ESC/POS text and KOT / bill / test tickets) |
-| `npm run test:integration` | 10 DB-backed tests pass (inventory: 3; shared rate limits: 4, including 20 simultaneous requests at a limit of 5 → exactly 5; row-level security: 3, including 24 interleaved requests for two hotels each seeing only its own rows) on a freshly seeded `hotel_os_test` |
+| `npm test` | 48 unit tests pass (money maths, Hindi phrases and patterns, incl. dates and times inside sentences and activity log lines, secrets sealing, rate limiter, S3 signing, signed guest links, SMTP email with attachment, invoice PDF content incl. IGST / UPI QR / cancelled, ESC/POS text and KOT / bill / test tickets) |
+| `npm run test:integration` | 16 DB-backed tests pass (inventory: 3; shared rate limits: 4, including 20 simultaneous requests at a limit of 5 → exactly 5; row-level security: 3, including 24 interleaved requests for two hotels each seeing only its own rows; custom roles: 6, including no escalation, system roles locked, no removal while in use) on a freshly seeded `hotel_os_test` |
 | `npm run build` | production build passes, all routes compile |
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
 | Overbooking guard | sold-out OTA booking refused (409); **6 simultaneous OTA requests for the last room → exactly 1 booking** |
@@ -87,6 +87,7 @@ housekeeping phone screen ✅ · activity log ✅
 | Row-level security | in psql, a connection stamped as the Residency sees none of Portico's bookings, updates 0 Portico rows and is refused when inserting a Portico guest. In the app: all 37 staff screens load with their data and no errors; Postgres log shows each request stamped with its hotel; reservation → cancel works (bookings, rooms, inventory, counters, OTA queue); platform console still counts the Residency's 6 rooms while the owner works in Portico; switched to the Residency, a Portico booking link shows "not found". Test booking removed, inventory consistent over 400 days |
 | Shared rate limits | two production servers (ports 3001 and 3002) with `RATE_LIMIT_STORE=postgres`, one client alternating between them: 15 + 15 answered, then 429 with Retry-After from both; another client unaffected |
 | Thermal printing | Restaurant → Printers: bad address refused; kitchen (80 mm) and counter (58 mm) printers added; agent key created and the real agent script run against two stand-in network printers. Test page, then POS table T2 → Send KOT → printed in the kitchen with **no browser print window**; Print bill → printed at the counter with GST split and UPI QR (bytes decoded and checked). Kitchen printer switched off → 3 tries, then "Failed: 127.0.0.1:9100 refused the connection"; switched on → Print again → printed. A 20-minute-old queued KOT was failed, not printed. Revoking the key stopped the agent. Test printers, order and bill number removed afterwards |
+| Custom roles | Settings → User Management as the owner: "Night auditor" made from Accountant minus "Record payments…" (6 of 23 permissions); "manager" as a name refused; given to a new staff member; removing it while in use refused ("1 staff member still has this role"). Signed in as that person: Night Audit, Payments, Reports and Activity Log open, Rate Management, User Management and Request Money send them to Home. Owner untick "See and export reports" → their next visit to Reports goes to Home. Editor checked in Hindi. Test staff and role removed afterwards |
 | Change booking | +1 night, upgrade Standard → Deluxe Family and add a room: blocked while a type is sold out, then saved; `booked` still matches booking rooms on every date (SQL check), OTAs pushed, activity log written. In-house guest extended: room kept, agreed nights kept at ₹2,300 |
 
 ## Pending (next up)
@@ -107,6 +108,7 @@ Product follow-ups:
 - [x] Guest ID scan at check-in (webcam or phone camera, private storage), room type photos, logo and cover photo upload
 - [x] Hindi on every screen: shared components translate their text (headers, labels, buttons, tables, tabs, dialogs, badges, filters, dropdown options, toasts), plus ~1,190 phrases and sentence patterns; the long sentences inside individual screens and dialogs are translated too
 - [x] Owner summary screen for phones (`/owner`)
+- [x] Custom roles per organisation: pick permissions (grouped), start from any role, edit, remove when nobody has it; you can only give permissions you hold
 - [x] DB-backed integration tests (`npm run test:integration`): concurrent last-room sales, change booking, cancel, sold-out change refused
 
 Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates incl./excl. GST at the desk, live OTA codes, printer models.
@@ -114,6 +116,12 @@ Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates i
 ## Change log
 
 ### 2026-11-26
+- **Custom roles:** Settings → User Management has a Roles card. Owners (anyone with "Add staff and change their
+  roles") make roles for their organisation, e.g. a night auditor: name, description, permissions in 7 groups,
+  optionally starting from an existing role. Custom roles show up in the staff role picker and in the "What each role
+  can do" matrix; changes apply on the member's next page. Nobody can create, edit, remove or assign a role with
+  permissions they do not hold, "everything" is reserved for owners, system roles cannot be changed, and a role
+  cannot be removed while staff have it. Every change is in the activity log.
 - **Hindi, second sweep:** every staff screen and the main dialogs checked in Hindi with a crawler that marks any text
   the dictionary does not know. Fixed: the Booking Report, new reservation form, night audit, rooms and rates, channel
   manager, reports, support and settings screens had sentences written straight into the page; dropdown options and

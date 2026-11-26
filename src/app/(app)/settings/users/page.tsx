@@ -3,7 +3,8 @@ import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db';
 import { loginHistory, propertyMembers, roles, users } from '@/db/schema';
 import { requireContext } from '@/server/context';
-import { PERMISSIONS, SYSTEM_ROLES } from '@/server/auth/permissions';
+import { PERMISSION_GROUPS, PERMISSIONS } from '@/server/auth/permissions';
+import { listRoles } from '@/server/services/roles';
 import { UsersManager } from './users-manager';
 
 export const metadata: Metadata = { title: 'User Management' };
@@ -39,8 +40,10 @@ export default async function UsersPage() {
     <UsersManager
       staff={JSON.parse(JSON.stringify(staff))}
       logins={JSON.parse(JSON.stringify(logins.map((l) => ({ ...l, name: staff.find((s) => s.id === l.userId)?.name ?? l.identifier }))))}
-      roles={SYSTEM_ROLES.map((r) => ({ key: r.key, name: r.name, description: r.description, permissions: r.permissions as string[] }))}
+      roles={await listRoles(ctx.propertyId)}
       permissions={Object.entries(PERMISSIONS).map(([key, label]) => ({ key, label }))}
+      groups={PERMISSION_GROUPS}
+      myPermissions={ctx.permissions}
       currentUserId={ctx.userId}
       isOwner={ctx.role.key === 'owner'}
     />

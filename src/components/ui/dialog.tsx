@@ -130,6 +130,8 @@ interface ConfirmDialogProps {
   requireReason?: boolean;
   reasonLabel?: string;
   loading?: boolean;
+  /** Whether an Undo toast follows. False shows "This cannot be undone." instead. */
+  undoable?: boolean;
 }
 
 function ConfirmDialogInner({
@@ -144,6 +146,7 @@ function ConfirmDialogInner({
   requireReason,
   reasonLabel = 'Reason',
   loading,
+  undoable = true,
 }: ConfirmDialogProps) {
   const [reason, setReason] = useState('');
   return (
@@ -177,7 +180,7 @@ function ConfirmDialogInner({
           <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Type a short reason" autoFocus />
         </Field>
       )}
-      {!preview && !requireReason && <p className="text-sm text-ink-600">{tx('You can undo this from the notification that appears.')}</p>}
+      {!preview && !requireReason && <p className="text-sm text-ink-600">{tx(undoable ? 'You can undo this from the notification that appears.' : 'This cannot be undone.')}</p>}
     </Dialog>
   );
 }

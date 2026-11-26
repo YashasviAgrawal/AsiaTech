@@ -5,7 +5,7 @@ import { and, eq, ne, or, sql } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { db } from '@/db';
-import { properties, propertyMembers, roles, users } from '@/db/schema';
+import { properties, propertyMembers, users } from '@/db/schema';
 import { isValidGstin } from '@/lib/gst';
 import { normaliseMobile } from '@/lib/utils';
 import { actionContext } from '../context';
@@ -13,6 +13,8 @@ import { runAction } from '../action';
 import { isOwnFile } from '../storage';
 import { UserError } from '../errors';
 import { logActivity } from '../audit';
+import { canGrant } from '../auth/permissions';
+import { deleteRole, findAssignableRole, saveRole, type roleInput } from '../services/roles';
 
 function refresh() {
   revalidatePath('/', 'layout');
@@ -173,9 +175,10 @@ export async function saveUserAction(input: z.input<typeof userSchema>) {
     const data = userSchema.parse(input);
     if (!data.email && !data.mobile) throw new UserError('Add an email or a mobile number to sign in with.');
     const mobile = normaliseMobile(data.mobile);
-    const [role] = await db.select().from(roles).where(and(eq(roles.key, data.roleKey), eq(roles.isSystem, true)));
+    const role = await findAssignableRole(ctx.propertyId, data.roleKey);
     if (!role) throw new UserError('Unknown role.');
     if (role.key === 'owner' && ctx.role.key !== 'owner') throw new UserError('Only an owner can add another owner.');
+    if (!canGrant(ctx.permissions, role.permissions)) throw new UserError(`You cannot give the ${role.name} role: it has permissions you do not have.`);
 
     const clash = await db
       .select({ id: users.id })
@@ -224,6 +227,26 @@ export async function signOutEverywhereAction(userId: string) {
     await db.update(users).set({ sessionVersion: sql`${users.sessionVersion} + 1` }).where(eq(users.id, userId));
     return { ok: true };
   }, 'Signed out on every device.');
+}
+
+/* ───────── roles ───────── */
+
+export async function saveRoleAction(input: z.input<typeof roleInput>) {
+  return runAction(async () => {
+    const ctx = await actionContext('users.manage');
+    const role = await saveRole({ propertyId: ctx.propertyId, userId: ctx.userId, permissions: ctx.permissions }, input);
+    refresh();
+    return role;
+  }, 'Role saved.');
+}
+
+export async function deleteRoleAction(id: string) {
+  return runAction(async () => {
+    const ctx = await actionContext('users.manage');
+    await deleteRole({ propertyId: ctx.propertyId, userId: ctx.userId, permissions: ctx.permissions }, id);
+    refresh();
+    return { ok: true };
+  }, 'Role removed.');
 }
 
 /* ───────── setup wizard ───────── */
