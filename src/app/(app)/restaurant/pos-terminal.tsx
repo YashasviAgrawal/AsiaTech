@@ -76,13 +76,14 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
           meta: draft ? { outletId: data.outlet.id, orderType: draft.orderType, tableId: draft.tableId ?? null, bookingId: draft.bookingId ?? null, roomId: draft.roomId ?? null, guestName: draft.guestName ?? null } : undefined,
           items,
         }),
-      { success: (d) => `KOT ${d.kotNo} sent to kitchen · ${d.orderNo}` },
+      { success: (d) => `KOT ${d.kotNo} sent to kitchen · ${d.orderNo}${d.printedOn.length ? ` · ${tr('printing on')} ${d.printedOn.join(', ')}` : ''}` },
     );
     if (result.ok) {
       setCart({});
       setDraft(null);
       setSelectedId(result.data.orderId);
-      if (thenPrint) window.open(`/print/kot/${result.data.orderId}?kot=${result.data.kotNo}`, '_blank', 'width=420,height=640');
+      // A kitchen printer took it; otherwise print from the browser as before.
+      if (thenPrint && result.data.printedOn.length === 0) window.open(`/print/kot/${result.data.orderId}?kot=${result.data.kotNo}`, '_blank', 'width=420,height=640');
     }
     return result;
   }
@@ -280,7 +281,15 @@ export function PosTerminal({ data, canVoid, canManage }: { data: Terminal; canV
             <ChefHat className="h-4 w-4" /> Send KOT {cartLines.length ? `(${cartLines.reduce((t, [, q]) => t + q, 0)})` : ''}
           </Button>
           {selected && selected.status === 'open' && (
-            <Button variant="outline" disabled={pending || cartLines.length > 0} onClick={() => run(() => billOrderAction(selected.id), { success: (d) => `Bill ${d.billNo}`, onSuccess: () => window.open(`/print/bill/${selected.id}`, '_blank', 'width=420,height=700') })}>
+            <Button variant="outline" disabled={pending || cartLines.length > 0} onClick={() =>
+                run(() => billOrderAction(selected.id), {
+                  success: (d) => `Bill ${d.billNo}${d.printedOn.length ? ` · ${tr('printing on')} ${d.printedOn.join(', ')}` : ''}`,
+                  onSuccess: (d) => {
+                    if (d.printedOn.length === 0) window.open(`/print/bill/${selected.id}`, '_blank', 'width=420,height=700');
+                  },
+                })
+              }
+            >
               <Printer className="h-4 w-4" /> Print bill
             </Button>
           )}

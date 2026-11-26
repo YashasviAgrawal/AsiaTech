@@ -28,6 +28,7 @@ export const hi: Partial<Record<MessageKey, string>> = {
   'nav.bookingEngine': 'बुकिंग इंजन',
   'nav.pointOfSale': 'पॉइंट ऑफ़ सेल',
   'nav.menuTables': 'मेन्यू और टेबल',
+  'nav.printers': 'प्रिंटर',
   'nav.roomStatus': 'कमरों की स्थिति',
   'nav.checklist': 'चेकलिस्ट',
   'nav.repairs': 'रिपेयर टिकट',

@@ -31,6 +31,7 @@ export const en = {
   'nav.bookingEngine': 'Booking Engine',
   'nav.pointOfSale': 'Point Of Sale',
   'nav.menuTables': 'Menu & Tables',
+  'nav.printers': 'Printers',
   'nav.roomStatus': 'Room Status',
   'nav.checklist': 'Checklist',
   'nav.repairs': 'Repair Tickets',

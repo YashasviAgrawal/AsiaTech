@@ -10,6 +10,17 @@ import { runAction } from '../action';
 import { UserError } from '../errors';
 import { actorFromContext } from '../services/actor';
 import { billOrder, closeDay, reopenOrder, restoreOrder, saveOutlet, sendKot, setDiscount, settleOrder, voidItem, voidOrder } from '../services/pos';
+import { queueBill, queueKot } from '../services/printing';
+
+/** Thermal printing must never stop a KOT or bill: a printing problem only means "print from the browser". */
+async function printQuietly(work: () => Promise<string[]>): Promise<string[]> {
+  try {
+    return await work();
+  } catch (error) {
+    console.error('[print] could not queue ticket', error);
+    return [];
+  }
+}
 
 function refresh() {
   revalidatePath('/restaurant', 'layout');
@@ -35,9 +46,11 @@ const kotSchema = z.object({
 export async function sendKotAction(input: z.input<typeof kotSchema>) {
   return runAction(async () => {
     const ctx = await actionContext('pos.use');
-    const result = await sendKot(actorFromContext(ctx), kotSchema.parse(input));
+    const actor = actorFromContext(ctx);
+    const result = await sendKot(actor, kotSchema.parse(input));
+    const printedOn = await printQuietly(() => queueKot(actor, result.orderId, result.kotNo, { auto: true, byName: ctx.user.name }));
     refresh();
-    return result;
+    return { ...result, printedOn };
   });
 }
 
@@ -62,9 +75,11 @@ export async function setDiscountAction(orderId: string, discount: number) {
 export async function billOrderAction(orderId: string) {
   return runAction(async () => {
     const ctx = await actionContext('pos.use');
-    const result = await billOrder(actorFromContext(ctx), orderId);
+    const actor = actorFromContext(ctx);
+    const result = await billOrder(actor, orderId);
+    const printedOn = await printQuietly(() => queueBill(actor, orderId, { auto: true }));
     refresh();
-    return result;
+    return { ...result, printedOn };
   });
 }
 

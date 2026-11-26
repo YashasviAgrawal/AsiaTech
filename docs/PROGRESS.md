@@ -68,7 +68,7 @@ housekeeping phone screen ✅ · activity log ✅
 |-------|--------|
 | `npm run typecheck` | clean |
 | `npm run lint` | clean (React Compiler rules on) |
-| `npm test` | 37 unit tests pass (money maths, Hindi phrases and patterns, secrets sealing, rate limiter, S3 signing, signed guest links, SMTP email with attachment, invoice PDF content incl. IGST / UPI QR / cancelled) |
+| `npm test` | 46 unit tests pass (money maths, Hindi phrases and patterns, secrets sealing, rate limiter, S3 signing, signed guest links, SMTP email with attachment, invoice PDF content incl. IGST / UPI QR / cancelled, ESC/POS text and KOT / bill / test tickets) |
 | `npm run test:integration` | 3 DB-backed tests pass on a freshly seeded `hotel_os_test` (GST slabs, tax split, amount in words, financial year, duplicates, formatting) |
 | `npm run build` | production build passes, all routes compile |
 | End to end in a browser | reservation → returning-guest autofill → check-in → charge → check-out → invoice `SRP/26-27/0001`; POS table → KOT → settle; payment link → webhook → booking paid; Night Audit 6 steps → business date moved, report emailed |
@@ -84,6 +84,7 @@ housekeeping phone screen ✅ · activity log ✅
 | Exports and undo | Payments, Credit, Petty Cash, Activity Log export with the screen's filters (valid .xlsx, 403 without permission); Booking Report prints / saves as A4 landscape PDF; folio line void → Undo → void → Restore keeps the linked restaurant bill in step; POS order void → restore puts the room-bill line back; restore refused on another business day |
 | Uploads | fake image refused; ID uploaded + webcam scan (fake camera) saved on the guest at check-in; private file 200 for staff, login redirect for anonymous; room photos + cover order on the booking page; logo/cover on the booking page for anonymous visitors; CSS-injection link refused |
 | Invoice PDF and sending | checked out a guest in the browser → "Send invoice" opened by itself with the guest's mobile and email filled in → sent on WhatsApp (signed link) and email (PDF attached, 47 KB) → logged on the booking's history; PDF text checked (GSTIN, CGST/SGST split, amount in words, "Fully paid"); balance-due bill shows the UPI QR for the right amount; guest link opens the PDF signed out, tampered or swapped tokens → 404, 30 requests/min then 429; staff route 401 signed out; Hindi dialog checked |
+| Thermal printing | Restaurant → Printers: bad address refused; kitchen (80 mm) and counter (58 mm) printers added; agent key created and the real agent script run against two stand-in network printers. Test page, then POS table T2 → Send KOT → printed in the kitchen with **no browser print window**; Print bill → printed at the counter with GST split and UPI QR (bytes decoded and checked). Kitchen printer switched off → 3 tries, then "Failed: 127.0.0.1:9100 refused the connection"; switched on → Print again → printed. A 20-minute-old queued KOT was failed, not printed. Revoking the key stopped the agent. Test printers, order and bill number removed afterwards |
 | Change booking | +1 night, upgrade Standard → Deluxe Family and add a room: blocked while a type is sold out, then saved; `booked` still matches booking rooms on every date (SQL check), OTAs pushed, activity log written. In-house guest extended: room kept, agreed nights kept at ₹2,300 |
 
 ## Pending (next up)
@@ -97,7 +98,7 @@ Production readiness:
 - [ ] Postgres Row-Level Security on `property_id`
 - [x] Super-admin console `/admin`: organisations and hotels (plan, suspend / re-activate), System Update editor
 - [x] Server-side PDF for invoices: download, email attachment over SMTP, signed WhatsApp link for the guest; "Send invoice" opens right after check-out
-- [ ] Thermal print agent for KOT (58/80 mm)
+- [x] Thermal printing: KOTs and bills straight to the kitchen and counter printers (ESC/POS, 58/80 mm) through a one-file print agent on a hotel PC
 
 Product follow-ups:
 - [x] "Change booking" dialog (dates, add/remove rooms, room type upgrade, plan, occupancy) with a live availability re-check
@@ -109,6 +110,13 @@ Product follow-ups:
 Questions for the client (from PLAN.md): "Today's POS In House" meaning, rates incl./excl. GST at the desk, live OTA codes, printer models.
 
 ## Change log
+
+### 2026-11-26
+- **Thermal printing (Restaurant → Printers):** add kitchen and counter printers (network IP or USB / shared on the
+  agent PC, 58 or 80 mm, copies, per outlet). "Send KOT" prints in the kitchen and "Print bill" at the counter with no
+  browser print window; without a printer the browser window opens as before. A one-file print agent on a hotel PC
+  (key shown once, revocable) collects tickets and reports back; failures retry 3 times and show why, with Print
+  again. Tickets are never printed more than 15 minutes late. Reprints are marked on the KOT.
 
 ### 2026-11-25
 - **Invoice PDF and sending:** the GST invoice is rendered as a real PDF on the server (same content as the print page:

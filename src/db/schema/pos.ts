@@ -142,3 +142,72 @@ export const posDayCloses = pgTable(
   },
   (t) => [uniqueIndex('pos_day_closes_uq').on(t.outletId, t.businessDate)],
 );
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Thermal printing. The app runs in the cloud and cannot reach the kitchen's
+ * printers, so a small print agent on a hotel PC collects jobs over HTTPS and
+ * sends the raw ESC/POS bytes to each printer on the local network.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+export const PRINTER_ROLES = ['kot', 'bill', 'both'] as const;
+
+export const printers = pgTable('printers', {
+  id: pk(),
+  propertyId: propertyRef(),
+  /** null = used by every outlet. */
+  outletId: uuid('outlet_id').references(() => posOutlets.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  role: text('role', { enum: PRINTER_ROLES }).notNull().default('kot'),
+  /** network: "192.168.1.50:9100". shared: a USB device or shared printer path on the agent PC ("/dev/usb/lp0", "\\\\localhost\\KOT"). */
+  connection: text('connection', { enum: ['network', 'shared'] }).notNull().default('network'),
+  address: text('address').notNull(),
+  paperWidth: integer('paper_width').notNull().default(80),
+  copies: integer('copies').notNull().default(1),
+  /** Print KOTs / bills on their own as soon as they are made. */
+  autoPrint: boolean('auto_print').notNull().default(true),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: createdAt(),
+});
+
+export const printAgents = pgTable(
+  'print_agents',
+  {
+    id: pk(),
+    propertyId: propertyRef(),
+    name: text('name').notNull(),
+    /** sha256 of the key; the key itself is shown once. */
+    keyHash: text('key_hash').notNull(),
+    keyHint: text('key_hint').notNull(),
+    lastSeenAt: ts('last_seen_at'),
+    lastIp: text('last_ip'),
+    revokedAt: ts('revoked_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('print_agents_key_uq').on(t.keyHash)],
+);
+
+export const printJobs = pgTable(
+  'print_jobs',
+  {
+    id: pk(),
+    propertyId: propertyRef(),
+    printerId: uuid('printer_id')
+      .notNull()
+      .references(() => printers.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: ['kot', 'bill', 'test'] }).notNull(),
+    /** "KOT 3 · Table T4", shown in the job list. */
+    label: text('label').notNull(),
+    entityId: uuid('entity_id'),
+    /** ESC/POS bytes, base64. Rendered when queued, so a reprint is the same ticket. */
+    payload: text('payload').notNull(),
+    status: text('status', { enum: ['queued', 'printing', 'printed', 'failed'] }).notNull().default('queued'),
+    attempts: integer('attempts').notNull().default(0),
+    error: text('error'),
+    agentId: uuid('agent_id').references(() => printAgents.id, { onDelete: 'set null' }),
+    claimedAt: ts('claimed_at'),
+    printedAt: ts('printed_at'),
+    createdBy: uuid('created_by').references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index('print_jobs_queue_idx').on(t.propertyId, t.status, t.createdAt)],
+);
